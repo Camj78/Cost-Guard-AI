@@ -79,7 +79,11 @@ export default function WaitlistPage() {
     founders already joined.
   </p>
 )}
-          
+ {typeof count === "number" && count < 25 && (
+  <p className="text-xs text-muted-foreground">
+    Early access is limited — first invites go out to early adopters.
+  </p>
+)}         
         </div>
 
         {submitted ? (
