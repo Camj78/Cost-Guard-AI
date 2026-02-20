@@ -17,28 +17,32 @@ export async function POST(req: Request) {
     if (!supabaseUrl || !serviceRoleKey) {
       return NextResponse.json({ error: "Server not configured" }, { status: 500 });
     }
-// Build payload with only existing fields
-const payload: Record<string, any> = { email };
-if (company) payload.company = company;
-if (source) payload.source = source;
 
-const res = await fetch(`${supabaseUrl}/rest/v1/waitlist`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    apikey: serviceRoleKey,
-    Authorization: `Bearer ${serviceRoleKey}`,
-    Prefer: "return=minimal",
-  },
-  body: JSON.stringify(payload),
-});
+    const payload: Record<string, any> = { email };
+    if (company) payload.company = company;
+    if (source) payload.source = source;
+
+    const res = await fetch(`${supabaseUrl}/rest/v1/waitlist`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify(payload),
+    });
 
     if (res.status === 409) {
       return NextResponse.json({ ok: true, already: true });
     }
 
     if (!res.ok) {
-      return NextResponse.json({ error: "Insert failed" }, { status: 500 });
+      const text = await res.text().catch(() => "");
+      return NextResponse.json(
+        { error: "Insert failed", status: res.status, details: text.slice(0, 500) },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ ok: true });
