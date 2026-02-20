@@ -5,6 +5,9 @@ import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+import { PRO_ENABLED } from "@/lib/flags";
+console.log("PRO_ENABLED:", PRO_ENABLED);
+
 
 export function Header() {
   return (
