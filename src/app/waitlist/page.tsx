@@ -150,16 +150,13 @@ export default function WaitlistPage() {
            <p className="text-xs text-muted-foreground">
   No spam. One email when Pro opens. We never sell your email.
 </p>
-
-<div className="pt-2 text-[11px] leading-5 text-muted-foreground">
-  <span className="font-medium text-foreground">
-    Built for AI founders shipping production workloads.
-  </span>
-  <span className="opacity-80"> — No prompt storage. No training on your data.</span>
-</div>
           </form>
         )}
       </div>
+      <footer className="mx-auto mt-10 max-w-xl border-t pt-6 text-center text-[11px] text-muted-foreground">
+  Built for AI founders shipping production workloads.{" "}
+  <span className="opacity-80">No prompt storage. No training on your data.</span>
+</footer>
     </main>
   );
 }
