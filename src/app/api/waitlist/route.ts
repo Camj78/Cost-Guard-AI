@@ -32,7 +32,6 @@ const res = await fetch(`${supabaseUrl}/rest/v1/waitlist`, {
   },
   body: JSON.stringify(payload),
 });
-    });
 
     if (res.status === 409) {
       return NextResponse.json({ ok: true, already: true });
