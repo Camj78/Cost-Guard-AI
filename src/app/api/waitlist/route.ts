@@ -17,16 +17,8 @@ export async function POST(req: Request) {
     if (!supabaseUrl || !serviceRoleKey) {
       return NextResponse.json({ error: "Server not configured" }, { status: 500 });
     }
-
-    const res = await fetch(`${supabaseUrl}/rest/v1/waitlist`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-        Prefer: "return=minimal",
-      },
-     const payload: Record<string, any> = { email };
+// Build payload with only existing fields
+const payload: Record<string, any> = { email };
 if (company) payload.company = company;
 if (source) payload.source = source;
 
