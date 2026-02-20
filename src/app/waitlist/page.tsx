@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 export default function WaitlistPage() {
   const [email, setEmail] = useState("");
@@ -11,9 +10,6 @@ export default function WaitlistPage() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    // Phase 1: no backend complexity.
-    // This just confirms intent. We’ll wire storage in Phase 2.
     setSubmitted(true);
   }
 
@@ -25,8 +21,8 @@ export default function WaitlistPage() {
             Join the Pro Waitlist
           </h1>
           <p className="text-muted-foreground">
-            Pro adds historical drift tracking, batch analysis, and team-ready
-            reporting. Get early access when it ships.
+            Pro adds historical drift tracking, batch analysis, and team-ready reporting.
+            Get early access when it ships.
           </p>
         </div>
 
@@ -41,12 +37,13 @@ export default function WaitlistPage() {
           <form onSubmit={onSubmit} className="space-y-4 rounded-lg border p-6">
             <div className="space-y-2">
               <label className="text-sm font-medium">Email</label>
-              <Input
+              <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
                 type="email"
                 required
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
 
@@ -54,10 +51,11 @@ export default function WaitlistPage() {
               <label className="text-sm font-medium">
                 Company <span className="text-muted-foreground">(optional)</span>
               </label>
-              <Input
+              <input
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
                 placeholder="CostGuardAI"
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
 
