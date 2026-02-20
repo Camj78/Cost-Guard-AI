@@ -147,9 +147,16 @@ export default function WaitlistPage() {
               {loading ? "Joining..." : "Join Waitlist"}
             </Button>
 
-            <p className="text-xs text-muted-foreground">
-              No spam. One email when Pro opens. We never sell your email.
-            </p>
+           <p className="text-xs text-muted-foreground">
+  No spam. One email when Pro opens. We never sell your email.
+</p>
+
+<div className="pt-2 text-[11px] leading-5 text-muted-foreground">
+  <span className="font-medium text-foreground">
+    Built for AI founders shipping production workloads.
+  </span>
+  <span className="opacity-80"> — No prompt storage. No training on your data.</span>
+</div>
           </form>
         )}
       </div>
