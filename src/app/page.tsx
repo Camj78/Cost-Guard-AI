@@ -37,7 +37,27 @@ export default function Page() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
-
+{/* ✅ HERO (Phase 1) */}
+<section className="border-b bg-background">
+  <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
+    <div className="max-w-2xl space-y-3">
+      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+        Preflight safety system for AI products in production.
+      </h1>
+      <p className="text-base sm:text-lg text-muted-foreground">
+        Detect token overflow, cost drift, and production risk before you ship.
+      </p>
+      <p className="text-sm text-muted-foreground">
+        Used by AI founders before every deploy.
+        <div className="pt-2">
+  <Button className="gap-2" onClick={() => window.scrollTo({ top: 500, behavior: "smooth" })}>
+    Run Preflight <Zap className="w-4 h-4" />
+  </Button>
+</div>
+      </p>
+    </div>
+  </div>
+</section>
       {/* Main content */}
       <main className="flex-1 px-4 sm:px-6 py-6">
         <div className="mx-auto max-w-6xl">
