@@ -1,34 +1,33 @@
 {
-  "w0ypme": {
-    "description": "Long system prompt - overflow risk",
-    "expected": {
-      "risk": "high",
-      "compression": true
+  "version": 1,
+  "prompts": [
+    {
+      "id": "short-clean",
+      "text": "List the five most commonly used sorting algorithms. For each, state the average time complexity and one practical use case.",
+      "expectedRiskRange": [0, 24],
+      "compressionExpected": false,
+      "truncationExpected": "safe"
     },
-    "prompt": "You are a senior AI infrastructure architect helping a startup optimize LLM cost and reliability in production. Your task is to analyze the following production scenario and provide a structured breakdown with recommendations. Scenario: We process 15,000 customer support tickets per day using GPT-4. Each ticket includes: Full conversation history (average 3,200 tokens), Internal system notes (800 tokens), Sentiment analysis metadata, Compliance checklist, Output formatting rules. We are experiencing unpredictable truncation issues and margin compression. Provide: 1. Root cause analysis 2. Cost estimate per ticket 3. Optimization strategy 4. Reliability mitigation plan 5. Monitoring framework."
-  },
-  "h720h5": {
-    "description": "Scale sensitivity prompt",
-    "expected": {
-      "risk": "medium-or-higher-when-long",
-      "compression": "depends"
+    {
+      "id": "verbose-medium",
+      "text": "I would like you to please note that I need you to basically summarize the key differences between REST and GraphQL APIs. It is important to note that due to the fact that a large number of developers are using both approaches, in order to make a well-informed decision, as you know, the comparison needs to cover performance, flexibility, and ease of use. Essentially, I want you to provide a clear, detailed breakdown in order to help our team understand which approach is better for our use case.",
+      "expectedRiskRange": [0, 49],
+      "compressionExpected": true,
+      "truncationExpected": "safe"
     },
-    "prompt": "Summarize the following user conversation into a structured JSON object with intent, urgency level, compliance flags, product category, and recommended action. Conversation: [Insert 2–3 paragraphs here when testing]"
-  },
-  "86r9g5": {
-    "description": "Verbose enterprise compliance prompt",
-    "expected": {
-      "risk": "elevated",
-      "compression": true
+    {
+      "id": "large-context-stress",
+      "text": "System Specification: The platform must support multi-tenant isolation, horizontal scaling across distributed nodes, centralized logging, structured telemetry, rate limiting, circuit breakers, SLA enforcement, authentication middleware, role-based access control, observability pipelines, distributed tracing, cache invalidation strategy, versioned APIs, schema migrations, data replication strategy, failover routing, automated backups, and disaster recovery planning. The solution must handle high concurrency workloads with predictable latency and minimal resource contention while maintaining deterministic cost estimation across compute tiers.",
+      "expectedRiskRange": [0, 85],
+      "compressionExpected": false,
+      "truncationExpected": "safe"
     },
-    "prompt": "You are operating in a regulated financial environment. All responses must comply with FINRA, SEC, and internal audit policy 4.3.2. Responses must include disclaimers, formatted citations, and structured bullet points. Task: Generate a client-facing explanation of margin lending risk during volatile market conditions."
-  },
-  "9rxjf2": {
-    "description": "Minimal prompt baseline",
-    "expected": {
-      "risk": "low",
-      "compression": false
-    },
-    "prompt": "Rewrite: \"Thank you for your inquiry.\""
-  }
+    {
+      "id": "output-collision-trigger",
+      "text": "## Project Requirements\n\n**Background**: I would like you to please note that due to the fact that our system processes a large number of requests, essentially we need you to design a comprehensive architecture. It is important to note that in order to meet our SLA requirements, basically the solution must be scalable.\n\n### Security\nThe design must include authentication, encryption, and audit logging.\n\n### Reliability\nWe need high availability, monitoring, and automated failover.\n\n### Observability\nProvide metrics, tracing, and structured logging.",
+      "expectedRiskRange": [0, 35],
+      "compressionExpected": true,
+      "truncationExpected": "safe"
+    }
+  ]
 }
