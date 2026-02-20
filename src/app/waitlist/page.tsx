@@ -75,8 +75,8 @@ export default function WaitlistPage() {
   }
 
   return (
-    <main className="min-h-screen px-4 sm:px-6 py-16">
-      <div className="mx-auto max-w-xl space-y-6">
+    <main className="min-h-screen flex flex-col px-4 sm:px-6 py-16">
+     <div className="mx-auto max-w-xl space-y-6 flex-1">
         <div className="space-y-2">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
             Join the Pro Waitlist
