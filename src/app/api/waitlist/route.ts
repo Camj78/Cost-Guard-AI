@@ -26,11 +26,20 @@ export async function POST(req: Request) {
         Authorization: `Bearer ${serviceRoleKey}`,
         Prefer: "return=minimal",
       },
-      body: JSON.stringify({
-        email,
-        company: company || null,
-        source: source || null,
-      }),
+     const payload: Record<string, any> = { email };
+if (company) payload.company = company;
+if (source) payload.source = source;
+
+const res = await fetch(`${supabaseUrl}/rest/v1/waitlist`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    apikey: serviceRoleKey,
+    Authorization: `Bearer ${serviceRoleKey}`,
+    Prefer: "return=minimal",
+  },
+  body: JSON.stringify(payload),
+});
     });
 
     if (res.status === 409) {
