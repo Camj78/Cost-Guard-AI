@@ -118,7 +118,44 @@ export default function Page() {
           </div>
         </div>
       </main>
+{/* ✅ WHY THIS MATTERS */}
+<section className="border-t bg-muted/30">
+  <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
+    <div className="text-center mb-8">
+      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+        Why This Matters
+      </h2>
+    </div>
 
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-sm sm:text-base">
+      
+      {/* Token Overflow */}
+      <div className="space-y-2">
+        <h3 className="font-semibold">Token Overflow</h3>
+        <p className="text-muted-foreground">
+          Truncation → broken outputs → silent failure in production.
+        </p>
+      </div>
+
+      {/* Cost Drift */}
+      <div className="space-y-2">
+        <h3 className="font-semibold">Cost Drift</h3>
+        <p className="text-muted-foreground">
+          Margins collapse at scale when token usage expands unnoticed.
+        </p>
+      </div>
+
+      {/* Risk Score */}
+      <div className="space-y-2">
+        <h3 className="font-semibold">Risk Score</h3>
+        <p className="text-muted-foreground">
+          Signal of production instability — not legal advice, just operational risk.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
       <Footer />
     </div>
   );
