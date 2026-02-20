@@ -33,7 +33,6 @@ export async function POST(req: Request) {
       }),
     });
 
-    // Unique violation usually returns 409
     if (res.status === 409) {
       return NextResponse.json({ ok: true, already: true });
     }
