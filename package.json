@@ -10,6 +10,7 @@
     "golden": "tsx tests/run-golden.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "js-tiktoken": "^1.0.21",
