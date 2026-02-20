@@ -37,7 +37,8 @@ export default function Page() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
-{/* ✅ HERO (Phase 1) */}
+
+      {/* ✅ HERO (Phase 1) */}
 <section className="border-b bg-background">
   <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
     <div className="max-w-2xl space-y-3">
@@ -118,7 +119,8 @@ export default function Page() {
           </div>
         </div>
       </main>
-{/* ✅ WHY THIS MATTERS */}
+
+      {/* ✅ WHY THIS MATTERS */}
 <section className="border-t bg-muted/30">
   <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
     <div className="text-center mb-8">
@@ -172,6 +174,79 @@ export default function Page() {
     </div>
   </div>
 </section>
+
+{/* ✅ WHO THIS IS FOR */}
+<section className="border-t bg-muted/20">
+  <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16">
+    <div className="text-center mb-10">
+      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+        Who This Is For
+      </h2>
+    </div>
+
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-sm sm:text-base">
+      
+      <div className="space-y-2">
+        <h3 className="font-semibold">AI SaaS Founders</h3>
+        <p className="text-muted-foreground">
+          Shipping prompts into production and need cost + failure visibility before scaling.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="font-semibold">Product & ML Teams</h3>
+        <p className="text-muted-foreground">
+          Monitoring token usage and drift across models and deployments.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="font-semibold">AI Infrastructure Engineers</h3>
+        <p className="text-muted-foreground">
+          Preventing overflow, runaway costs, and silent degradation.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+      {/* ✅ HOW IT WORKS */}
+<section className="border-t bg-background">
+  <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16">
+    <div className="text-center mb-10">
+      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+        How Preflight Works
+      </h2>
+    </div>
+
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-sm sm:text-base">
+      
+      <div className="space-y-2">
+        <h3 className="font-semibold">1. Analyze</h3>
+        <p className="text-muted-foreground">
+          Estimate tokens, cost, compression, and risk before deployment.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="font-semibold">2. Simulate</h3>
+        <p className="text-muted-foreground">
+          Adjust output length and compare models to understand scale impact.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="font-semibold">3. Deploy Safely</h3>
+        <p className="text-muted-foreground">
+          Ship with predictable cost and reduced production risk.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+      
       {/* ✅ PRICING */}
 <section className="border-t bg-background">
   <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16">
