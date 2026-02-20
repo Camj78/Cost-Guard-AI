@@ -152,7 +152,23 @@ export default function Page() {
           Signal of production instability — not legal advice, just operational risk.
         </p>
       </div>
-
+{/* 🔒 PRO TEASER */}
+<div className="mt-10 rounded-lg border bg-background p-6">
+  <div className="flex items-start justify-between gap-4">
+    <div className="space-y-1">
+      <p className="text-sm font-semibold">🔒 Pro Feature</p>
+      <p className="text-sm text-muted-foreground">
+        Unlock model comparison, historical drift tracking, batch runs, and exports.
+      </p>
+    </div>
+    <a
+      href="/waitlist"
+      className="text-sm font-medium underline underline-offset-4"
+    >
+      Unlock Pro
+    </a>
+  </div>
+</div>
     </div>
   </div>
 </section>
