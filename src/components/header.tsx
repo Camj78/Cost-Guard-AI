@@ -4,9 +4,7 @@ import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-<Button asChild variant="secondary">
-  <Link href="/waitlist">Join Pro Waitlist</Link>
-</Button>
+
 
 export function Header() {
   return (
@@ -31,7 +29,9 @@ export function Header() {
             </p>
           </div>
         </div>
-
+<Button asChild variant="secondary">
+  <Link href="/waitlist">Join Pro Waitlist</Link>
+</Button>
         {/* Privacy trust badge */}
         <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 rounded-full px-3 py-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
