@@ -1,4 +1,16 @@
 "use client";
+const [count, setCount] = useState<number | null>(null);
+import { useEffect } from "react";
+useEffect(() => {
+  (async () => {
+    try {
+      const res = await fetch("/api/waitlist/count", { cache: "no-store" });
+      const data = await res.json();
+      if (res.ok && typeof data.count === "number") setCount(data.count);
+    } catch {}
+  })();
+}, []);
+
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -61,6 +73,13 @@ export default function WaitlistPage() {
             Pro adds historical drift tracking, batch analysis, and team-ready reporting.
             Get early access when it ships.
           </p>
+{typeof count === "number" && (
+  <p className="text-sm text-muted-foreground">
+    <span className="font-medium text-foreground">{count.toLocaleString()}</span>{" "}
+    founders joined the Pro waitlist.
+  </p>
+)}
+          
         </div>
 
         {submitted ? (
