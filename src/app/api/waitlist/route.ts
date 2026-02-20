@@ -1,11 +1,5 @@
 import { NextResponse } from "next/server";
 
-const VERSION = "waitlist-route-v2-debug"; // change this string anytime to confirm deploy
-
-export async function GET() {
-  return NextResponse.json({ ok: true, version: VERSION });
-}
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -21,10 +15,7 @@ export async function POST(req: Request) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !serviceRoleKey) {
-      return NextResponse.json(
-        { error: "Server not configured", version: VERSION },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Server not configured" }, { status: 500 });
     }
 
     const payload: Record<string, any> = { email };
@@ -43,24 +34,15 @@ export async function POST(req: Request) {
     });
 
     if (res.status === 409) {
-      return NextResponse.json({ ok: true, already: true, version: VERSION });
+      return NextResponse.json({ ok: true, already: true });
     }
 
     if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      return NextResponse.json(
-        {
-          error: "Insert failed",
-          status: res.status,
-          details: text.slice(0, 1000),
-          version: VERSION,
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Insert failed" }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, version: VERSION });
+    return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: "Bad request", version: VERSION }, { status: 400 });
+    return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
 }
