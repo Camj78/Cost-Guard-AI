@@ -2,6 +2,11 @@
 
 import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+<Button asChild variant="secondary">
+  <Link href="/waitlist">Join Pro Waitlist</Link>
+</Button>
 
 export function Header() {
   return (
