@@ -6,19 +6,49 @@ import { Button } from "@/components/ui/button";
 export default function WaitlistPage() {
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
+  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [already, setAlready] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
- async function onSubmit(e: React.FormEvent) {
-  e.preventDefault();
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setAlready(false);
 
-  const res = await fetch("/api/waitlist", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, company, source: "waitlist_page" }),
-  });
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      setError("Please enter a valid email.");
+      return;
+    }
 
-  if (res.ok) setSubmitted(true);
-}
+    setLoading(true);
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: cleanEmail,
+          company: company.trim(),
+          source: "waitlist_page",
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(data?.error || "Submit failed. Please try again.");
+        return;
+      }
+
+      if (data?.already) setAlready(true);
+      setSubmitted(true);
+    } catch (err) {
+      setError("Network error. Please refresh and try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <main className="min-h-screen px-4 sm:px-6 py-16">
@@ -35,13 +65,21 @@ export default function WaitlistPage() {
 
         {submitted ? (
           <div className="rounded-lg border p-6 space-y-2">
-            <p className="font-medium">You’re on the list.</p>
+            <p className="font-medium">
+              {already ? "You’re already on the list." : "You’re on the list."}
+            </p>
             <p className="text-sm text-muted-foreground">
               We’ll email you when Pro opens.
             </p>
           </div>
         ) : (
           <form onSubmit={onSubmit} className="space-y-4 rounded-lg border p-6">
+            {error && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Email</label>
               <input
@@ -66,8 +104,8 @@ export default function WaitlistPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full">
-              Join Waitlist
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Joining..." : "Join Waitlist"}
             </Button>
 
             <p className="text-xs text-muted-foreground">
