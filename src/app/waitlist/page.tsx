@@ -109,7 +109,7 @@ export default function WaitlistPage() {
             </Button>
 
             <p className="text-xs text-muted-foreground">
-              No spam. One email when Pro opens.
+              No spam. One email when Pro opens. We never sell your email.
             </p>
           </form>
         )}
