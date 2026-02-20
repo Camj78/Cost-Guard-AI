@@ -172,6 +172,58 @@ export default function Page() {
     </div>
   </div>
 </section>
+      {/* ✅ PRICING */}
+<section className="border-t bg-background">
+  <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16">
+    <div className="text-center mb-10">
+      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+        Pricing
+      </h2>
+      <p className="text-muted-foreground mt-2">
+        Built for teams shipping AI into production.
+      </p>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      {/* Free */}
+      <div className="rounded-lg border p-6 space-y-4">
+        <h3 className="text-xl font-semibold">Free</h3>
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          <li>• Single preflight analysis</li>
+          <li>• Token + cost + risk visibility</li>
+          <li>• Manual usage</li>
+        </ul>
+        <div className="pt-4 text-sm font-medium">
+          $0
+        </div>
+      </div>
+
+      {/* Pro */}
+      <div className="rounded-lg border p-6 space-y-4 bg-muted/30">
+        <h3 className="text-xl font-semibold">Pro</h3>
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          <li>• Unlimited preflights</li>
+          <li>• Model comparison matrix</li>
+          <li>• Historical drift tracking</li>
+          <li>• Batch analysis</li>
+          <li>• Team dashboard</li>
+          <li>• Priority support</li>
+        </ul>
+        <div className="pt-4 text-lg font-semibold">
+          $29 / month
+        </div>
+        <a
+          href="/waitlist"
+          className="inline-block text-sm font-medium underline underline-offset-4"
+        >
+          Join Pro Waitlist
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
       <Footer />
     </div>
   );
