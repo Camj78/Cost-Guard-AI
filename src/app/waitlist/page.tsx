@@ -8,10 +8,17 @@ export default function WaitlistPage() {
   const [company, setCompany] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSubmitted(true);
-  }
+ async function onSubmit(e: React.FormEvent) {
+  e.preventDefault();
+
+  const res = await fetch("/api/waitlist", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, company, source: "waitlist_page" }),
+  });
+
+  if (res.ok) setSubmitted(true);
+}
 
   return (
     <main className="min-h-screen px-4 sm:px-6 py-16">
