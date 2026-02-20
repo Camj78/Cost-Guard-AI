@@ -1,27 +1,31 @@
 "use client";
-const [count, setCount] = useState<number | null>(null);
-import { useEffect } from "react";
-useEffect(() => {
-  (async () => {
-    try {
-      const res = await fetch("/api/waitlist/count", { cache: "no-store" });
-      const data = await res.json();
-      if (res.ok && typeof data.count === "number") setCount(data.count);
-    } catch {}
-  })();
-}, []);
 
-
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 export default function WaitlistPage() {
+  const [count, setCount] = useState<number | null>(null);
+
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [already, setAlready] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/waitlist/count", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        const n = Number(data?.count);
+        if (Number.isFinite(n)) setCount(n);
+      } catch {
+        // optionally setCount(0) or ignore
+      }
+    })();
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,7 +59,15 @@ export default function WaitlistPage() {
 
       if (data?.already) setAlready(true);
       setSubmitted(true);
-    } catch (err) {
+
+      // Optional: refresh count after successful submit
+      try {
+        const r2 = await fetch("/api/waitlist/count", { cache: "no-store" });
+        const d2 = await r2.json();
+        const n2 = Number(d2?.count);
+        if (Number.isFinite(n2)) setCount(n2);
+      } catch {}
+    } catch {
       setError("Network error. Please refresh and try again.");
     } finally {
       setLoading(false);
@@ -73,17 +85,21 @@ export default function WaitlistPage() {
             Pro adds historical drift tracking, batch analysis, and team-ready reporting.
             Get early access when it ships.
           </p>
-{typeof count === "number" && (
-  <p className="text-sm text-muted-foreground">
-    <span className="font-medium text-foreground">{count.toLocaleString()}</span>{" "}
-    founders already joined.
-  </p>
-)}
- {typeof count === "number" && count < 25 && (
-  <p className="text-xs text-muted-foreground">
-    Early access is limited — first invites go out to early adopters.
-  </p>
-)}         
+
+          {count !== null && (
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">
+                {count.toLocaleString()}
+              </span>{" "}
+              founders already joined.
+            </p>
+          )}
+
+          {count !== null && count < 25 && (
+            <p className="text-xs text-muted-foreground">
+              Early access is limited — first invites go out to early adopters.
+            </p>
+          )}
         </div>
 
         {submitted ? (
