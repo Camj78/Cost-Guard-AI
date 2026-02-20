@@ -1,0 +1,34 @@
+{
+  "w0ypme": {
+    "description": "Long system prompt - overflow risk",
+    "expected": {
+      "risk": "high",
+      "compression": true
+    },
+    "prompt": "You are a senior AI infrastructure architect helping a startup optimize LLM cost and reliability in production. Your task is to analyze the following production scenario and provide a structured breakdown with recommendations. Scenario: We process 15,000 customer support tickets per day using GPT-4. Each ticket includes: Full conversation history (average 3,200 tokens), Internal system notes (800 tokens), Sentiment analysis metadata, Compliance checklist, Output formatting rules. We are experiencing unpredictable truncation issues and margin compression. Provide: 1. Root cause analysis 2. Cost estimate per ticket 3. Optimization strategy 4. Reliability mitigation plan 5. Monitoring framework."
+  },
+  "h720h5": {
+    "description": "Scale sensitivity prompt",
+    "expected": {
+      "risk": "medium-or-higher-when-long",
+      "compression": "depends"
+    },
+    "prompt": "Summarize the following user conversation into a structured JSON object with intent, urgency level, compliance flags, product category, and recommended action. Conversation: [Insert 2–3 paragraphs here when testing]"
+  },
+  "86r9g5": {
+    "description": "Verbose enterprise compliance prompt",
+    "expected": {
+      "risk": "elevated",
+      "compression": true
+    },
+    "prompt": "You are operating in a regulated financial environment. All responses must comply with FINRA, SEC, and internal audit policy 4.3.2. Responses must include disclaimers, formatted citations, and structured bullet points. Task: Generate a client-facing explanation of margin lending risk during volatile market conditions."
+  },
+  "9rxjf2": {
+    "description": "Minimal prompt baseline",
+    "expected": {
+      "risk": "low",
+      "compression": false
+    },
+    "prompt": "Rewrite: \"Thank you for your inquiry.\""
+  }
+}
