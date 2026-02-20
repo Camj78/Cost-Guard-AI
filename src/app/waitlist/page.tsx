@@ -76,7 +76,7 @@ export default function WaitlistPage() {
 {typeof count === "number" && (
   <p className="text-sm text-muted-foreground">
     <span className="font-medium text-foreground">{count.toLocaleString()}</span>{" "}
-    founders joined the Pro waitlist.
+    founders already joined.
   </p>
 )}
           
