@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 import { PRO_ENABLED } from "@/lib/flags";
+import { ThemeToggle } from "@/components/theme-toggle";
 console.log("PRO_ENABLED:", PRO_ENABLED);
 
 
@@ -38,6 +39,7 @@ export function Header() {
 >
   Join Pro Waitlist
 </a>
+        <ThemeToggle />
         {/* Privacy trust badge */}
         <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 rounded-full px-3 py-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
