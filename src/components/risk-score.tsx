@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { type RiskLevel } from "@/lib/risk";
 import { Badge } from "@/components/ui/badge";
 
@@ -51,19 +52,44 @@ const LEVEL_CONFIG: Record<
 export function RiskScore({ score, level, explanation }: RiskScoreProps) {
   const config = LEVEL_CONFIG[level];
 
+  // Animated count-up: 0 → score over 800ms, ease-out cubic
+  const [displayScore, setDisplayScore] = useState(0);
+
+  useEffect(() => {
+    const target = score;
+    const start = performance.now();
+    const duration = 800;
+    let raf: number;
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplayScore(Math.round(eased * target));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [score]);
+
   return (
     <div className="space-y-3">
       {/* Score + badge row */}
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-2">
           <span className={`text-4xl font-bold tabular-nums ${config.scoreClass}`}>
-            {score}
+            {displayScore}
           </span>
           <span className="text-sm text-muted-foreground">/100</span>
         </div>
         <Badge variant="outline" className={config.badgeClass}>
           {config.label}
         </Badge>
+      </div>
+
+      {/* Severity meter — 3-segment pill */}
+      <div className="flex gap-1">
+        <div className={`flex-1 h-2 rounded-l-full bg-emerald-500 ${score <= 33 ? "opacity-100" : "opacity-20"}`} />
+        <div className={`flex-1 h-2 bg-yellow-400 ${score >= 34 && score <= 66 ? "opacity-100" : "opacity-20"}`} />
+        <div className={`flex-1 h-2 rounded-r-full bg-red-500 ${score >= 67 ? "opacity-100" : "opacity-20"}`} />
       </div>
 
       {/* Label */}

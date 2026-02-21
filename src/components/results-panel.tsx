@@ -1,24 +1,56 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { RiskScore } from "@/components/risk-score";
 import { TokenDisplay } from "@/components/token-display";
 import { CostDisplay } from "@/components/cost-display";
 import { ContextBar } from "@/components/context-bar";
 import { TruncationWarning } from "@/components/truncation-warning";
 import { type RiskAssessment } from "@/lib/risk";
+import { formatCost } from "@/lib/formatters";
 
 interface ResultsPanelProps {
   analysis: RiskAssessment | null;
   isAnalyzing: boolean;
   hasPrompt: boolean;
+  // Compression diff props
+  originalText: string;
+  compressedText: string | null;
+  origTokens: number;
+  compTokens: number | null;
+  origCost: number;
+  compCost: number | null;
+  tokenDelta: number | null;
+  costDelta: number | null;
+  compressionDeltaPct: number | null;
+}
+
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help inline-block ml-1 align-middle" />
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[260px] text-xs">{text}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 export function ResultsPanel({
   analysis,
   isAnalyzing,
   hasPrompt,
+  originalText,
+  compressedText,
+  origTokens,
+  compTokens,
+  origCost,
+  compCost,
+  tokenDelta,
+  costDelta,
+  compressionDeltaPct,
 }: ResultsPanelProps) {
   // Empty state
   if (!hasPrompt && !isAnalyzing) {
@@ -84,6 +116,7 @@ export function ResultsPanel({
         <CardHeader className="pb-2 pt-4">
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Token count
+            <InfoTooltip text="Your prompt may exceed model context limits, causing truncation or failure." />
           </CardTitle>
         </CardHeader>
         <CardContent className="pb-4">
@@ -112,6 +145,7 @@ export function ResultsPanel({
         <CardHeader className="pb-2 pt-4">
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Cost estimate
+            <InfoTooltip text="Small inefficiencies multiply significantly at high request volume." />
           </CardTitle>
         </CardHeader>
         <CardContent className="pb-4">
@@ -124,7 +158,84 @@ export function ResultsPanel({
         </CardContent>
       </Card>
 
-      {/* 5. Truncation warning */}
+      {/* 5. Compression diff */}
+      {compressedText && (
+        <Card>
+          <CardHeader className="pb-2 pt-4">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Compression diff
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-4 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Original */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Original</p>
+                <div className="rounded border border-border p-2 text-xs whitespace-pre-wrap line-clamp-6">
+                  {originalText}
+                </div>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tokens</span>
+                    <span className="font-mono tabular-nums">{origTokens.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Cost</span>
+                    <span className="font-mono tabular-nums">{formatCost(origCost)}</span>
+                  </div>
+                </div>
+              </div>
+              {/* Compressed */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Compressed</p>
+                <div className="rounded border border-border p-2 text-xs whitespace-pre-wrap line-clamp-6 font-mono">
+                  {compressedText}
+                </div>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tokens</span>
+                    <span className="font-mono tabular-nums">{compTokens?.toLocaleString() ?? "—"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Cost</span>
+                    <span className="font-mono tabular-nums">{compCost != null ? formatCost(compCost) : "—"}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Delta row */}
+            <div className="border-t border-border pt-3 grid grid-cols-3 gap-2 text-xs">
+              <div>
+                <p className="text-muted-foreground">Tokens saved</p>
+                <p className={`font-mono tabular-nums font-medium ${
+                  tokenDelta == null ? "text-muted-foreground" : tokenDelta > 0 ? "text-emerald-600" : tokenDelta < 0 ? "text-red-600" : "text-muted-foreground"
+                }`}>
+                  {tokenDelta == null ? "—" : `${tokenDelta > 0 ? "-" : "+"}${Math.abs(tokenDelta).toLocaleString()}`}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">% saved</p>
+                <p className={`font-mono tabular-nums font-medium ${
+                  compressionDeltaPct == null ? "text-muted-foreground" : compressionDeltaPct > 0 ? "text-emerald-600" : compressionDeltaPct < 0 ? "text-red-600" : "text-muted-foreground"
+                }`}>
+                  {compressionDeltaPct == null ? "—" : `${compressionDeltaPct.toFixed(1)}%`}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Cost saved</p>
+                <p className={`font-mono tabular-nums font-medium ${
+                  costDelta == null ? "text-muted-foreground" : costDelta > 0 ? "text-emerald-600" : costDelta < 0 ? "text-red-600" : "text-muted-foreground"
+                }`}>
+                  {costDelta == null ? "—" : `${costDelta > 0 ? "-" : "+"}${formatCost(Math.abs(costDelta))}`}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 6. Truncation warning */}
       <TruncationWarning truncation={analysis.truncation} />
     </div>
   );

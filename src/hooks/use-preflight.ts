@@ -29,6 +29,10 @@ export interface PreflightState {
   // Compression
   compressionPreview: CompressionResult | null;
   compressionDelta: number; // (1 - compressedTokens / inputTokens) * 100
+  compressedTokens: number;
+  compressedCostTotal: number;
+  tokenDelta: number; // inputTokens - compressedTokens (positive = savings)
+  costDelta: number; // estimatedCostTotal - compressedCostTotal (positive = savings)
 
   // Perf guard
   isLargePrompt: boolean; // prompt > 200K chars
@@ -55,6 +59,10 @@ export function usePreflight(): PreflightState {
   const [compressionPreview, setCompressionPreview] =
     useState<CompressionResult | null>(null);
   const [compressionDelta, setCompressionDelta] = useState(0);
+  const [compressedTokens, setCompressedTokens] = useState(0);
+  const [compressedCostTotal, setCompressedCostTotal] = useState(0);
+  const [tokenDelta, setTokenDelta] = useState(0);
+  const [costDelta, setCostDelta] = useState(0);
   const [needsManualAnalyze, setNeedsManualAnalyze] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,6 +83,10 @@ export function usePreflight(): PreflightState {
         setAnalysis(null);
         setCompressionPreview(null);
         setCompressionDelta(0);
+        setCompressedTokens(0);
+        setCompressedCostTotal(0);
+        setTokenDelta(0);
+        setCostDelta(0);
         setIsAnalyzing(false);
         return;
       }
@@ -110,6 +122,16 @@ export function usePreflight(): PreflightState {
       });
 
       setAnalysis(result);
+
+      // Compression metrics (precomputed here for ResultsPanel diff card)
+      const compCostTotal =
+        (compressedTokens / 1_000_000) * mdl.inputPricePer1M +
+        (result.expectedOutputTokens / 1_000_000) * mdl.outputPricePer1M;
+      setCompressedTokens(compressedTokens);
+      setCompressedCostTotal(compCostTotal);
+      setTokenDelta(inputTokens - compressedTokens);
+      setCostDelta(result.estimatedCostTotal - compCostTotal);
+
       setIsAnalyzing(false);
     },
     []
@@ -137,6 +159,10 @@ export function usePreflight(): PreflightState {
         setAnalysis(null);
         setCompressionPreview(null);
         setCompressionDelta(0);
+        setCompressedTokens(0);
+        setCompressedCostTotal(0);
+        setTokenDelta(0);
+        setCostDelta(0);
         setIsAnalyzing(false);
         return;
       }
@@ -222,6 +248,10 @@ export function usePreflight(): PreflightState {
     isAnalyzing,
     compressionPreview,
     compressionDelta,
+    compressedTokens,
+    compressedCostTotal,
+    tokenDelta,
+    costDelta,
     isLargePrompt,
     needsManualAnalyze,
     model,

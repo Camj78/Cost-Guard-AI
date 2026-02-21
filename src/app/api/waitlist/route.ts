@@ -6,6 +6,8 @@ export async function POST(req: Request) {
     const email = String(body.email || "").trim().toLowerCase();
     const company = String(body.company || "").trim();
     const source = String(body.source || "").trim();
+    const role = String(body.role || "").trim();
+    const stage = String(body.stage || "").trim();
 
     if (!email || !email.includes("@")) {
       return NextResponse.json({ error: "Invalid email" }, { status: 400 });
@@ -21,6 +23,8 @@ export async function POST(req: Request) {
     const payload: Record<string, any> = { email };
     if (company) payload.company = company;
     if (source) payload.source = source;
+    if (role) payload.role = role;
+    if (stage) payload.stage = stage;
 
     const res = await fetch(`${supabaseUrl}/rest/v1/waitlist`, {
       method: "POST",
@@ -38,7 +42,11 @@ export async function POST(req: Request) {
     }
 
     if (!res.ok) {
-      return NextResponse.json({ error: "Insert failed" }, { status: 500 });
+      const details = await res.text().catch(() => "");
+      return NextResponse.json(
+        { error: "Insert failed", status: res.status, details: details.slice(0, 800) },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ ok: true });

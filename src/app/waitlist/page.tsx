@@ -8,6 +8,8 @@ export default function WaitlistPage() {
 
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
+  const [role, setRole] = useState("");
+  const [stage, setStage] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [already, setAlready] = useState(false);
@@ -47,6 +49,8 @@ export default function WaitlistPage() {
           email: cleanEmail,
           company: company.trim(),
           source: "waitlist_page",
+          role: role || undefined,
+          stage: stage || undefined,
         }),
       });
 
@@ -141,6 +145,39 @@ export default function WaitlistPage() {
                 placeholder="CostGuardAI"
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Role <span className="text-muted-foreground">(optional)</span>
+              </label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">Select your role</option>
+                <option value="founder">Founder</option>
+                <option value="dev">Developer</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Stage <span className="text-muted-foreground">(optional)</span>
+              </label>
+              <select
+                value={stage}
+                onChange={(e) => setStage(e.target.value)}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">Select your stage</option>
+                <option value="idea">Idea</option>
+                <option value="mvp">MVP</option>
+                <option value="pre-revenue">Pre-revenue</option>
+                <option value="revenue">Revenue</option>
+                <option value="scale">Scale</option>
+              </select>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>

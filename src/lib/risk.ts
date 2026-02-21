@@ -219,3 +219,17 @@ export function assessRisk(inputs: RiskInputs): RiskAssessment {
     isEstimated: tokenStrategy === "estimated",
   };
 }
+
+/**
+ * Shared helper: compute per-request cost from token counts and model pricing.
+ * Used by assessRisk internally and by CostAtScalePanel for comparison models.
+ */
+export function computeRequestCost(
+  inputTokens: number,
+  outputTokens: number,
+  inputPricePer1M: number,
+  outputPricePer1M: number,
+): number {
+  return (inputTokens / 1_000_000) * inputPricePer1M
+    + (outputTokens / 1_000_000) * outputPricePer1M;
+}
