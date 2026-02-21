@@ -3,10 +3,16 @@ import { supabaseAdmin } from "@/lib/supabase-server";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+function getStripe() {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("Missing STRIPE_SECRET_KEY");
+  return new Stripe(key, { apiVersion: "2023-10-16" });
+}
+
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(req: Request) {
+  const stripe = getStripe();
   const rawBody = Buffer.from(await req.arrayBuffer());
   const sig = req.headers.get("stripe-signature");
 
@@ -107,6 +113,7 @@ export async function POST(req: Request) {
 // Returns "" if customer is deleted, has no metadata, or on error
 async function getUserIdFromCustomer(customerId: string): Promise<string> {
   try {
+    const stripe = getStripe();
     const customer = await stripe.customers.retrieve(customerId);
     if (customer.deleted) return "";
     return (customer as Stripe.Customer).metadata?.user_id ?? "";
