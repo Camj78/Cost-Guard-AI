@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { supabaseAdmin } from "@/lib/supabase-server";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
@@ -9,10 +9,19 @@ function getStripe() {
   return new Stripe(key, { apiVersion: "2026-01-28.clover" });
 }
 
-const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET!;
+function getAdminClient(): SupabaseClient {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url) throw new Error("Missing SUPABASE_URL");
+  if (!key) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+  return createClient(url, key);
+}
 
 export async function POST(req: Request) {
+  const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!WEBHOOK_SECRET) throw new Error("Missing STRIPE_WEBHOOK_SECRET");
   const stripe = getStripe();
+  const supabaseAdmin = getAdminClient();
   const rawBody = Buffer.from(await req.arrayBuffer());
   const sig = req.headers.get("stripe-signature");
 

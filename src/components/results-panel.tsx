@@ -55,8 +55,8 @@ export function ResultsPanel({
   // Empty state
   if (!hasPrompt && !isAnalyzing) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[320px] text-center px-6 gap-5">
-        <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center text-3xl">
+      <div className="glass-card flex flex-col items-center justify-center min-h-[320px] text-center p-8 gap-5">
+        <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-3xl">
           ⚡
         </div>
         <div className="space-y-1.5">
@@ -89,7 +89,7 @@ export function ResultsPanel({
   // (subsequent analyses update in-place, keeping previous results visible)
   if (!analysis && hasPrompt) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[320px] gap-3 text-muted-foreground">
+      <div className="glass-card flex flex-col items-center justify-center min-h-[320px] gap-3 text-muted-foreground p-8">
         <Loader2 className="w-6 h-6 animate-spin" />
         <p className="text-sm">Analyzing prompt…</p>
       </div>
@@ -99,9 +99,9 @@ export function ResultsPanel({
   if (!analysis) return null;
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${analysis ? "animate-fade-in-up" : ""}`}>
       {/* 1. Failure Risk Score — THE moat */}
-      <Card>
+      <Card className="glass-card shadow-none">
         <CardContent className="pt-5 pb-4">
           <RiskScore
             score={analysis.riskScore}
@@ -112,9 +112,9 @@ export function ResultsPanel({
       </Card>
 
       {/* 2. Token count */}
-      <Card>
+      <Card className="glass-card shadow-none">
         <CardHeader className="pb-2 pt-4">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardTitle className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             Token count
             <InfoTooltip text="Your prompt may exceed model context limits, causing truncation or failure." />
           </CardTitle>
@@ -129,7 +129,7 @@ export function ResultsPanel({
       </Card>
 
       {/* 3. Context usage */}
-      <Card>
+      <Card className="glass-card shadow-none">
         <CardContent className="pt-4 pb-4">
           <ContextBar
             inputTokens={analysis.inputTokens}
@@ -141,9 +141,9 @@ export function ResultsPanel({
       </Card>
 
       {/* 4. Cost estimate */}
-      <Card>
+      <Card className="glass-card shadow-none">
         <CardHeader className="pb-2 pt-4">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardTitle className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             Cost estimate
             <InfoTooltip text="Small inefficiencies multiply significantly at high request volume." />
           </CardTitle>
@@ -160,9 +160,9 @@ export function ResultsPanel({
 
       {/* 5. Compression diff */}
       {compressedText && (
-        <Card>
+        <Card className="glass-card shadow-none">
           <CardHeader className="pb-2 pt-4">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
               Compression diff
             </CardTitle>
           </CardHeader>
@@ -171,7 +171,7 @@ export function ResultsPanel({
               {/* Original */}
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Original</p>
-                <div className="rounded border border-border p-2 text-xs whitespace-pre-wrap line-clamp-6">
+                <div className="rounded border border-white/10 bg-white/5 p-2 text-xs whitespace-pre-wrap line-clamp-6">
                   {originalText}
                 </div>
                 <div className="space-y-1 text-xs">
@@ -188,7 +188,7 @@ export function ResultsPanel({
               {/* Compressed */}
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Compressed</p>
-                <div className="rounded border border-border p-2 text-xs whitespace-pre-wrap line-clamp-6 font-mono">
+                <div className="rounded border border-white/10 bg-white/5 p-2 text-xs whitespace-pre-wrap line-clamp-6 font-mono">
                   {compressedText}
                 </div>
                 <div className="space-y-1 text-xs">
@@ -205,11 +205,11 @@ export function ResultsPanel({
             </div>
 
             {/* Delta row */}
-            <div className="border-t border-border pt-3 grid grid-cols-3 gap-2 text-xs">
+            <div className="border-t border-white/10 pt-3 grid grid-cols-3 gap-2 text-xs">
               <div>
                 <p className="text-muted-foreground">Tokens saved</p>
                 <p className={`font-mono tabular-nums font-medium ${
-                  tokenDelta == null ? "text-muted-foreground" : tokenDelta > 0 ? "text-emerald-600" : tokenDelta < 0 ? "text-red-600" : "text-muted-foreground"
+                  tokenDelta == null ? "text-muted-foreground" : tokenDelta > 0 ? "text-emerald-400" : tokenDelta < 0 ? "text-red-400" : "text-muted-foreground"
                 }`}>
                   {tokenDelta == null ? "—" : `${tokenDelta > 0 ? "-" : "+"}${Math.abs(tokenDelta).toLocaleString()}`}
                 </p>
@@ -217,7 +217,7 @@ export function ResultsPanel({
               <div>
                 <p className="text-muted-foreground">% saved</p>
                 <p className={`font-mono tabular-nums font-medium ${
-                  compressionDeltaPct == null ? "text-muted-foreground" : compressionDeltaPct > 0 ? "text-emerald-600" : compressionDeltaPct < 0 ? "text-red-600" : "text-muted-foreground"
+                  compressionDeltaPct == null ? "text-muted-foreground" : compressionDeltaPct > 0 ? "text-emerald-400" : compressionDeltaPct < 0 ? "text-red-400" : "text-muted-foreground"
                 }`}>
                   {compressionDeltaPct == null ? "—" : `${compressionDeltaPct.toFixed(1)}%`}
                 </p>
@@ -225,7 +225,7 @@ export function ResultsPanel({
               <div>
                 <p className="text-muted-foreground">Cost saved</p>
                 <p className={`font-mono tabular-nums font-medium ${
-                  costDelta == null ? "text-muted-foreground" : costDelta > 0 ? "text-emerald-600" : costDelta < 0 ? "text-red-600" : "text-muted-foreground"
+                  costDelta == null ? "text-muted-foreground" : costDelta > 0 ? "text-emerald-400" : costDelta < 0 ? "text-red-400" : "text-muted-foreground"
                 }`}>
                   {costDelta == null ? "—" : `${costDelta > 0 ? "-" : "+"}${formatCost(Math.abs(costDelta))}`}
                 </p>

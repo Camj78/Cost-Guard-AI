@@ -70,61 +70,69 @@ export default function Page() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background relative">
+      {/* Radial glow overlay */}
+      <div className="absolute inset-0 -z-10 bg-radial-glow pointer-events-none" aria-hidden="true" />
+
       <Header />
 
-      {/* ✅ HERO (Phase 1) */}
-<section className="border-b bg-background">
-  <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
-    <div className="max-w-2xl space-y-3">
-      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-        Preflight safety system for AI products in production.
-      </h1>
-      <p className="text-base sm:text-lg text-muted-foreground">
-        Detect token overflow, cost drift, and production risk before you ship.
-      </p>
-      <p className="text-sm text-muted-foreground">
-        Used by AI founders before every deploy.
-        <div className="pt-2">
-  <Button className="gap-2" onClick={() => window.scrollTo({ top: 500, behavior: "smooth" })}>
-    Run Preflight <Zap className="w-4 h-4" />
-  </Button>
-</div>
-      </p>
-    </div>
-  </div>
-</section>
-      {/* Main content */}
+      {/* HERO SECTION */}
+      <section className="pt-16 pb-12 px-4 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <div className="max-w-2xl space-y-4">
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
+              Preflight safety system for AI products in production.
+            </h1>
+            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+              Detect token overflow, cost drift, and production risk before you ship.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Used by AI founders before every deploy.
+            </p>
+            <div className="pt-2">
+              <Button
+                className="gap-2 bg-indigo-600 hover:bg-indigo-500 text-white border-0"
+                onClick={() => window.scrollTo({ top: 500, behavior: "smooth" })}
+              >
+                Run Preflight <Zap className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* MAIN CONTENT */}
       <main className="flex-1 px-4 sm:px-6 py-6">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-5xl">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-start">
 
-            {/* ── LEFT COLUMN: Input ── */}
+            {/* LEFT COLUMN: Input Controls */}
             <div className="space-y-4">
-              <PromptInput
-                value={prompt}
-                onChange={setPrompt}
-                isLargePrompt={isLargePrompt}
-              />
+              <div className="glass-card p-6">
+                <PromptInput
+                  value={prompt}
+                  onChange={setPrompt}
+                  isLargePrompt={isLargePrompt}
+                />
+              </div>
 
-              {/* Model selector + assumptions link */}
-              <div className="space-y-1.5">
+              <div className="glass-card p-6 space-y-3">
                 <ModelSelector selectedId={modelId} onSelect={setModelId} />
                 <ModelAssumptions model={model} />
               </div>
 
-              {/* Expected output slider */}
-              <OutputSlider
-                value={expectedOutputTokens}
-                max={sliderMax}
-                onChange={setExpectedOutputTokens}
-              />
+              <div className="glass-card p-6">
+                <OutputSlider
+                  value={expectedOutputTokens}
+                  max={sliderMax}
+                  onChange={setExpectedOutputTokens}
+                />
+              </div>
 
-              {/* Manual analyze button (large prompts only) */}
               {needsManualAnalyze && (
                 <Button
                   onClick={triggerManualAnalyze}
-                  className="w-full gap-2"
+                  className="w-full gap-2 bg-indigo-600 hover:bg-indigo-500 text-white border-0"
                   size="default"
                 >
                   <Zap className="w-4 h-4" />
@@ -132,18 +140,19 @@ export default function Page() {
                 </Button>
               )}
 
-              {/* Compression panel */}
-              <CompressionPanel
-                compressionPreview={compressionPreview}
-                compressionDelta={compressionDelta}
-                originalPrompt={prompt}
-                model={model}
-                onApply={applyCompression}
-              />
+              <div className="glass-card p-6">
+                <CompressionPanel
+                  compressionPreview={compressionPreview}
+                  compressionDelta={compressionDelta}
+                  originalPrompt={prompt}
+                  model={model}
+                  onApply={applyCompression}
+                />
+              </div>
             </div>
 
-            {/* ── RIGHT COLUMN: Results ── */}
-            <div className="lg:sticky lg:top-6 space-y-3">
+            {/* RIGHT COLUMN: Results Panel (Sticky) */}
+            <div className="lg:sticky lg:top-20 space-y-3">
               <ResultsPanel
                 analysis={analysis}
                 isAnalyzing={isAnalyzing}
@@ -167,7 +176,7 @@ export default function Page() {
                     size="sm"
                     onClick={handleRunPreflight}
                     disabled={!analysis || !selectedSavedPromptId}
-                    className="gap-1.5 text-xs"
+                    className="gap-1.5 text-xs border-white/10 hover:bg-white/10"
                   >
                     <Zap className="w-3 h-3" />
                     Run Preflight
@@ -188,244 +197,255 @@ export default function Page() {
         </div>
       </main>
 
-      {/* ✅ PRO: Saved Prompts + Risk History */}
+      {/* PRO: Saved Prompts + Risk History */}
       <ProGate>
-        <section className="border-t bg-muted/10">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-              <SavedPromptsPanel
-                prompt={prompt}
-                modelId={modelId}
-                onLoad={handleLoadSavedPrompt}
-              />
-              <RiskHistoryPanel
-                savedPromptId={selectedSavedPromptId}
-                historyVersion={historyVersion}
-              />
+        <section className="glass-section">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="glass-card p-6">
+                <SavedPromptsPanel
+                  prompt={prompt}
+                  modelId={modelId}
+                  onLoad={handleLoadSavedPrompt}
+                />
+              </div>
+              <div className="glass-card p-6">
+                <RiskHistoryPanel
+                  savedPromptId={selectedSavedPromptId}
+                  historyVersion={historyVersion}
+                />
+              </div>
             </div>
           </div>
         </section>
       </ProGate>
 
-      {/* ✅ WHY THIS MATTERS */}
-<section className="border-t bg-muted/30">
-  <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
-    <div className="text-center mb-8">
-      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-        Why This Matters
-      </h2>
-    </div>
+      {/* WHY THIS MATTERS */}
+      <section className="glass-section">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+              Why This Matters
+            </h2>
+          </div>
 
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-sm sm:text-base">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
 
-      {/* Token Overflow */}
-      <div className="space-y-2">
-        <h3 className="font-semibold">Token Overflow</h3>
-        <p className="text-muted-foreground">
-          Truncation → broken outputs → silent failure in production.
-        </p>
-      </div>
+            <div className="glass-card p-6 space-y-2">
+              <h3 className="font-semibold text-base">Token Overflow</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Truncation → broken outputs → silent failure in production.
+              </p>
+            </div>
 
-      {/* Cost Drift */}
-      <div className="space-y-2">
-        <h3 className="font-semibold">Cost Drift</h3>
-        <p className="text-muted-foreground">
-          Margins collapse at scale when token usage expands unnoticed.
-        </p>
-      </div>
+            <div className="glass-card p-6 space-y-2">
+              <h3 className="font-semibold text-base">Cost Drift</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Margins collapse at scale when token usage expands unnoticed.
+              </p>
+            </div>
 
-      {/* Risk Score */}
-      <div className="space-y-2">
-        <h3 className="font-semibold">Risk Score</h3>
-        <p className="text-muted-foreground">
-          Signal of production instability — not legal advice, just operational risk.
-        </p>
-      </div>
-<ProGate>
-  <div className="rounded-lg border bg-background p-4 space-y-1">
-    <h3 className="font-semibold">Drift Tracking</h3>
-    <p className="text-muted-foreground text-sm">
-      Monitor token and cost drift across model versions over time.
-    </p>
-  </div>
-</ProGate>
+            <div className="glass-card p-6 space-y-2">
+              <h3 className="font-semibold text-base">Risk Score</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Signal of production instability — not legal advice, just operational risk.
+              </p>
+            </div>
 
-<ProGate>
-  <div className="rounded-lg border bg-background p-4 space-y-1">
-    <h3 className="font-semibold">Batch Analysis</h3>
-    <p className="text-muted-foreground text-sm">
-      Run preflight checks on multiple prompts simultaneously.
-    </p>
-  </div>
-</ProGate>
+            <ProGate>
+              <div className="glass-card p-6 space-y-2">
+                <h3 className="font-semibold text-base">Drift Tracking</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Monitor token and cost drift across model versions over time.
+                </p>
+              </div>
+            </ProGate>
 
-<ProGate>
-  <div className="rounded-lg border bg-background p-4 space-y-1">
-    <h3 className="font-semibold">Model Comparison</h3>
-    <p className="text-muted-foreground text-sm">
-      Compare cost and risk across models before committing to one.
-    </p>
-  </div>
-</ProGate>
-    </div>
-  </div>
-</section>
+            <ProGate>
+              <div className="glass-card p-6 space-y-2">
+                <h3 className="font-semibold text-base">Batch Analysis</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Run preflight checks on multiple prompts simultaneously.
+                </p>
+              </div>
+            </ProGate>
 
-<ProGate>
-  <CostAtScalePanel
-    analysis={analysis}
-    model={model}
-  />
-</ProGate>
-
-{/* ✅ PRO: Model Comparison */}
-<ProGate>
-  <section className="border-t bg-background">
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
-      <ModelComparisonPanel
-        prompt={prompt}
-        expectedOutputTokens={expectedOutputTokens}
-      />
-    </div>
-  </section>
-</ProGate>
-
-{/* ✅ PRO: Batch Analysis */}
-<ProGate>
-  <section className="border-t bg-muted/10">
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
-      <BatchAnalysisPanel
-        model={model}
-        expectedOutputTokens={expectedOutputTokens}
-      />
-    </div>
-  </section>
-</ProGate>
-
-{/* ✅ WHO THIS IS FOR */}
-<section className="border-t bg-muted/20">
-  <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16">
-    <div className="text-center mb-10">
-      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-        Who This Is For
-      </h2>
-    </div>
-
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-sm sm:text-base">
-
-      <div className="space-y-2">
-        <h3 className="font-semibold">AI SaaS Founders</h3>
-        <p className="text-muted-foreground">
-          Shipping prompts into production and need cost + failure visibility before scaling.
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="font-semibold">Product & ML Teams</h3>
-        <p className="text-muted-foreground">
-          Monitoring token usage and drift across models and deployments.
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="font-semibold">AI Infrastructure Engineers</h3>
-        <p className="text-muted-foreground">
-          Preventing overflow, runaway costs, and silent degradation.
-        </p>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-      {/* ✅ HOW IT WORKS */}
-<section className="border-t bg-background">
-  <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16">
-    <div className="text-center mb-10">
-      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-        How Preflight Works
-      </h2>
-    </div>
-
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-sm sm:text-base">
-
-      <div className="space-y-2">
-        <h3 className="font-semibold">1. Analyze</h3>
-        <p className="text-muted-foreground">
-          Estimate tokens, cost, compression, and risk before deployment.
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="font-semibold">2. Simulate</h3>
-        <p className="text-muted-foreground">
-          Adjust output length and compare models to understand scale impact.
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="font-semibold">3. Deploy Safely</h3>
-        <p className="text-muted-foreground">
-          Ship with predictable cost and reduced production risk.
-        </p>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-      {/* ✅ PRICING */}
-<section className="border-t bg-background">
-  <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16">
-    <div className="text-center mb-10">
-      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-        Pricing
-      </h2>
-      <p className="text-muted-foreground mt-2">
-        Built for teams shipping AI into production.
-      </p>
-    </div>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-      {/* Free */}
-      <div className="rounded-lg border p-6 space-y-4">
-        <h3 className="text-xl font-semibold">Free</h3>
-        <ul className="space-y-2 text-sm text-muted-foreground">
-          <li>• Single preflight analysis</li>
-          <li>• Token + cost + risk visibility</li>
-          <li>• Manual usage</li>
-        </ul>
-        <div className="pt-4 text-sm font-medium">
-          $0
+            <ProGate>
+              <div className="glass-card p-6 space-y-2">
+                <h3 className="font-semibold text-base">Model Comparison</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Compare cost and risk across models before committing to one.
+                </p>
+              </div>
+            </ProGate>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* Pro */}
-      <div className="rounded-lg border p-6 space-y-4 bg-muted/30">
-        <h3 className="text-xl font-semibold">Pro</h3>
-        <ul className="space-y-2 text-sm text-muted-foreground">
-          <li>• Unlimited preflights</li>
-          <li>• Model comparison matrix</li>
-          <li>• Historical drift tracking</li>
-          <li>• Batch analysis</li>
-          <li>• Team dashboard</li>
-          <li>• Priority support</li>
-        </ul>
-        <div className="pt-4 text-lg font-semibold">
-          $29 / month
+      <ProGate>
+        <section className="glass-section">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12">
+            <CostAtScalePanel
+              analysis={analysis}
+              model={model}
+            />
+          </div>
+        </section>
+      </ProGate>
+
+      {/* PRO: Model Comparison */}
+      <ProGate>
+        <section className="glass-section">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12">
+            <ModelComparisonPanel
+              prompt={prompt}
+              expectedOutputTokens={expectedOutputTokens}
+            />
+          </div>
+        </section>
+      </ProGate>
+
+      {/* PRO: Batch Analysis */}
+      <ProGate>
+        <section className="glass-section">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12">
+            <BatchAnalysisPanel
+              model={model}
+              expectedOutputTokens={expectedOutputTokens}
+            />
+          </div>
+        </section>
+      </ProGate>
+
+      {/* WHO THIS IS FOR */}
+      <section className="glass-section">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+              Who This Is For
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+
+            <div className="glass-card p-6 space-y-2">
+              <h3 className="font-semibold text-base">AI SaaS Founders</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Shipping prompts into production and need cost + failure visibility before scaling.
+              </p>
+            </div>
+
+            <div className="glass-card p-6 space-y-2">
+              <h3 className="font-semibold text-base">Product & ML Teams</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Monitoring token usage and drift across models and deployments.
+              </p>
+            </div>
+
+            <div className="glass-card p-6 space-y-2">
+              <h3 className="font-semibold text-base">AI Infrastructure Engineers</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Preventing overflow, runaway costs, and silent degradation.
+              </p>
+            </div>
+
+          </div>
         </div>
-        <a
-          href="/upgrade"
-          className="inline-block text-sm font-medium underline underline-offset-4"
-        >
-          Upgrade to Pro →
-        </a>
-      </div>
+      </section>
 
-    </div>
-  </div>
-</section>
+      {/* HOW IT WORKS */}
+      <section className="glass-section">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+              How Preflight Works
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+
+            <div className="glass-card p-6 space-y-3">
+              <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">1</span>
+              <h3 className="font-semibold text-base">Analyze</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Estimate tokens, cost, compression, and risk before deployment.
+              </p>
+            </div>
+
+            <div className="glass-card p-6 space-y-3">
+              <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">2</span>
+              <h3 className="font-semibold text-base">Simulate</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Adjust output length and compare models to understand scale impact.
+              </p>
+            </div>
+
+            <div className="glass-card p-6 space-y-3">
+              <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">3</span>
+              <h3 className="font-semibold text-base">Deploy Safely</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Ship with predictable cost and reduced production risk.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section className="glass-section">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+              Pricing
+            </h2>
+            <p className="text-muted-foreground mt-2 text-sm">
+              Built for teams shipping AI into production.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+
+            {/* Free */}
+            <div className="glass-card p-8 space-y-4">
+              <h3 className="text-xl font-semibold">Free</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• Single preflight analysis</li>
+                <li>• Token + cost + risk visibility</li>
+                <li>• Manual usage</li>
+              </ul>
+              <div className="pt-2">
+                <span className="text-3xl font-bold font-mono">$0</span>
+              </div>
+            </div>
+
+            {/* Pro */}
+            <div className="rounded-2xl bg-indigo-500/10 border border-indigo-500/30 backdrop-blur-xl p-8 space-y-4" style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.3)" }}>
+              <h3 className="text-xl font-semibold">Pro</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• Unlimited preflights</li>
+                <li>• Model comparison matrix</li>
+                <li>• Historical drift tracking</li>
+                <li>• Batch analysis</li>
+                <li>• Team dashboard</li>
+                <li>• Priority support</li>
+              </ul>
+              <div className="pt-2">
+                <span className="text-3xl font-bold font-mono">$29</span>
+                <span className="text-sm text-muted-foreground ml-1">/ month</span>
+              </div>
+              <a
+                href="/upgrade"
+                className="inline-block text-sm font-medium text-indigo-400 hover:text-indigo-300 underline underline-offset-4 transition-colors"
+              >
+                Upgrade to Pro →
+              </a>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       <Footer />
     </div>
   );
