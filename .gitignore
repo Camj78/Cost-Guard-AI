@@ -10,3 +10,4 @@ dist/
 *.tsbuildinfo
 .DS_Store
 .claude/
+.vercel
