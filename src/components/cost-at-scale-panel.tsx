@@ -78,9 +78,9 @@ export function CostAtScalePanel({ analysis, model }: CostAtScalePanelProps) {
   if (!hasValidData) {
     return (
       <section className="border-t bg-background">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16">
           <div className="mb-6">
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+            <h2 className="text-2xl font-semibold tracking-tight">
               Cost at Scale
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -102,9 +102,9 @@ export function CostAtScalePanel({ analysis, model }: CostAtScalePanelProps) {
   // ── Full panel ────────────────────────────────────────────────────────────
   return (
     <section className="border-t bg-background">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16">
         <div className="mb-6">
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+          <h2 className="text-2xl font-semibold tracking-tight">
             Cost at Scale
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -119,10 +119,10 @@ export function CostAtScalePanel({ analysis, model }: CostAtScalePanelProps) {
         {/* Metric cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div className="rounded-xl border bg-card p-5 shadow-sm space-y-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Monthly cost
             </p>
-            <p className="text-3xl font-bold tabular-nums">
+            <p className="text-3xl font-bold font-mono tabular-nums">
               {monthlyCost != null ? formatCost(monthlyCost) : "—"}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -131,20 +131,20 @@ export function CostAtScalePanel({ analysis, model }: CostAtScalePanelProps) {
           </div>
 
           <div className="rounded-xl border bg-card p-5 shadow-sm space-y-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Yearly cost
             </p>
-            <p className="text-3xl font-bold tabular-nums">
+            <p className="text-3xl font-bold font-mono tabular-nums">
               {yearlyCost != null ? formatCost(yearlyCost) : "—"}
             </p>
             <p className="text-xs text-muted-foreground">Monthly × 12</p>
           </div>
 
           <div className="rounded-xl border bg-card p-5 shadow-sm space-y-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Cost per request
             </p>
-            <p className="text-3xl font-bold tabular-nums">
+            <p className="text-3xl font-bold font-mono tabular-nums">
               {costPerRequest != null ? formatCost(costPerRequest) : "—"}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -185,9 +185,9 @@ export function CostAtScalePanel({ analysis, model }: CostAtScalePanelProps) {
                         <span
                           className={
                             isMoreExpensive
-                              ? "text-red-600 font-mono tabular-nums text-xs"
+                              ? "text-red-400 font-mono tabular-nums text-xs"
                               : delta < 0
-                              ? "text-emerald-600 font-mono tabular-nums text-xs"
+                              ? "text-emerald-400 font-mono tabular-nums text-xs"
                               : "text-muted-foreground font-mono tabular-nums text-xs"
                           }
                         >
@@ -221,10 +221,10 @@ export function CostAtScalePanel({ analysis, model }: CostAtScalePanelProps) {
             <p className="text-sm font-semibold">Risk at scale</p>
             <div className="space-y-3">
               <div className="rounded-lg bg-muted/40 p-3 space-y-0.5">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                   1% failure rate
                 </p>
-                <p className="text-lg font-bold tabular-nums">
+                <p className="text-lg font-bold font-mono tabular-nums">
                   {formatNumber(badResponsesPerDay)}{" "}
                   <span className="text-sm font-normal text-muted-foreground">
                     bad responses/day
@@ -236,14 +236,14 @@ export function CostAtScalePanel({ analysis, model }: CostAtScalePanelProps) {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-0.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-0.5">
                     Failure Risk Score
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Relative risk (not a probability).
                   </p>
                 </div>
-                <span className="text-3xl font-bold tabular-nums">
+                <span className="text-3xl font-bold font-mono tabular-nums">
                   {riskScore ?? "—"}
                 </span>
               </div>

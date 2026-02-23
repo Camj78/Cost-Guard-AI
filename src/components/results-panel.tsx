@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Info } from "lucide-react";
+import { Loader2, Info, ScanLine } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { RiskScore } from "@/components/risk-score";
@@ -56,8 +56,8 @@ export function ResultsPanel({
   if (!hasPrompt && !isAnalyzing) {
     return (
       <div className="glass-card flex flex-col items-center justify-center min-h-[320px] text-center p-8 gap-5">
-        <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-3xl">
-          ⚡
+        <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center">
+          <ScanLine className="w-6 h-6 text-muted-foreground" />
         </div>
         <div className="space-y-1.5">
           <p className="font-semibold text-foreground text-base">
@@ -114,7 +114,7 @@ export function ResultsPanel({
       {/* 2. Token count */}
       <Card className="glass-card shadow-none">
         <CardHeader className="pb-2 pt-4">
-          <CardTitle className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             Token count
             <InfoTooltip text="Your prompt may exceed model context limits, causing truncation or failure." />
           </CardTitle>
@@ -143,7 +143,7 @@ export function ResultsPanel({
       {/* 4. Cost estimate */}
       <Card className="glass-card shadow-none">
         <CardHeader className="pb-2 pt-4">
-          <CardTitle className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             Cost estimate
             <InfoTooltip text="Small inefficiencies multiply significantly at high request volume." />
           </CardTitle>
@@ -162,7 +162,7 @@ export function ResultsPanel({
       {compressedText && (
         <Card className="glass-card shadow-none">
           <CardHeader className="pb-2 pt-4">
-            <CardTitle className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+            <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Compression diff
             </CardTitle>
           </CardHeader>

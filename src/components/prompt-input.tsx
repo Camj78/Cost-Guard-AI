@@ -52,7 +52,7 @@ export function PromptInput({ value, onChange, isLargePrompt }: PromptInputProps
 
         {/* Large prompt warning */}
         {isLargePrompt && (
-          <div className="flex items-center gap-1 text-amber-600 font-medium">
+          <div className="flex items-center gap-1 text-amber-400 font-medium">
             <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
             <span>
               &gt;{(PERF_GUARD_CHARS / 1000).toFixed(0)}K chars — realtime analysis paused. Click Analyze.

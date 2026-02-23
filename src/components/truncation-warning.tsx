@@ -11,19 +11,19 @@ interface TruncationWarningProps {
 const CONFIG = {
   safe: {
     icon: CheckCircle,
-    containerClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    containerClass: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400",
     iconClass: "text-emerald-500",
     label: "Output Safe",
   },
   warning: {
     icon: AlertTriangle,
-    containerClass: "bg-amber-50 border-amber-200 text-amber-700",
+    containerClass: "bg-amber-500/10 border-amber-500/20 text-amber-400",
     iconClass: "text-amber-500",
     label: "Truncation Risk",
   },
   danger: {
     icon: XCircle,
-    containerClass: "bg-red-50 border-red-200 text-red-700",
+    containerClass: "bg-red-500/10 border-red-500/20 text-red-400",
     iconClass: "text-red-500",
     label: "Truncation Likely",
   },

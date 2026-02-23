@@ -45,19 +45,19 @@ export function CompressionPanel({
   }
 
   return (
-    <div className="rounded-lg border border-amber-200 bg-amber-50/50 overflow-hidden">
+    <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 overflow-hidden">
       {/* Header row */}
       <div className="flex items-center justify-between px-4 py-3 gap-3">
         <div className="flex items-center gap-2 min-w-0">
-          <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+          <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
           <div className="min-w-0">
-            <span className="text-sm font-medium text-amber-800">
+            <span className="text-sm font-medium text-amber-400">
               Save {isEstimatedDelta ? "~" : ""}{compressionDelta.toFixed(0)}% tokens
             </span>
             {isEstimatedDelta && (
-              <span className="text-xs text-amber-600 ml-1">(~estimated)</span>
+              <span className="text-xs text-amber-400 ml-1">(~estimated)</span>
             )}
-            <span className="text-xs text-amber-600 ml-2">
+            <span className="text-xs text-amber-400 ml-2">
               ~{savedTokens.toLocaleString()} tokens saved
             </span>
           </div>
@@ -65,13 +65,13 @@ export function CompressionPanel({
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="text-xs text-amber-700 underline underline-offset-2 hover:text-amber-900 flex items-center gap-0.5"
+            className="text-xs text-amber-400 underline underline-offset-2 hover:text-amber-300 flex items-center gap-0.5"
           >
             {expanded ? "Hide preview" : "Preview"}
             {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
           {applied ? (
-            <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
+            <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
               <Check className="w-3.5 h-3.5" /> Applied
             </span>
           ) : (
@@ -89,11 +89,11 @@ export function CompressionPanel({
 
       {/* Expanded preview */}
       {expanded && (
-        <div className="border-t border-amber-200 px-4 py-3 space-y-3">
+        <div className="border-t border-amber-500/20 px-4 py-3 space-y-3">
           {/* Techniques */}
           <div>
-            <p className="text-xs font-medium text-amber-800 mb-1">Applied:</p>
-            <ul className="text-xs text-amber-700 space-y-0.5">
+            <p className="text-xs font-medium text-amber-400 mb-1">Applied:</p>
+            <ul className="text-xs text-amber-400 space-y-0.5">
               {compressionPreview.techniques.map((t, i) => (
                 <li key={i} className="flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-amber-500 shrink-0" />
@@ -105,10 +105,10 @@ export function CompressionPanel({
 
           {/* Compressed preview */}
           <div>
-            <p className="text-xs font-medium text-amber-800 mb-1">
+            <p className="text-xs font-medium text-amber-400 mb-1">
               Compressed prompt:
             </p>
-            <div className="bg-white border border-amber-200 rounded p-2.5 max-h-32 overflow-y-auto">
+            <div className="bg-white/5 border border-amber-500/20 rounded p-2.5 max-h-32 overflow-y-auto">
               <p className="text-xs font-mono whitespace-pre-wrap text-foreground/80 leading-relaxed">
                 {compressionPreview.compressed}
               </p>
@@ -116,7 +116,7 @@ export function CompressionPanel({
           </div>
 
           {/* Token comparison */}
-          <div className="flex items-center gap-4 text-xs text-amber-700">
+          <div className="flex items-center gap-4 text-xs text-amber-400">
             <span>Before: {originalTokens.toLocaleString()} tokens</span>
             <span>→</span>
             <span>

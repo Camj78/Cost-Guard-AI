@@ -18,11 +18,11 @@ interface BatchResult {
 
 function riskBadgeClass(riskLevel: RiskLevel): string {
   switch (riskLevel) {
-    case "safe": return "text-green-700 bg-green-50";
-    case "low": return "text-blue-700 bg-blue-50";
-    case "warning": return "text-yellow-700 bg-yellow-50";
-    case "high": return "text-orange-700 bg-orange-50";
-    case "critical": return "text-red-700 bg-red-50";
+    case "safe": return "text-emerald-400 bg-emerald-500/10";
+    case "low": return "text-blue-400 bg-blue-500/10";
+    case "warning": return "text-amber-400 bg-amber-500/10";
+    case "high": return "text-orange-400 bg-orange-500/10";
+    case "critical": return "text-red-400 bg-red-500/10";
   }
 }
 
@@ -117,7 +117,7 @@ export function BatchAnalysisPanel({ model, expectedOutputTokens }: BatchAnalysi
       {results !== null && (
         <div className="space-y-3">
           {truncated && (
-            <div className="rounded-md border border-yellow-200 bg-yellow-50 px-4 py-2.5 text-xs text-yellow-700">
+            <div className="rounded-md border border-amber-500/20 bg-amber-500/10 px-4 py-2.5 text-xs text-amber-400">
               Showing first {MAX_BATCH} of {input.split("\n").filter((l) => l.trim()).length} prompts.
             </div>
           )}

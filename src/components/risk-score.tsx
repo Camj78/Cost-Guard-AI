@@ -75,7 +75,7 @@ export function RiskScore({ score, level, explanation }: RiskScoreProps) {
       {/* Score + badge row */}
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-2">
-          <span className={`text-4xl font-bold tabular-nums ${config.scoreClass}`}>
+          <span className={`text-4xl font-bold font-mono tabular-nums ${config.scoreClass}`}>
             {displayScore}
           </span>
           <span className="text-sm text-muted-foreground">/100</span>
@@ -93,7 +93,7 @@ export function RiskScore({ score, level, explanation }: RiskScoreProps) {
       </div>
 
       {/* Label */}
-      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         Failure Risk Score (heuristic)
       </p>
 

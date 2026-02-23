@@ -18,11 +18,11 @@ interface ComparisonResult {
 
 function riskBadgeClass(riskLevel: string): string {
   switch (riskLevel) {
-    case "safe": return "text-green-700 bg-green-50";
-    case "low": return "text-blue-700 bg-blue-50";
-    case "warning": return "text-yellow-700 bg-yellow-50";
-    case "high": return "text-orange-700 bg-orange-50";
-    case "critical": return "text-red-700 bg-red-50";
+    case "safe": return "text-emerald-400 bg-emerald-500/10";
+    case "low": return "text-blue-400 bg-blue-500/10";
+    case "warning": return "text-amber-400 bg-amber-500/10";
+    case "high": return "text-orange-400 bg-orange-500/10";
+    case "critical": return "text-red-400 bg-red-500/10";
     default: return "text-muted-foreground bg-muted";
   }
 }
@@ -119,7 +119,7 @@ export function ModelComparisonPanel({ prompt, expectedOutputTokens }: ModelComp
                   <tr
                     key={r.modelId}
                     className={`border-b last:border-0 transition-colors ${
-                      isLowestRisk ? "bg-green-50 dark:bg-green-950" : "hover:bg-muted/30"
+                      isLowestRisk ? "bg-emerald-500/10" : "hover:bg-muted/30"
                     }`}
                   >
                     <td className="py-2.5 pr-4 font-medium">{r.modelName}</td>

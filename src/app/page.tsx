@@ -77,10 +77,10 @@ export default function Page() {
       <Header />
 
       {/* HERO SECTION */}
-      <section className="pt-16 pb-12 px-4 sm:px-6">
+      <section className="py-16 px-4 sm:px-6">
         <div className="mx-auto max-w-5xl">
           <div className="max-w-2xl space-y-4">
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
+            <h1 className="text-5xl font-black tracking-tight">
               Preflight safety system for AI products in production.
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
@@ -200,7 +200,7 @@ export default function Page() {
       {/* PRO: Saved Prompts + Risk History */}
       <ProGate>
         <section className="glass-section">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="glass-card p-6">
                 <SavedPromptsPanel
@@ -224,7 +224,7 @@ export default function Page() {
       <section className="glass-section">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+            <h2 className="text-2xl font-semibold tracking-tight">
               Why This Matters
             </h2>
           </div>
@@ -232,21 +232,21 @@ export default function Page() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
 
             <div className="glass-card p-6 space-y-2">
-              <h3 className="font-semibold text-base">Token Overflow</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Token Overflow</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Truncation → broken outputs → silent failure in production.
               </p>
             </div>
 
             <div className="glass-card p-6 space-y-2">
-              <h3 className="font-semibold text-base">Cost Drift</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Cost Drift</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Margins collapse at scale when token usage expands unnoticed.
               </p>
             </div>
 
             <div className="glass-card p-6 space-y-2">
-              <h3 className="font-semibold text-base">Risk Score</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Risk Score</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Signal of production instability — not legal advice, just operational risk.
               </p>
@@ -254,7 +254,7 @@ export default function Page() {
 
             <ProGate>
               <div className="glass-card p-6 space-y-2">
-                <h3 className="font-semibold text-base">Drift Tracking</h3>
+                <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Drift Tracking</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Monitor token and cost drift across model versions over time.
                 </p>
@@ -263,7 +263,7 @@ export default function Page() {
 
             <ProGate>
               <div className="glass-card p-6 space-y-2">
-                <h3 className="font-semibold text-base">Batch Analysis</h3>
+                <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Batch Analysis</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Run preflight checks on multiple prompts simultaneously.
                 </p>
@@ -272,7 +272,7 @@ export default function Page() {
 
             <ProGate>
               <div className="glass-card p-6 space-y-2">
-                <h3 className="font-semibold text-base">Model Comparison</h3>
+                <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Model Comparison</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Compare cost and risk across models before committing to one.
                 </p>
@@ -284,7 +284,7 @@ export default function Page() {
 
       <ProGate>
         <section className="glass-section">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
             <CostAtScalePanel
               analysis={analysis}
               model={model}
@@ -296,7 +296,7 @@ export default function Page() {
       {/* PRO: Model Comparison */}
       <ProGate>
         <section className="glass-section">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
             <ModelComparisonPanel
               prompt={prompt}
               expectedOutputTokens={expectedOutputTokens}
@@ -308,7 +308,7 @@ export default function Page() {
       {/* PRO: Batch Analysis */}
       <ProGate>
         <section className="glass-section">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
             <BatchAnalysisPanel
               model={model}
               expectedOutputTokens={expectedOutputTokens}
@@ -321,7 +321,7 @@ export default function Page() {
       <section className="glass-section">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+            <h2 className="text-2xl font-semibold tracking-tight">
               Who This Is For
             </h2>
           </div>
@@ -329,21 +329,21 @@ export default function Page() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
 
             <div className="glass-card p-6 space-y-2">
-              <h3 className="font-semibold text-base">AI SaaS Founders</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">AI SaaS Founders</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Shipping prompts into production and need cost + failure visibility before scaling.
               </p>
             </div>
 
             <div className="glass-card p-6 space-y-2">
-              <h3 className="font-semibold text-base">Product & ML Teams</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Product & ML Teams</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Monitoring token usage and drift across models and deployments.
               </p>
             </div>
 
             <div className="glass-card p-6 space-y-2">
-              <h3 className="font-semibold text-base">AI Infrastructure Engineers</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">AI Infrastructure Engineers</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Preventing overflow, runaway costs, and silent degradation.
               </p>
@@ -357,7 +357,7 @@ export default function Page() {
       <section className="glass-section">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+            <h2 className="text-2xl font-semibold tracking-tight">
               How Preflight Works
             </h2>
           </div>
@@ -366,7 +366,7 @@ export default function Page() {
 
             <div className="glass-card p-6 space-y-3">
               <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">1</span>
-              <h3 className="font-semibold text-base">Analyze</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Analyze</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Estimate tokens, cost, compression, and risk before deployment.
               </p>
@@ -374,7 +374,7 @@ export default function Page() {
 
             <div className="glass-card p-6 space-y-3">
               <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">2</span>
-              <h3 className="font-semibold text-base">Simulate</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Simulate</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Adjust output length and compare models to understand scale impact.
               </p>
@@ -382,7 +382,7 @@ export default function Page() {
 
             <div className="glass-card p-6 space-y-3">
               <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">3</span>
-              <h3 className="font-semibold text-base">Deploy Safely</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Deploy Safely</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Ship with predictable cost and reduced production risk.
               </p>
@@ -396,7 +396,7 @@ export default function Page() {
       <section className="glass-section">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+            <h2 className="text-2xl font-semibold tracking-tight">
               Pricing
             </h2>
             <p className="text-muted-foreground mt-2 text-sm">
@@ -408,7 +408,7 @@ export default function Page() {
 
             {/* Free */}
             <div className="glass-card p-8 space-y-4">
-              <h3 className="text-xl font-semibold">Free</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Free</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• Single preflight analysis</li>
                 <li>• Token + cost + risk visibility</li>
@@ -421,7 +421,7 @@ export default function Page() {
 
             {/* Pro */}
             <div className="rounded-2xl bg-indigo-500/10 border border-indigo-500/30 backdrop-blur-xl p-8 space-y-4" style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.3)" }}>
-              <h3 className="text-xl font-semibold">Pro</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Pro</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• Unlimited preflights</li>
                 <li>• Model comparison matrix</li>

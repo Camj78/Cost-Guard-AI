@@ -26,7 +26,7 @@ export function TokenDisplay({ tokens, isEstimated, usageRatio }: TokenDisplayPr
   return (
     <div>
       <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold tabular-nums">
+        <span className="text-3xl font-bold font-mono tabular-nums">
           {isEstimated ? "~" : ""}
           {formatNumber(tokens)}
         </span>
@@ -37,9 +37,9 @@ export function TokenDisplay({ tokens, isEstimated, usageRatio }: TokenDisplayPr
           className={`text-xs font-medium ${
             isEstimated
               ? usageRatio >= 0.85
-                ? "text-amber-600"
-                : "text-blue-500"
-              : "text-emerald-600"
+                ? "text-amber-400"
+                : "text-blue-400"
+              : "text-emerald-400"
           }`}
         >
           {estimationLabel}

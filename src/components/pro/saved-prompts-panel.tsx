@@ -127,7 +127,7 @@ export function SavedPromptsPanel({ prompt, modelId, onLoad }: SavedPromptsPanel
                 </button>
                 <button
                   onClick={() => handleDelete(p.id)}
-                  className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
+                  className="rounded-md border border-red-500/20 px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors"
                 >
                   Delete
                 </button>

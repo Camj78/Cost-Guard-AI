@@ -63,11 +63,11 @@ function riskLevelLabel(score: number): string {
 }
 
 function riskBadgeClass(score: number): string {
-  if (score <= 24) return "text-green-700 bg-green-50";
-  if (score <= 49) return "text-blue-700 bg-blue-50";
-  if (score <= 69) return "text-yellow-700 bg-yellow-50";
-  if (score <= 84) return "text-orange-700 bg-orange-50";
-  return "text-red-700 bg-red-50";
+  if (score <= 24) return "text-emerald-400 bg-emerald-500/10";
+  if (score <= 49) return "text-blue-400 bg-blue-500/10";
+  if (score <= 69) return "text-amber-400 bg-amber-500/10";
+  if (score <= 84) return "text-orange-400 bg-orange-500/10";
+  return "text-red-400 bg-red-500/10";
 }
 
 export function RiskHistoryPanel({ savedPromptId, historyVersion }: RiskHistoryPanelProps) {

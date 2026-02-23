@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 
 import { PRO_ENABLED } from "@/lib/flags";
 import { ThemeToggle } from "@/components/theme-toggle";
-console.log("PRO_ENABLED:", PRO_ENABLED);
 
 
 export function Header() {
