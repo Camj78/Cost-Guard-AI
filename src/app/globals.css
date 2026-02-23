@@ -142,6 +142,22 @@
     animation: fade-in-up 0.4s ease-out both;
   }
 
+  @keyframes data-arrive {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-data-arrive {
+    animation: data-arrive 0.2s ease-out both;
+  }
+
+  @keyframes count-settle {
+    0% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+  .animate-count-settle {
+    animation: count-settle 0.15s ease-out both;
+  }
+
   .glass-card {
     @apply rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);

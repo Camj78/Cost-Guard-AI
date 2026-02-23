@@ -54,8 +54,10 @@ export function RiskScore({ score, level, explanation }: RiskScoreProps) {
 
   // Animated count-up: 0 → score over 800ms, ease-out cubic
   const [displayScore, setDisplayScore] = useState(0);
+  const [isSettled, setIsSettled] = useState(false);
 
   useEffect(() => {
+    setIsSettled(false);
     const target = score;
     const start = performance.now();
     const duration = 800;
@@ -64,7 +66,11 @@ export function RiskScore({ score, level, explanation }: RiskScoreProps) {
       const t = Math.min((now - start) / duration, 1);
       const eased = 1 - Math.pow(1 - t, 3);
       setDisplayScore(Math.round(eased * target));
-      if (t < 1) raf = requestAnimationFrame(tick);
+      if (t < 1) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        setIsSettled(true);
+      }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
@@ -75,7 +81,7 @@ export function RiskScore({ score, level, explanation }: RiskScoreProps) {
       {/* Score + badge row */}
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-2">
-          <span className={`text-4xl font-bold font-mono tabular-nums ${config.scoreClass}`}>
+          <span className={`text-4xl font-bold font-mono tabular-nums ${config.scoreClass} ${isSettled ? "animate-count-settle" : ""}`}>
             {displayScore}
           </span>
           <span className="text-sm text-muted-foreground">/100</span>

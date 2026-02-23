@@ -99,9 +99,10 @@ export function ResultsPanel({
   if (!analysis) return null;
 
   return (
-    <div className={`space-y-4 ${analysis ? "animate-fade-in-up" : ""}`}>
+    <div className="space-y-4">
       {/* 1. Failure Risk Score — THE moat */}
-      <Card className="glass-card shadow-none">
+      <Card className="glass-card shadow-none relative animate-data-arrive transition-all duration-100 hover:-translate-y-[1px] hover:border-white/[0.14]" style={{ animationDelay: "0ms" }}>
+        <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-indigo-500/50 via-indigo-400/30 to-transparent" />
         <CardContent className="pt-5 pb-4">
           <RiskScore
             score={analysis.riskScore}
@@ -112,7 +113,7 @@ export function ResultsPanel({
       </Card>
 
       {/* 2. Token count */}
-      <Card className="glass-card shadow-none">
+      <Card className="glass-card shadow-none animate-data-arrive transition-all duration-100 hover:-translate-y-[1px] hover:border-white/[0.14]" style={{ animationDelay: "50ms" }}>
         <CardHeader className="pb-2 pt-4">
           <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             Token count
@@ -141,7 +142,7 @@ export function ResultsPanel({
       </Card>
 
       {/* 4. Cost estimate */}
-      <Card className="glass-card shadow-none">
+      <Card className="glass-card shadow-none animate-data-arrive transition-all duration-100 hover:-translate-y-[1px] hover:border-white/[0.14]" style={{ animationDelay: "100ms" }}>
         <CardHeader className="pb-2 pt-4">
           <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             Cost estimate
@@ -160,7 +161,7 @@ export function ResultsPanel({
 
       {/* 5. Compression diff */}
       {compressedText && (
-        <Card className="glass-card shadow-none">
+        <Card className="glass-card shadow-none animate-data-arrive transition-all duration-100 hover:-translate-y-[1px] hover:border-white/[0.14]" style={{ animationDelay: "150ms" }}>
           <CardHeader className="pb-2 pt-4">
             <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Compression diff
