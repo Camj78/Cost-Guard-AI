@@ -252,32 +252,59 @@ export default function Page() {
               </p>
             </div>
 
-            <ProGate>
-              <div className="glass-card p-6 space-y-2">
-                <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Drift Tracking</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Monitor token and cost drift across model versions over time.
-                </p>
-              </div>
-            </ProGate>
+            <div className="glass-card p-6 space-y-2">
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Drift Tracking</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Monitor token and cost drift across model versions over time.
+              </p>
+            </div>
 
-            <ProGate>
-              <div className="glass-card p-6 space-y-2">
-                <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Batch Analysis</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Run preflight checks on multiple prompts simultaneously.
-                </p>
-              </div>
-            </ProGate>
+            <div className="glass-card p-6 space-y-2">
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Batch Analysis</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Run preflight checks on multiple prompts simultaneously.
+              </p>
+            </div>
 
-            <ProGate>
-              <div className="glass-card p-6 space-y-2">
-                <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Model Comparison</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Compare cost and risk across models before committing to one.
-                </p>
-              </div>
-            </ProGate>
+            <div className="glass-card p-6 space-y-2">
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Model Comparison</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Compare cost and risk across models before committing to one.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PRIMARY UPGRADE CTA — single canonical section */}
+      <section className="glass-section">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12">
+          <div className="glass-card p-8 max-w-lg mx-auto text-center space-y-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              Pro Features
+            </p>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Unlock Advanced Risk Intelligence
+            </h2>
+            <div className="flex flex-wrap justify-center gap-2">
+              {["Model comparison", "Risk history", "Saved prompts", "Cost at scale"].map((f) => (
+                <span
+                  key={f}
+                  className="text-xs text-muted-foreground border border-border rounded-full px-3 py-1 bg-muted"
+                >
+                  {f}
+                </span>
+              ))}
+            </div>
+            <Button
+              asChild
+              className="bg-indigo-600 hover:bg-indigo-500 active:scale-[0.97] text-white px-6"
+            >
+              <a href="/upgrade">Upgrade to Pro</a>
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              No prompt data ever leaves your browser.
+            </p>
           </div>
         </div>
       </section>
@@ -457,7 +484,8 @@ export default function Page() {
               </div>
               <Button
                 asChild
-                className="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.97] text-white"
+                variant="outline"
+                className="w-full active:scale-[0.97]"
               >
                 <a href="/upgrade">Upgrade to Pro</a>
               </Button>

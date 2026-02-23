@@ -1,13 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-
-import { PRO_ENABLED } from "@/lib/flags";
 import { ThemeToggle } from "@/components/theme-toggle";
-
 
 export function Header() {
   return (
@@ -15,13 +9,13 @@ export function Header() {
       <div className="mx-auto max-w-6xl flex items-center justify-between">
         {/* Logo + name */}
         <div className="flex items-center gap-3">
-          <Image
-            src="/logo_transparent.png"
-            alt="CostGuardAI logo"
-            width={36}
-            height={36}
-            className="rounded-md"
-            priority
+          <img
+            src="/logo.svg"
+            alt=""
+            aria-hidden="true"
+            width={32}
+            height={32}
+            className="h-8 w-8 shrink-0"
           />
           <div>
             <h1 className="text-lg font-semibold tracking-tight leading-none">
@@ -32,17 +26,20 @@ export function Header() {
             </p>
           </div>
         </div>
-<a
-  href="/waitlist"
-  className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
->
-  Join Pro Waitlist
-</a>
-        <ThemeToggle />
-        {/* Privacy trust badge */}
-        <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground bg-white/5 border border-white/10 rounded-full px-3 py-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-          <span>All analysis runs locally. Your prompts never leave your browser.</span>
+
+        {/* Right side */}
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <a
+            href="/waitlist"
+            className="inline-flex items-center justify-center rounded-md border border-white/10 px-4 py-2 text-sm font-medium hover:bg-white/5 transition-colors"
+          >
+            Join Pro Waitlist
+          </a>
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground bg-white/5 border border-white/10 rounded-full px-3 py-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <span>All analysis runs locally. Your prompts never leave your browser.</span>
+          </div>
         </div>
       </div>
     </header>
