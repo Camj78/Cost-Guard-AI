@@ -12,7 +12,7 @@ import { ResultsPanel } from "@/components/results-panel";
 import { CostAtScalePanel } from "@/components/cost-at-scale-panel";
 import { ModelAssumptions } from "@/components/model-assumptions";
 import { Button } from "@/components/ui/button";
-import { Zap } from "lucide-react";
+import { Zap, Check } from "lucide-react";
 import ProGate from "@/components/pro/ProGate";
 import { SavedPromptsPanel } from "@/components/pro/saved-prompts-panel";
 import { RiskHistoryPanel } from "@/components/pro/risk-history-panel";
@@ -415,31 +415,52 @@ export default function Page() {
                 <li>• Manual usage</li>
               </ul>
               <div className="pt-2">
-                <span className="text-3xl font-bold font-mono">$0</span>
+                <span className="text-3xl font-semibold font-mono">$0</span>
               </div>
             </div>
 
             {/* Pro */}
-            <div className="rounded-2xl bg-indigo-500/10 border border-indigo-500/30 backdrop-blur-xl p-8 space-y-4" style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.3)" }}>
+            <div className="rounded-2xl bg-indigo-500/10 border-2 border-indigo-500/60 backdrop-blur-xl p-8 space-y-4" style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.3)" }}>
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Pro</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>• Unlimited preflights</li>
-                <li>• Model comparison matrix</li>
-                <li>• Historical drift tracking</li>
-                <li>• Batch analysis</li>
-                <li>• Team dashboard</li>
-                <li>• Priority support</li>
+              <ul className="space-y-2 text-sm">
+                <li className="flex gap-2">
+                  <Check className="mt-0.5 size-3.5 text-emerald-400 shrink-0" />
+                  <span className="font-semibold">Unlimited preflights</span>
+                </li>
+                <li className="flex gap-2">
+                  <Check className="mt-0.5 size-3.5 text-emerald-400 shrink-0" />
+                  <span className="font-semibold">Model comparison matrix</span>
+                </li>
+                <li className="flex gap-2">
+                  <Check className="mt-0.5 size-3.5 text-emerald-400 shrink-0" />
+                  <span className="font-semibold">Historical drift tracking</span>
+                </li>
+                <li className="flex gap-2">
+                  <Check className="mt-0.5 size-3.5 text-emerald-400 shrink-0" />
+                  <span className="font-semibold">Batch analysis</span>
+                </li>
+                <li className="flex gap-2">
+                  <Check className="mt-0.5 size-3.5 text-emerald-400 shrink-0" />
+                  <span className="font-semibold">Team dashboard</span>
+                </li>
+                <li className="flex gap-2">
+                  <Check className="mt-0.5 size-3.5 text-emerald-400 shrink-0" />
+                  <span className="font-semibold">Priority support</span>
+                </li>
               </ul>
               <div className="pt-2">
-                <span className="text-3xl font-bold font-mono">$29</span>
-                <span className="text-sm text-muted-foreground ml-1">/ month</span>
+                <span className="text-4xl font-black font-mono tracking-tight">$29</span>
+                <div className="text-xs text-muted-foreground mt-1">per month</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Pays for itself at ~10K req/day
+                </div>
               </div>
-              <a
-                href="/upgrade"
-                className="inline-block text-sm font-medium text-indigo-400 hover:text-indigo-300 underline underline-offset-4 transition-colors"
+              <Button
+                asChild
+                className="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.97] text-white"
               >
-                Upgrade to Pro →
-              </a>
+                <a href="/upgrade">Upgrade to Pro</a>
+              </Button>
             </div>
 
           </div>
