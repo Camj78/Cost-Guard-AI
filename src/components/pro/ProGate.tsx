@@ -8,7 +8,11 @@ export default function ProGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetch("/api/me")
-      .then((r) => r.json())
+      .then((r) =>
+        r.ok
+          ? r.json()
+          : Promise.reject(new Error("me_not_ok"))
+      )
       .then((d) => setIsPro(d.pro === true))
       .catch(() => setIsPro(false));
   }, []);
