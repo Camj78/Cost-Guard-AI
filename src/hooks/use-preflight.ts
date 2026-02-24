@@ -50,8 +50,54 @@ export interface PreflightState {
   triggerManualAnalyze: () => void;
 }
 
+// Fire-and-forget: record analysis to server (only when user is signed in)
+async function recordAnalysis(
+  result: RiskAssessment,
+  promptText: string,
+  mdlId: string
+) {
+  try {
+    const encoder = new TextEncoder();
+    const hashBuffer = await crypto.subtle.digest(
+      "SHA-256",
+      encoder.encode(promptText)
+    );
+    const prompt_hash = Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    await fetch("/api/analyses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt_hash,
+        model_id: mdlId,
+        input_tokens: result.inputTokens,
+        output_tokens: result.expectedOutputTokens,
+        cost_total: result.estimatedCostTotal,
+        risk_score: result.riskScore,
+      }),
+    });
+  } catch {
+    // Silent — never surface errors to the user
+  }
+}
+
 export function usePreflight(): PreflightState {
-  const [prompt, setPromptRaw] = useState("");
+  // Pre-fill from dashboard "Load" if sessionStorage key is set
+  const [prompt, setPromptRaw] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const loaded = sessionStorage.getItem("cg_load_prompt");
+      if (loaded) {
+        sessionStorage.removeItem("cg_load_prompt");
+        return loaded;
+      }
+    } catch {
+      // sessionStorage unavailable
+    }
+    return "";
+  });
   const [modelId, setModelIdRaw] = useState(DEFAULT_MODEL_ID);
   const [expectedOutputTokens, setExpectedRaw] = useState(DEFAULT_EXPECTED_OUTPUT);
   const [analysis, setAnalysis] = useState<RiskAssessment | null>(null);
@@ -122,6 +168,9 @@ export function usePreflight(): PreflightState {
       });
 
       setAnalysis(result);
+
+      // Record to server (fire-and-forget, silently no-ops if not signed in)
+      recordAnalysis(result, text, mdl.id);
 
       // Compression metrics (precomputed here for ResultsPanel diff card)
       const compCostTotal =
@@ -232,6 +281,17 @@ export function usePreflight(): PreflightState {
     setNeedsManualAnalyze(false);
     runAnalysis(prompt, model, expectedOutputTokens);
   }, [prompt, model, expectedOutputTokens, runAnalysis]);
+
+  // If prompt was pre-filled from sessionStorage, run initial analysis
+  const didInitRef = useRef(false);
+  useEffect(() => {
+    if (didInitRef.current) return;
+    didInitRef.current = true;
+    if (prompt.trim() && prompt.length <= PERF_GUARD_CHAR_LIMIT) {
+      runAnalysis(prompt, model, expectedOutputTokens);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
