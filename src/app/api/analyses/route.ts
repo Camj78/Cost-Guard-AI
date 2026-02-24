@@ -40,9 +40,9 @@ export async function POST(req: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    // If not authenticated, silently succeed (fire-and-forget from client)
+    // Unauthenticated: exit early — never insert with null user_id
     if (!user) {
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({ ok: true, recorded: false });
     }
 
     const body = await req.json();
@@ -61,7 +61,37 @@ export async function POST(req: Request) {
       !Number.isFinite(cost_total) ||
       !Number.isFinite(risk_score)
     ) {
-      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+      return NextResponse.json({ ok: false, recorded: false });
+    }
+
+    const now = new Date();
+    const monthStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0)
+    ).toISOString();
+
+    // Fetch pro flag — check error separately to avoid false-free-tier gating
+    const { data: userRow, error: userRowErr } = await supabase
+      .from("users")
+      .select("pro")
+      .eq("id", user.id)
+      .single();
+
+    // If users lookup errors (RLS etc.) → skip gating entirely, fail-open
+    if (!userRowErr) {
+      const isPro = userRow?.pro === true;
+
+      if (!isPro) {
+        const { count, error: countErr } = await supabase
+          .from("analysis_history")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .gte("created_at", monthStart);
+
+        // Only gate when count is reliable and at limit
+        if (!countErr && (count ?? 0) >= 25) {
+          return NextResponse.json({ ok: true, recorded: false, limit_reached: true });
+        }
+      }
     }
 
     const { error } = await supabase.from("analysis_history").insert({
@@ -75,11 +105,11 @@ export async function POST(req: Request) {
     });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ ok: false, recorded: false });
     }
 
-    return NextResponse.json({ ok: true }, { status: 201 });
+    return NextResponse.json({ ok: true, recorded: true });
   } catch {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json({ ok: false, recorded: false });
   }
 }

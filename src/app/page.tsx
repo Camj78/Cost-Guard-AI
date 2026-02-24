@@ -21,8 +21,12 @@ import { BatchAnalysisPanel } from "@/components/pro/batch-analysis-panel";
 import { PdfExportButton } from "@/components/pro/pdf-export-button";
 import { getSavedPrompts } from "@/lib/saved-prompts";
 import { addHistoryEntry } from "@/lib/analysis-history";
+import { useUsage } from "@/hooks/use-usage";
+import { UsageMeter } from "@/components/usage-meter";
 
 export default function Page() {
+  const { isPro, isAuthed, usedThisMonth, limit, refetch } = useUsage();
+
   const {
     prompt,
     modelId,
@@ -44,7 +48,7 @@ export default function Page() {
     setExpectedOutputTokens,
     applyCompression,
     triggerManualAnalyze,
-  } = usePreflight();
+  } = usePreflight({ onRecorded: refetch });
 
   const hasPrompt = prompt.trim().length > 0;
 
@@ -167,6 +171,11 @@ export default function Page() {
                 costDelta={costDelta || null}
                 compressionDeltaPct={compressionDelta || null}
               />
+
+              {/* Free tier usage meter — only for authenticated non-Pro users */}
+              {isAuthed && isPro === false && limit !== null && (
+                <UsageMeter used={usedThisMonth} limit={limit} />
+              )}
 
               {/* Pro: Run Preflight + PDF Export */}
               <ProGate>

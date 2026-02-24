@@ -54,7 +54,8 @@ export interface PreflightState {
 async function recordAnalysis(
   result: RiskAssessment,
   promptText: string,
-  mdlId: string
+  mdlId: string,
+  onRecorded?: () => void
 ) {
   try {
     const encoder = new TextEncoder();
@@ -66,7 +67,7 @@ async function recordAnalysis(
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    await fetch("/api/analyses", {
+    const res = await fetch("/api/analyses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -78,12 +79,19 @@ async function recordAnalysis(
         risk_score: result.riskScore,
       }),
     });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.recorded === true) {
+        onRecorded?.();
+      }
+    }
   } catch {
     // Silent — never surface errors to the user
   }
 }
 
-export function usePreflight(): PreflightState {
+export function usePreflight(options?: { onRecorded?: () => void }): PreflightState {
   // Pre-fill from dashboard "Load" if sessionStorage key is set
   const [prompt, setPromptRaw] = useState(() => {
     if (typeof window === "undefined") return "";
@@ -170,7 +178,7 @@ export function usePreflight(): PreflightState {
       setAnalysis(result);
 
       // Record to server (fire-and-forget, silently no-ops if not signed in)
-      recordAnalysis(result, text, mdl.id);
+      recordAnalysis(result, text, mdl.id, options?.onRecorded);
 
       // Compression metrics (precomputed here for ResultsPanel diff card)
       const compCostTotal =
