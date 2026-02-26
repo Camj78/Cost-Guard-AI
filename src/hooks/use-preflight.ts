@@ -25,6 +25,7 @@ export interface PreflightState {
   // Analysis results
   analysis: RiskAssessment | null;
   isAnalyzing: boolean;
+  lastAnalysisId: string | null; // ID of the most recently recorded analysis_history row
 
   // Compression
   compressionPreview: CompressionResult | null;
@@ -55,7 +56,8 @@ async function recordAnalysis(
   result: RiskAssessment,
   promptText: string,
   mdlId: string,
-  onRecorded?: () => void
+  onRecorded?: () => void,
+  onIdCaptured?: (id: string) => void
 ) {
   try {
     const encoder = new TextEncoder();
@@ -84,6 +86,7 @@ async function recordAnalysis(
       const data = await res.json();
       if (data.recorded === true) {
         onRecorded?.();
+        if (data.id) onIdCaptured?.(data.id as string);
       }
     }
   } catch {
@@ -110,6 +113,7 @@ export function usePreflight(options?: { onRecorded?: () => void }): PreflightSt
   const [expectedOutputTokens, setExpectedRaw] = useState(DEFAULT_EXPECTED_OUTPUT);
   const [analysis, setAnalysis] = useState<RiskAssessment | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [lastAnalysisId, setLastAnalysisId] = useState<string | null>(null);
   const [compressionPreview, setCompressionPreview] =
     useState<CompressionResult | null>(null);
   const [compressionDelta, setCompressionDelta] = useState(0);
@@ -135,6 +139,7 @@ export function usePreflight(options?: { onRecorded?: () => void }): PreflightSt
     (text: string, mdl: ModelConfig, expected: number) => {
       if (!text.trim()) {
         setAnalysis(null);
+        setLastAnalysisId(null);
         setCompressionPreview(null);
         setCompressionDelta(0);
         setCompressedTokens(0);
@@ -165,6 +170,7 @@ export function usePreflight(options?: { onRecorded?: () => void }): PreflightSt
 
       // Risk assessment
       const result = assessRisk({
+        promptText: text,
         inputTokens,
         contextWindow: mdl.contextWindow,
         expectedOutputTokens: expected,
@@ -178,7 +184,7 @@ export function usePreflight(options?: { onRecorded?: () => void }): PreflightSt
       setAnalysis(result);
 
       // Record to server (fire-and-forget, silently no-ops if not signed in)
-      recordAnalysis(result, text, mdl.id, options?.onRecorded);
+      recordAnalysis(result, text, mdl.id, options?.onRecorded, setLastAnalysisId);
 
       // Compression metrics (precomputed here for ResultsPanel diff card)
       const compCostTotal =
@@ -214,6 +220,7 @@ export function usePreflight(options?: { onRecorded?: () => void }): PreflightSt
 
       if (!v.trim()) {
         setAnalysis(null);
+        setLastAnalysisId(null);
         setCompressionPreview(null);
         setCompressionDelta(0);
         setCompressedTokens(0);
@@ -314,6 +321,7 @@ export function usePreflight(options?: { onRecorded?: () => void }): PreflightSt
     expectedOutputTokens,
     analysis,
     isAnalyzing,
+    lastAnalysisId,
     compressionPreview,
     compressionDelta,
     compressedTokens,

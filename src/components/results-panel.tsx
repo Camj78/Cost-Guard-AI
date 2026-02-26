@@ -108,6 +108,7 @@ export function ResultsPanel({
             score={analysis.riskScore}
             level={analysis.riskLevel}
             explanation={analysis.riskExplanation}
+            riskDrivers={analysis.riskDrivers}
           />
         </CardContent>
       </Card>

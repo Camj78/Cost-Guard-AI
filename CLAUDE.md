@@ -1,7 +1,32 @@
 Project: CostGuardAI
-Audience: AI Founders, CTOs, Technical Agencies
-Positioning: Infrastructure-grade AI prompt preflight system
+Audience: AI SaaS founders, indie hackers, dev teams on OpenAI / Anthropic / Gemini
+Positioning: Developer-first AI cost & failure risk optimization tool
 Philosophy: Clarity > Precision > Authority > Restraint
+
+---------------------------------------------------------
+CORE IDENTITY
+---------------------------------------------------------
+
+CostGuardAI IS:
+A developer workflow tool that prevents AI cost waste and production failures
+BEFORE deployment.
+
+CostGuardAI is NOT:
+- Enterprise procurement software
+- Generic AI chat
+- Social AI tool
+- AI marketplace
+- Multi-category AI platform
+
+Primary users:
+- AI SaaS founders
+- Indie hackers
+- Dev teams using OpenAI / Anthropic / Gemini
+- Teams spending $500–$25K/month on LLM APIs
+
+Primary pain:
+Unpredictable token costs, silent truncation, overlong prompts,
+failure risk, model inefficiency.
 
 ---------------------------------------------------------
 GLOBAL EXECUTION RULES
@@ -13,7 +38,7 @@ Default behavior:
 - Optimize for product quality
 - Protect pricing power
 - Prevent scope creep
-- Preserve enterprise perception
+- Preserve developer credibility
 - Maintain build stability
 
 If any request conflicts with these principles:
@@ -42,10 +67,58 @@ No experimental ideas.
 Visual and UX improvements must stay within current feature boundaries.
 
 ---------------------------------------------------------
+PRIMARY VALUE PILLARS
+---------------------------------------------------------
+
+1) Preflight Analysis Engine (Core)
+   - Exact token calculation (OpenAI)
+   - Estimated tokens for other providers
+   - Cost breakdown
+   - Context usage %
+   - Truncation warnings
+   - Failure Risk Score (0–100)
+
+2) Failure Risk Intelligence (Moat)
+   - Heuristic scoring (structure, length, ambiguity, instruction quality)
+   - Risk-weighted cost metric
+   - Comparative risk across models
+   - Continuous refinement of scoring logic
+   Risk engine must feel intelligent, not arbitrary.
+
+3) Workflow Integration (Mandatory Expansion)
+   - Public API endpoint for analysis
+   - CLI tool (minimal)
+   - VSCode extension (future, planned)
+   - Shareable analysis links
+   - CI usage capability (future phase)
+
+4) Developer Monetization Layer
+   - Free tier (limited analyses/month)
+   - Pro tier (unlimited + history + comparison)
+   - Team tier (shared history + exports)
+
+---------------------------------------------------------
+MOAT
+---------------------------------------------------------
+
+Our moat is NOT token math.
+
+Our moat is:
+Risk + Cost Optimization Intelligence.
+
+We win by:
+- Making devs feel unsafe shipping without running preflight.
+- Becoming the "linting layer" for LLM prompts.
+- Owning the psychological category of "LLM risk scoring."
+
+Every feature must reinforce:
+"Run this before you ship."
+
+---------------------------------------------------------
 DESIGN DISCIPLINE GUARDRAIL
 ---------------------------------------------------------
 
-CostGuardAI must feel like infrastructure, not a template SaaS.
+CostGuardAI must feel like a developer tool, not a template SaaS.
 
 NON-NEGOTIABLE DESIGN RULES:
 
@@ -139,9 +212,82 @@ DATA PRESENTATION RULES
 - Estimated values must indicate uncertainty
 - Risk score must maintain semantic 5-level color mapping
 
-Enterprise convention:
 Labels left-aligned.
 Values right-aligned.
+
+---------------------------------------------------------
+ARCHITECTURAL RULES
+---------------------------------------------------------
+
+Stack:
+- Next.js App Router
+- Supabase (Auth + Postgres)
+- Flat structure
+- Minimal dependencies
+- No backend overengineering
+
+Data Tables (minimal):
+- users
+- saved_prompts
+- analysis_history
+
+Future allowed additions:
+- api_keys (for public API)
+- share_links
+
+All writes must be scoped to user_id.
+Keep queries simple.
+No background workers.
+No heavy analytics infra.
+
+---------------------------------------------------------
+SCOPE LOCK — DO NOT BUILD
+---------------------------------------------------------
+
+- Enterprise governance tools
+- RBAC
+- Org dashboards
+- SOC2 features
+- Compliance layers
+- Complex ingestion pipelines
+- Multi-tenant architecture
+
+Do not pivot to enterprise category.
+
+If a feature does not:
+- Improve retention
+- Improve developer workflow integration
+- Improve risk intelligence
+- Improve shareability
+Reject it.
+
+---------------------------------------------------------
+BUILD PHASES (LOCKED)
+---------------------------------------------------------
+
+D1 — Auth + Saved State          ✓ Complete
+D2 — Usage gating + Pro tier     ✓ Complete
+D3 — Public API endpoint
+D4 — CLI wrapper
+D5 — Shareable analysis links
+D6 — Risk intelligence refinement
+D7 — Marketing + distribution engine
+
+Do not skip ahead.
+Do not add new categories.
+
+---------------------------------------------------------
+MONETIZATION STRATEGY
+---------------------------------------------------------
+
+Primary revenue:
+Subscription (self-serve).
+
+No enterprise sales.
+No custom contracts.
+No sales team.
+
+Growth = product-led + founder content distribution.
 
 ---------------------------------------------------------
 PRICING AUTHORITY RULE
@@ -205,10 +351,20 @@ Claude must:
 - Avoid refactors unless required
 - Maintain readability
 - Maintain consistency
-- Preserve enterprise authority
+- Preserve developer-tool authority
 
 Default mindset:
-This product is evaluated by CTOs.
+This product is evaluated by developers who build with LLMs every day.
+
+---------------------------------------------------------
+DEFINITION OF INDUSTRY LEADER
+---------------------------------------------------------
+
+CostGuardAI becomes industry leader when:
+- Devs integrate it into their workflow
+- Risk Score becomes referenced publicly
+- It is mentioned in AI build tutorials
+- It becomes the standard pre-deployment step for LLM prompts
 
 ---------------------------------------------------------
 END OF FILE

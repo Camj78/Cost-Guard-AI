@@ -94,21 +94,25 @@ export async function POST(req: Request) {
       }
     }
 
-    const { error } = await supabase.from("analysis_history").insert({
-      user_id: user.id,
-      prompt_hash,
-      model_id,
-      input_tokens,
-      output_tokens,
-      cost_total,
-      risk_score,
-    });
+    const { data: inserted, error } = await supabase
+      .from("analysis_history")
+      .insert({
+        user_id: user.id,
+        prompt_hash,
+        model_id,
+        input_tokens,
+        output_tokens,
+        cost_total,
+        risk_score,
+      })
+      .select("id")
+      .single();
 
     if (error) {
       return NextResponse.json({ ok: false, recorded: false });
     }
 
-    return NextResponse.json({ ok: true, recorded: true });
+    return NextResponse.json({ ok: true, recorded: true, id: inserted?.id ?? null });
   } catch {
     return NextResponse.json({ ok: false, recorded: false });
   }

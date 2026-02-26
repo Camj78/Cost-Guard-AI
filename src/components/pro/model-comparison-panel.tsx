@@ -41,6 +41,7 @@ export function ModelComparisonPanel({ prompt, expectedOutputTokens }: ModelComp
     const raw = MODELS.map((model) => {
       const inputTokens = countTokens(prompt, model);
       const result = assessRisk({
+        promptText: prompt,
         inputTokens,
         contextWindow: model.contextWindow,
         expectedOutputTokens,

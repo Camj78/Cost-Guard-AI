@@ -166,6 +166,7 @@ function analyzeCell(
       : 0;
 
   const riskInputs: RiskInputs = {
+    promptText: text,
     inputTokens,
     contextWindow: model.contextWindow,
     expectedOutputTokens: DEFAULT_EXPECTED_OUTPUT,

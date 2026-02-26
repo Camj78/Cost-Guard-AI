@@ -54,6 +54,7 @@ export function BatchAnalysisPanel({ model, expectedOutputTokens }: BatchAnalysi
     const batchResults: BatchResult[] = batch.map((prompt) => {
       const inputTokens = countTokens(prompt, model);
       const result = assessRisk({
+        promptText: prompt,
         inputTokens,
         contextWindow: model.contextWindow,
         expectedOutputTokens,

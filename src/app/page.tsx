@@ -19,6 +19,7 @@ import { RiskHistoryPanel } from "@/components/pro/risk-history-panel";
 import { ModelComparisonPanel } from "@/components/pro/model-comparison-panel";
 import { BatchAnalysisPanel } from "@/components/pro/batch-analysis-panel";
 import { PdfExportButton } from "@/components/pro/pdf-export-button";
+import { ShareButton } from "@/components/share-button";
 import { getSavedPrompts } from "@/lib/saved-prompts";
 import { addHistoryEntry } from "@/lib/analysis-history";
 import { useUsage } from "@/hooks/use-usage";
@@ -33,6 +34,7 @@ export default function Page() {
     expectedOutputTokens,
     analysis,
     isAnalyzing,
+    lastAnalysisId,
     compressionPreview,
     compressionDelta,
     compressedTokens,
@@ -171,6 +173,16 @@ export default function Page() {
                 costDelta={costDelta || null}
                 compressionDeltaPct={compressionDelta || null}
               />
+
+              {/* Share button — authenticated users only, visible when analysis exists */}
+              {analysis && (
+                <ShareButton
+                  analysis={analysis}
+                  analysisId={lastAnalysisId}
+                  model={model}
+                  isAuthed={isAuthed}
+                />
+              )}
 
               {/* Free tier usage meter — only for authenticated non-Pro users */}
               {isAuthed && isPro === false && limit !== null && (

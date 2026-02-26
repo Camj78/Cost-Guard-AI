@@ -1,7 +1,7 @@
 /**
- * Failure Risk Score (heuristic) engine.
- * Scoring: 0-100 based on 5 weighted factors.
- * Explanation: deterministic, top 2-3 factors by points descending.
+ * Failure Risk Score engine — structured, weighted, deterministic.
+ * 5 components: Length, Context Saturation, Ambiguity, Structural, Output Volatility.
+ * Final score: weighted sum, 0–100. riskDrivers: top 3 by unweighted bucket score.
  */
 
 import type { TokenStrategy } from "@/config/models";
@@ -9,11 +9,18 @@ import type { TokenStrategy } from "@/config/models";
 // --- Types ---
 
 export type RiskLevel = "safe" | "low" | "warning" | "high" | "critical";
+export const RISK_LEVELS = ["safe", "low", "warning", "high", "critical"] as const;
 
 export interface RiskFactor {
   name: string;
   points: number;
   template: string;
+}
+
+export interface RiskDriver {
+  name: string;     // Component name
+  impact: number;   // Unweighted bucket score 0–100
+  fixes: string[];  // Deterministic fixes for triggered heuristics
 }
 
 export interface TruncationLevel {
@@ -38,11 +45,12 @@ export interface RiskAssessment {
   estimatedCostOutput: number;
   estimatedCostTotal: number;
 
-  // Failure Risk Score (heuristic)
+  // Failure Risk Score
   riskScore: number;
   riskLevel: RiskLevel;
   riskFactors: RiskFactor[];
   riskExplanation: string;
+  riskDrivers: RiskDriver[];
 
   // Truncation (separate UI signal)
   truncation: TruncationLevel;
@@ -53,7 +61,7 @@ export interface RiskAssessment {
 
 // --- Risk level mapping ---
 
-function getRiskLevel(score: number): RiskLevel {
+export function getRiskLevel(score: number): RiskLevel {
   if (score <= 24) return "safe";
   if (score <= 49) return "low";
   if (score <= 69) return "warning";
@@ -61,22 +69,10 @@ function getRiskLevel(score: number): RiskLevel {
   return "critical";
 }
 
-// --- Deterministic explanation templates ---
-
-function buildExplanation(factors: RiskFactor[]): string {
-  const sorted = [...factors]
-    .filter((f) => f.points > 0)
-    .sort((a, b) => b.points - a.points);
-
-  const top = sorted.slice(0, 3);
-  if (top.length === 0) return "No significant risk factors detected.";
-
-  return top.map((f) => f.template).join(". ") + ".";
-}
-
 // --- Main scoring function ---
 
 export interface RiskInputs {
+  promptText: string;
   inputTokens: number;
   contextWindow: number;
   expectedOutputTokens: number;
@@ -87,13 +83,29 @@ export interface RiskInputs {
   outputPricePer1M: number;
 }
 
+// Ambiguous terms list (exact spec)
+const AMBIGUOUS_TERMS = [
+  "improve", "optimize", "better", "good", "high quality",
+  "fast", "efficient", "robust", "flexible", "clean",
+  "scalable", "advanced", "modern",
+];
+
+// Volatility phrases list (exact spec)
+const VOLATILITY_PHRASES = [
+  "write a detailed",
+  "comprehensive",
+  "in depth",
+  "as much as possible",
+  "thoroughly explain",
+];
+
 export function assessRisk(inputs: RiskInputs): RiskAssessment {
   const {
+    promptText,
     inputTokens,
     contextWindow,
     expectedOutputTokens,
     maxOutputTokens,
-    compressionDelta,
     tokenStrategy,
     inputPricePer1M,
     outputPricePer1M,
@@ -103,79 +115,205 @@ export function assessRisk(inputs: RiskInputs): RiskAssessment {
   const usageRatio = contextWindow > 0 ? inputTokens / contextWindow : 0;
   const usagePercent = usageRatio * 100;
 
-  // --- 1. Context Pressure (0-40 pts) ---
-  let contextPressurePts = 0;
-  if (usageRatio >= 1.0) contextPressurePts = 40;
-  else if (usageRatio >= 0.9) contextPressurePts = 30;
-  else if (usageRatio >= 0.8) contextPressurePts = 20;
-  else if (usageRatio >= 0.7) contextPressurePts = 10;
+  // ─── 1. Length Risk (25%) ───────────────────────────────────────────────
+  const lengthRatio = contextWindow > 0 ? inputTokens / contextWindow : 0;
+  let lengthBucket: number;
+  if (lengthRatio < 0.15) lengthBucket = 5;
+  else if (lengthRatio < 0.30) lengthBucket = 15;
+  else if (lengthRatio < 0.50) lengthBucket = 30;
+  else if (lengthRatio < 0.70) lengthBucket = 60;
+  else lengthBucket = 90;
 
-  // --- 2. Output Collision Risk (0-25 pts) ---
-  let collisionPts = 0;
-  if (remaining <= expectedOutputTokens) collisionPts = 25;
-  else if (remaining <= expectedOutputTokens * 1.5) collisionPts = 15;
-  else if (remaining <= expectedOutputTokens * 2) collisionPts = 5;
+  const lengthFixes: string[] = [];
+  if (lengthBucket === 30)
+    lengthFixes.push("Reduce prompt length. Context usage is at 30–50%.");
+  else if (lengthBucket === 60)
+    lengthFixes.push("Reduce prompt length. Over 50% of context window consumed by input alone.");
+  else if (lengthBucket === 90)
+    lengthFixes.push("Prompt exceeds 70% of context window. Shorten significantly to reduce truncation risk.");
 
-  // --- 3. Output Cap Constraint (0-15 pts) ---
-  let capPts = 0;
-  if (expectedOutputTokens > maxOutputTokens) capPts = 15;
-  else if (expectedOutputTokens > maxOutputTokens * 0.8) capPts = 8;
+  const lengthRisk = lengthBucket * 0.25;
 
-  // --- 4. Verbosity / Inefficiency (0-10 pts) ---
-  let verbosityPts = 0;
-  if (compressionDelta >= 25) verbosityPts = 10;
-  else if (compressionDelta >= 15) verbosityPts = 5;
+  // ─── 2. Context Saturation Risk (20%) ──────────────────────────────────
+  const totalTokens = inputTokens + expectedOutputTokens;
+  const saturation = contextWindow > 0 ? totalTokens / contextWindow : 0;
+  let saturationBucket: number;
+  if (saturation < 0.50) saturationBucket = 5;
+  else if (saturation < 0.70) saturationBucket = 30;
+  else if (saturation < 0.85) saturationBucket = 65;
+  else saturationBucket = 95;
 
-  // --- 5. Estimation Uncertainty (0-10 pts) ---
-  let uncertaintyPts = 0;
-  if (tokenStrategy === "estimated") {
-    uncertaintyPts += 5;
-    if (usageRatio >= 0.85) uncertaintyPts += 5;
+  const saturationFixes: string[] = [];
+  if (saturationBucket === 30)
+    saturationFixes.push("Combined input + output token count at 50–70% of context limit.");
+  else if (saturationBucket === 65)
+    saturationFixes.push("Combined token usage at 70–85% of context limit. Reduce prompt length or expected output tokens.");
+  else if (saturationBucket === 95)
+    saturationFixes.push("Combined token usage exceeds 85% of context limit. High truncation risk — reduce input or expected output.");
+
+  const contextRisk = saturationBucket * 0.20;
+
+  // ─── 3. Ambiguity Risk (20%) ────────────────────────────────────────────
+  const lower = promptText.toLowerCase();
+  const totalWords = promptText.trim().length > 0
+    ? promptText.trim().split(/\s+/).length
+    : 0;
+
+  let ambiguousMatches = 0;
+  const matchedTerms: string[] = [];
+  for (const term of AMBIGUOUS_TERMS) {
+    let pos = 0;
+    let found = false;
+    while ((pos = lower.indexOf(term, pos)) !== -1) {
+      ambiguousMatches++;
+      found = true;
+      pos += term.length;
+    }
+    if (found) matchedTerms.push(term);
   }
 
-  // --- Build factors for explanation ---
-  const factors: RiskFactor[] = [
+  const ambiguityDensity = totalWords > 0 ? ambiguousMatches / totalWords : 0;
+  let ambiguityBucket: number;
+  if (ambiguousMatches === 0) ambiguityBucket = 5;
+  else if (ambiguityDensity < 0.01) ambiguityBucket = 20;
+  else if (ambiguityDensity < 0.02) ambiguityBucket = 45;
+  else if (ambiguityDensity < 0.04) ambiguityBucket = 70;
+  else ambiguityBucket = 90;
+
+  const ambiguityFixes: string[] = [];
+  if (ambiguityBucket >= 20) {
+    const termList = matchedTerms.slice(0, 4).map((t) => `'${t}'`).join(", ");
+    if (ambiguityBucket === 20)
+      ambiguityFixes.push(`Vague term(s) detected: ${termList}. Replace with specific, measurable requirements.`);
+    else if (ambiguityBucket === 45)
+      ambiguityFixes.push(`Ambiguous term density at 1–2%. Replace: ${termList}. Use explicit, measurable criteria.`);
+    else if (ambiguityBucket === 70)
+      ambiguityFixes.push(`High ambiguity density (2–4%). Rewrite requirements — remove: ${termList}.`);
+    else
+      ambiguityFixes.push(`Very high ambiguity density (>4%). Eliminate vague directives. Found: ${termList}.`);
+  }
+
+  const ambiguityRisk = ambiguityBucket * 0.20;
+
+  // ─── 4. Structural Risk (20%) ───────────────────────────────────────────
+  let structuralSum = 0;
+  const structuralFixes: string[] = [];
+
+  // No line breaks
+  if (!/\n/.test(promptText)) {
+    structuralSum += 20;
+    structuralFixes.push("Add line breaks to separate logical sections.");
+  }
+  // No bullet or numbered list
+  if (!/^[\t ]*[-*\d]/m.test(promptText)) {
+    structuralSum += 20;
+    structuralFixes.push("Use bullet points or numbered lists for multi-step requirements.");
+  }
+  // No explicit output format directive
+  if (
+    !/(format|output|return|respond|provide).{0,50}(json|xml|markdown|bullet|numbered|table|list|code)/i.test(
+      promptText
+    )
+  ) {
+    structuralSum += 25;
+    structuralFixes.push("Add explicit output format instructions (e.g., 'Return JSON with fields: ...').");
+  }
+  // No constraint words
+  if (!/\b(max|limit|exactly|at most|no more than)\b/i.test(promptText)) {
+    structuralSum += 20;
+    structuralFixes.push("Add constraints using 'max', 'limit', or 'exactly' to bound output.");
+  }
+  // No headings or delimiters
+  if (!/^#{1,3}\s|^---$|^\*\*\w/m.test(promptText)) {
+    structuralSum += 15;
+    structuralFixes.push("Add section headers or delimiters (e.g., '### Instructions', '---') to structure the prompt.");
+  }
+
+  const structuralBucket = Math.min(100, structuralSum);
+  const structuralRisk = structuralBucket * 0.20;
+
+  // ─── 5. Output Volatility Risk (15%) ────────────────────────────────────
+  let volatilitySum = 0;
+  const volatilityFixes: string[] = [];
+
+  for (const phrase of VOLATILITY_PHRASES) {
+    if (lower.includes(phrase)) {
+      volatilitySum += 25;
+      volatilityFixes.push(`Remove open-ended directive: '${phrase}'. Scope the output explicitly.`);
+    }
+  }
+  if (inputTokens > 0 && expectedOutputTokens > 2 * inputTokens) {
+    volatilitySum += 30;
+    volatilityFixes.push("Expected output exceeds 2× input token count. Reduce expected output tokens or narrow the scope.");
+  }
+
+  const volatilityBucket = Math.min(100, volatilitySum);
+  const volatilityRisk = volatilityBucket * 0.15;
+
+  // ─── Final score ────────────────────────────────────────────────────────
+  const totalRisk = lengthRisk + contextRisk + ambiguityRisk + structuralRisk + volatilityRisk;
+  const riskScore = Math.min(100, Math.round(totalRisk));
+
+  // ─── Risk drivers: top 3 by unweighted bucket score ────────────────────
+  const allDrivers: RiskDriver[] = [
+    { name: "Length Risk", impact: lengthBucket, fixes: lengthFixes },
+    { name: "Context Saturation Risk", impact: saturationBucket, fixes: saturationFixes },
+    { name: "Ambiguity Risk", impact: ambiguityBucket, fixes: ambiguityFixes },
+    { name: "Structural Risk", impact: structuralBucket, fixes: structuralFixes },
+    { name: "Output Volatility Risk", impact: volatilityBucket, fixes: volatilityFixes },
+  ];
+  const riskDrivers = [...allDrivers]
+    .sort((a, b) => b.impact - a.impact)
+    .slice(0, 3);
+
+  // ─── riskFactors (backward compat) ─────────────────────────────────────
+  const riskFactors: RiskFactor[] = [
     {
-      name: "Context Pressure",
-      points: contextPressurePts,
-      template: `${usagePercent.toFixed(1)}% of context window used`,
+      name: "Length Risk",
+      points: Math.round(lengthRisk),
+      template: `Input uses ${(lengthRatio * 100).toFixed(1)}% of the context window`,
     },
     {
-      name: "Output Collision",
-      points: collisionPts,
-      template: `Only ${remaining.toLocaleString()} tokens remain for an expected ${expectedOutputTokens.toLocaleString()}-token response`,
+      name: "Context Saturation Risk",
+      points: Math.round(contextRisk),
+      template: `Combined tokens (input + output) at ${(saturation * 100).toFixed(1)}% of context limit`,
     },
     {
-      name: "Output Cap",
-      points: capPts,
-      template: `Expected output (${expectedOutputTokens.toLocaleString()}) exceeds model's ${maxOutputTokens.toLocaleString()}-token output limit`,
+      name: "Ambiguity Risk",
+      points: Math.round(ambiguityRisk),
+      template: ambiguousMatches > 0
+        ? `${ambiguousMatches} ambiguous term(s) detected in prompt`
+        : "No ambiguous terms detected",
     },
     {
-      name: "Verbosity",
-      points: verbosityPts,
-      template: `Prompt could be compressed by ~${compressionDelta.toFixed(0)}% to reduce risk`,
+      name: "Structural Risk",
+      points: Math.round(structuralRisk),
+      template: structuralFixes.length > 0
+        ? `${structuralFixes.length} structural issue(s) detected`
+        : "Prompt has adequate structure",
     },
     {
-      name: "Uncertainty",
-      points: uncertaintyPts,
-      template: "Token count is estimated \u2014 actual usage may vary",
+      name: "Output Volatility Risk",
+      points: Math.round(volatilityRisk),
+      template: volatilityFixes.length > 0
+        ? `${volatilityFixes.length} open-ended output directive(s) detected`
+        : "No open-ended output directives detected",
     },
   ];
 
-  // --- Sum + floors + cap ---
-  let riskScore =
-    contextPressurePts + collisionPts + capPts + verbosityPts + uncertaintyPts;
+  // riskExplanation: top contributing components
+  const sortedFactors = [...riskFactors]
+    .filter((f) => f.points > 0)
+    .sort((a, b) => b.points - a.points);
+  const riskExplanation =
+    sortedFactors.length > 0
+      ? sortedFactors
+          .slice(0, 3)
+          .map((f) => f.template)
+          .join(". ") + "."
+      : "No significant risk factors detected.";
 
-  // Risk floor rules
-  if (usageRatio >= 1.0) {
-    riskScore = 100;
-  } else if (usageRatio >= 0.95) {
-    riskScore = Math.max(riskScore, 85);
-  }
-
-  riskScore = Math.min(riskScore, 100);
-
-  // --- Truncation (separate signal) ---
+  // ─── Truncation (separate UI signal) ───────────────────────────────────
   let truncation: TruncationLevel;
   if (remaining < expectedOutputTokens) {
     truncation = {
@@ -194,10 +332,9 @@ export function assessRisk(inputs: RiskInputs): RiskAssessment {
     };
   }
 
-  // --- Cost ---
+  // ─── Cost ───────────────────────────────────────────────────────────────
   const estimatedCostInput = (inputTokens / 1_000_000) * inputPricePer1M;
-  const estimatedCostOutput =
-    (expectedOutputTokens / 1_000_000) * outputPricePer1M;
+  const estimatedCostOutput = (expectedOutputTokens / 1_000_000) * outputPricePer1M;
   const estimatedCostTotal = estimatedCostInput + estimatedCostOutput;
 
   return {
@@ -213,8 +350,9 @@ export function assessRisk(inputs: RiskInputs): RiskAssessment {
     estimatedCostTotal,
     riskScore,
     riskLevel: getRiskLevel(riskScore),
-    riskFactors: factors,
-    riskExplanation: buildExplanation(factors),
+    riskFactors,
+    riskExplanation,
+    riskDrivers,
     truncation,
     isEstimated: tokenStrategy === "estimated",
   };
