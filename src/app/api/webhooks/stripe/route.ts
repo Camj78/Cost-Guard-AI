@@ -61,12 +61,13 @@ export async function POST(req: Request) {
       const subscriptionId = session.subscription as string;
       const customerId = session.customer as string;
 
-      // Store IDs and mark pending; subscription.updated is authoritative for pro=true
+      // Grant Pro immediately on checkout; subscription.updated will set final pro_status
       await supabaseAdmin
         .from("users")
         .update({
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
+          pro: true,
           pro_status: "pending",
           updated_at: new Date().toISOString(),
         })

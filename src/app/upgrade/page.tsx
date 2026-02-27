@@ -28,10 +28,7 @@ export default function UpgradePage() {
       .then((r) => r.json())
       .then((d) => {
         if (d.pro === true) setView("pro");
-        // If user is logged in but not pro, show upgrade — but /api/me alone
-        // can't distinguish "not logged in" vs "logged in, not pro".
-        // We default to showing the login form; if they click upgrade without
-        // being logged in, /api/checkout returns 401 and we re-show login.
+        else if (d.is_authed === true) setView("upgrade");
         else setView("login");
       })
       .catch(() => setView("login"));

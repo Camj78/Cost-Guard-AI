@@ -64,11 +64,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, recorded: false });
     }
 
-    const now = new Date();
-    const monthStart = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0)
-    ).toISOString();
-
     // Fetch pro flag — check error separately to avoid false-free-tier gating
     const { data: userRow, error: userRowErr } = await supabase
       .from("users")
@@ -76,24 +71,35 @@ export async function POST(req: Request) {
       .eq("id", user.id)
       .single();
 
-    // If users lookup errors (RLS etc.) → skip gating entirely, fail-open
-    if (!userRowErr) {
-      const isPro = userRow?.pro === true;
-
-      if (!isPro) {
-        const { count, error: countErr } = await supabase
-          .from("analysis_history")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .gte("created_at", monthStart);
-
-        // Only gate when count is reliable and at limit
-        if (!countErr && (count ?? 0) >= 25) {
-          return NextResponse.json({ ok: true, recorded: false, limit_reached: true });
-        }
-      }
+    // Fail-closed: if users lookup errors (RLS etc.), refuse to record
+    if (userRowErr) {
+      return NextResponse.json({ ok: false, recorded: false });
     }
 
+    const isPro = userRow?.pro === true;
+
+    if (!isPro) {
+      // Atomic count-check + insert via RPC — prevents race condition under concurrent requests
+      const { data: rpcData, error: rpcErr } = await supabase.rpc("record_analysis", {
+        p_user_id: user.id,
+        p_created_at: new Date().toISOString(),
+        p_payload: { prompt_hash, model_id, input_tokens, output_tokens, cost_total, risk_score },
+        p_limit: 25,
+      });
+
+      if (rpcErr) {
+        return NextResponse.json({ ok: false, recorded: false });
+      }
+
+      const result = rpcData as { recorded: boolean; limit_reached: boolean; id?: string };
+      if (!result.recorded) {
+        return NextResponse.json({ ok: true, recorded: false, limit_reached: result.limit_reached ?? false });
+      }
+
+      return NextResponse.json({ ok: true, recorded: true, id: result.id ?? null });
+    }
+
+    // Pro tier: no monthly limit — insert directly
     const { data: inserted, error } = await supabase
       .from("analysis_history")
       .insert({
