@@ -219,7 +219,7 @@ export default function Page() {
       </main>
 
       {/* PRO: Saved Prompts + Risk History */}
-      <ProGate>
+      <ProGate moment="history_locked">
         <section className="glass-section">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -342,7 +342,7 @@ export default function Page() {
       </ProGate>
 
       {/* PRO: Model Comparison */}
-      <ProGate>
+      <ProGate moment="compare_locked">
         <section className="glass-section">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
             <ModelComparisonPanel
@@ -354,7 +354,7 @@ export default function Page() {
       </ProGate>
 
       {/* PRO: Batch Analysis */}
-      <ProGate>
+      <ProGate moment="batch_locked">
         <section className="glass-section">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
             <BatchAnalysisPanel

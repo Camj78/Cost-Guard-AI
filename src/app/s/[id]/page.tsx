@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import { RevokeButton } from "./revoke-button";
+import { UpgradeButton } from "@/components/upgrade-button";
 import type { ShareSnapshot } from "@/lib/share-schema";
 import type { Metadata } from "next";
 
@@ -70,6 +71,18 @@ export default async function SharedAnalysisPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Pro status check for conversion hook — non-fatal, defaults to free
+  let isUserPro = false;
+  if (user) {
+    const { data: userRow } = await supabase
+      .from("users")
+      .select("pro")
+      .eq("id", user.id)
+      .maybeSingle();
+    isUserPro = userRow?.pro === true;
+  }
+  const isAuthedNotPro = !!user && !isUserPro;
 
   // RLS enforces revoked=false and expiry automatically
   const { data: shareLink } = await supabase
@@ -178,6 +191,19 @@ export default async function SharedAnalysisPage({
           )}
         </div>
       </main>
+
+      {/* Conversion hook */}
+      <div className="mx-auto max-w-lg w-full px-4 pt-6 pb-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <a
+          href="/?ref=share"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Run your own preflight →
+        </a>
+        {isAuthedNotPro && (
+          <UpgradeButton moment="share_cta" variant="outline" size="sm" />
+        )}
+      </div>
 
       <Footer />
     </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { UpgradeButton } from "@/components/upgrade-button";
+
 interface UsageMeterProps {
   used: number;
   limit: number;
@@ -10,6 +12,7 @@ export function UsageMeter({ used, limit }: UsageMeterProps) {
   const pct = limit > 0 ? Math.min(100, Math.round((usedClamped / limit) * 100)) : 0;
   const isAtLimit = usedClamped >= limit;
   const isApproaching = pct >= 80 && !isAtLimit;
+  const isNearing = pct >= 70 && !isAtLimit;
 
   const fillColor = isAtLimit
     ? "bg-red-500"
@@ -36,15 +39,19 @@ export function UsageMeter({ used, limit }: UsageMeterProps) {
       </div>
 
       {isAtLimit && (
-        <p className="text-xs text-muted-foreground">
-          Analysis won&apos;t be saved —{" "}
-          <a
-            href="/upgrade"
-            className="text-indigo-400 hover:text-indigo-300"
-          >
-            Upgrade to Pro
-          </a>
-        </p>
+        <div className="flex items-center justify-between gap-2 pt-0.5">
+          <p className="text-xs text-muted-foreground">
+            Analysis won&apos;t be saved this month.
+          </p>
+          <UpgradeButton moment="usage_100" />
+        </div>
+      )}
+
+      {isNearing && !isAtLimit && (
+        <div className="flex items-center justify-between gap-2 pt-0.5">
+          <p className="text-xs text-muted-foreground">Approaching limit.</p>
+          <UpgradeButton moment="usage_70" variant="outline" />
+        </div>
       )}
     </div>
   );

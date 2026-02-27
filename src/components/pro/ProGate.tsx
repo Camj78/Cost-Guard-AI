@@ -2,8 +2,15 @@
 
 import { useEffect, useState } from "react";
 import FakeGate from "./FakeGate";
+import type { UpgradeMoment } from "@/config/monetization";
 
-export default function ProGate({ children }: { children: React.ReactNode }) {
+export default function ProGate({
+  children,
+  moment,
+}: {
+  children: React.ReactNode;
+  moment?: UpgradeMoment;
+}) {
   const [isPro, setIsPro] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -18,6 +25,6 @@ export default function ProGate({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (isPro === null) return null; // loading
-  if (!isPro) return <FakeGate />;
+  if (!isPro) return <FakeGate moment={moment} />;
   return <>{children}</>;
 }
