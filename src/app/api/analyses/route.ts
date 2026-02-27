@@ -65,13 +65,39 @@ export async function POST(req: Request) {
     }
 
     // Fetch pro flag — check error separately to avoid false-free-tier gating
-    const { data: userRow, error: userRowErr } = await supabase
+    let { data: userRow, error: userRowErr } = await supabase
       .from("users")
       .select("pro")
       .eq("id", user.id)
       .single();
 
-    // Fail-closed: if users lookup errors (RLS etc.), refuse to record
+    // PGRST116 = "no rows" — new/incognito account; upsert then re-fetch
+    if (userRowErr?.code === "PGRST116") {
+      const { error: upsertErr } = await supabase
+        .from("users")
+        .upsert(
+          {
+            id: user.id,
+            email: user.email ?? null,
+            pro: false,
+            pro_status: "free",
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        );
+
+      if (!upsertErr) {
+        ({ data: userRow, error: userRowErr } = await supabase
+          .from("users")
+          .select("pro")
+          .eq("id", user.id)
+          .single());
+      } else {
+        userRowErr = upsertErr;
+      }
+    }
+
+    // Fail-closed: real DB/RLS errors still block recording
     if (userRowErr) {
       return NextResponse.json({ ok: false, recorded: false });
     }
