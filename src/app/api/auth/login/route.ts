@@ -19,7 +19,22 @@ export async function POST(req: Request) {
     });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      const isRateLimit =
+        error.status === 429 ||
+        error.message.toLowerCase().includes("rate limit");
+
+      console.error("[auth/login] signInWithOtp error:", error.status, error.name);
+
+      if (isRateLimit) {
+        return NextResponse.json(
+          { error: "Too many sign-in emails were sent. Please wait 60 seconds and try again." },
+          { status: 429 }
+        );
+      }
+      return NextResponse.json(
+        { error: "Couldn't send the magic link. Please try again." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ ok: true });

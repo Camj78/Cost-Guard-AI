@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export interface UsageState {
   isPro: boolean | null;      // null while loading
@@ -8,31 +8,93 @@ export interface UsageState {
   usedThisMonth: number;
   limit: number | null;       // null = unlimited (Pro)
   isLimitReached: boolean;
+  proJustActivated: boolean;  // true when checkout=success redirect flipped pro to true
   refetch: () => void;
 }
+
+const POLL_INTERVAL_MS = 3000;
+const POLL_MAX_ATTEMPTS = 5;
 
 export function useUsage(): UsageState {
   const [isPro, setIsPro] = useState<boolean | null>(null);
   const [isAuthed, setIsAuthed] = useState(false);
   const [usedThisMonth, setUsedThisMonth] = useState(0);
   const [limit, setLimit] = useState<number | null>(25);
+  const [proJustActivated, setProJustActivated] = useState(false);
 
-  const fetchUsage = useCallback(async () => {
+  const pollCountRef = useRef(0);
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isPollingRef = useRef(false);
+
+  const fetchUsage = useCallback(async (): Promise<boolean> => {
     try {
       const res = await fetch("/api/me");
-      if (!res.ok) return;
+      if (!res.ok) return false;
       const data = await res.json();
-      setIsPro(data.pro === true);
+      const newIsPro = data.pro === true;
+      setIsPro(newIsPro);
       setIsAuthed(data.is_authed === true);
       setUsedThisMonth(typeof data.usage_this_month === "number" ? data.usage_this_month : 0);
       setLimit(data.usage_limit === null ? null : typeof data.usage_limit === "number" ? data.usage_limit : 25);
+      return newIsPro;
     } catch {
-      // Silent — never surface errors
+      return false;
     }
   }, []);
 
-  useEffect(() => {
+  const refetch = useCallback(() => {
     fetchUsage();
+  }, [fetchUsage]);
+
+  useEffect(() => {
+    // Check for checkout=success in URL (only runs client-side)
+    const isCheckoutSuccess =
+      typeof window !== "undefined" &&
+      window.location.search.includes("checkout=success");
+
+    if (isCheckoutSuccess) {
+      // Clean the query param immediately so it doesn't persist on refresh
+      if (typeof window !== "undefined" && window.history) {
+        const clean =
+          window.location.pathname +
+          window.location.search
+            .replace(/[?&]checkout=success/, "")
+            .replace(/^&/, "?") +
+          window.location.hash;
+        window.history.replaceState(null, "", clean || window.location.pathname);
+      }
+
+      // Poll until pro flips to true or max attempts exceeded
+      isPollingRef.current = true;
+      pollCountRef.current = 0;
+
+      const poll = async () => {
+        if (!isPollingRef.current) return;
+        pollCountRef.current += 1;
+
+        const nowPro = await fetchUsage();
+        if (nowPro) {
+          setProJustActivated(true);
+          isPollingRef.current = false;
+          return;
+        }
+
+        if (pollCountRef.current < POLL_MAX_ATTEMPTS) {
+          pollTimerRef.current = setTimeout(poll, POLL_INTERVAL_MS);
+        } else {
+          isPollingRef.current = false;
+        }
+      };
+
+      poll();
+    } else {
+      fetchUsage();
+    }
+
+    return () => {
+      isPollingRef.current = false;
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    };
   }, [fetchUsage]);
 
   const isLimitReached = limit !== null && usedThisMonth >= limit;
@@ -43,6 +105,7 @@ export function useUsage(): UsageState {
     usedThisMonth,
     limit,
     isLimitReached,
-    refetch: fetchUsage,
+    proJustActivated,
+    refetch,
   };
 }

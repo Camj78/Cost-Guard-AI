@@ -26,7 +26,7 @@ import { useUsage } from "@/hooks/use-usage";
 import { UsageMeter } from "@/components/usage-meter";
 
 export default function Page() {
-  const { isPro, isAuthed, usedThisMonth, limit, refetch } = useUsage();
+  const { isPro, isAuthed, usedThisMonth, limit, refetch, proJustActivated } = useUsage();
 
   const {
     prompt,
@@ -81,6 +81,12 @@ export default function Page() {
       <div className="absolute inset-0 -z-10 bg-radial-glow pointer-events-none" aria-hidden="true" />
 
       <Header />
+
+      {proJustActivated && (
+        <div className="border-b border-emerald-800/60 bg-emerald-950/40 px-4 py-3 text-center text-sm text-emerald-400">
+          Pro activated — all features are now unlocked.
+        </div>
+      )}
 
       {/* HERO SECTION */}
       <section className="py-16 px-4 sm:px-6">

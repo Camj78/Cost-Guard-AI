@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 type View = "loading" | "login" | "upgrade" | "pro";
@@ -22,6 +22,31 @@ export default function UpgradePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<"monthly" | "annual">("monthly");
+  const [cooldownSecs, setCooldownSecs] = useState(0);
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const COOLDOWN_SECS = 60;
+
+  useEffect(() => {
+    return () => {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+    };
+  }, []);
+
+  const startCooldown = useCallback(() => {
+    if (cooldownRef.current) clearInterval(cooldownRef.current);
+    setCooldownSecs(COOLDOWN_SECS);
+    cooldownRef.current = setInterval(() => {
+      setCooldownSecs((s) => {
+        if (s <= 1) {
+          clearInterval(cooldownRef.current!);
+          cooldownRef.current = null;
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  }, []);
 
   useEffect(() => {
     fetch("/api/me")
@@ -34,27 +59,33 @@ export default function UpgradePage() {
       .catch(() => setView("login"));
   }, []);
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+  async function sendMagicLink(emailAddr: string) {
     setBusy(true);
     setError(null);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: emailAddr }),
       });
       const d = await res.json();
       if (!res.ok) {
-        setError(d.error ?? "Something went wrong");
+        setError(d.error ?? "Couldn't send the magic link. Please try again.");
+        if (res.status === 429) startCooldown();
       } else {
         setEmailSent(true);
+        startCooldown();
       }
     } catch {
-      setError("Something went wrong");
+      setError("Couldn't send the magic link. Please try again.");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    await sendMagicLink(email);
   }
 
   async function handleUpgrade() {
@@ -180,9 +211,18 @@ export default function UpgradePage() {
                 placeholder="you@example.com"
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
-              <Button type="submit" disabled={busy} className="w-full">
-                {busy ? "Sending..." : "Send magic link"}
+              <Button type="submit" disabled={busy || cooldownSecs > 0} className="w-full">
+                {cooldownSecs > 0
+                  ? `Try again in ${cooldownSecs}s`
+                  : busy
+                  ? "Sending..."
+                  : "Send magic link"}
               </Button>
+              {cooldownSecs > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Only the most recent link works. Check spam/promotions.
+                </p>
+              )}
             </form>
             <button
               type="button"
@@ -286,6 +326,19 @@ export default function UpgradePage() {
             <p className="text-sm text-muted-foreground">
               We sent a magic link to <strong>{email}</strong>. Click it to log in, then come back here to upgrade.
             </p>
+            {cooldownSecs > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Resend in {cooldownSecs}s
+              </p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEmailSent(false)}
+                className="text-xs text-muted-foreground hover:underline"
+              >
+                Resend magic link
+              </button>
+            )}
           </div>
         )}
 
