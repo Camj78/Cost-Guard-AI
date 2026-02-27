@@ -189,6 +189,26 @@ export default function Page() {
                 <UsageMeter used={usedThisMonth} limit={limit} />
               )}
 
+              {/* Risk-based upgrade nudge — high/critical risk, free tier only */}
+              {analysis && isAuthed && isPro === false && analysis.riskScore >= 60 && (
+                <div className="glass-card p-4 space-y-2 border border-amber-500/20">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-400">
+                    {analysis.riskScore >= 80 ? "Critical risk detected" : "High risk detected"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {analysis.riskScore >= 80
+                      ? `Risk score: ${analysis.riskScore}/100. At this level, structural issues and context saturation create high probability of silent failure at scale.`
+                      : `Risk score: ${analysis.riskScore}/100. Track how this changes as you iterate — prompt drift is invisible without history.`}
+                  </p>
+                  <a
+                    href="/upgrade"
+                    className="inline-flex items-center text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+                  >
+                    Unlock risk history to track drift →
+                  </a>
+                </div>
+              )}
+
               {/* Pro: Run Preflight + PDF Export */}
               <ProGate>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -496,10 +516,20 @@ export default function Page() {
                   <span className="font-semibold">Priority support</span>
                 </li>
               </ul>
-              <div className="pt-2">
-                <span className="text-4xl font-black font-mono tracking-tight">$29</span>
-                <div className="text-xs text-muted-foreground mt-1">per month</div>
-                <div className="text-xs text-muted-foreground mt-1">
+              <div className="pt-2 space-y-1">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-4xl font-black font-mono tracking-tight">$29</span>
+                  <span className="text-sm text-muted-foreground">/ month</span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs text-muted-foreground">or</span>
+                  <span className="font-mono tabular-nums text-sm font-semibold">$199</span>
+                  <span className="text-xs text-muted-foreground">/ year</span>
+                  <span className="text-xs font-medium text-emerald-400 border border-emerald-500/30 rounded px-1.5 py-0.5 leading-none">
+                    Save $149
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
                   Pays for itself at ~10K req/day
                 </div>
               </div>

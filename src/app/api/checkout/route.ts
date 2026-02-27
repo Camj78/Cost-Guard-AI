@@ -10,9 +10,17 @@ function getStripe() {
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
     const stripe = getStripe();
+
+    let plan: "monthly" | "annual" = "monthly";
+    try {
+      const body = await req.json();
+      if (body?.plan === "annual") plan = "annual";
+    } catch {
+      // No body or invalid JSON — default to monthly
+    }
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
@@ -56,11 +64,16 @@ export async function POST() {
     }
 
     // Create Checkout session
+    const priceId =
+      plan === "annual"
+        ? (process.env.STRIPE_ANNUAL_PRICE_ID ?? process.env.STRIPE_PRICE_ID!)
+        : process.env.STRIPE_PRICE_ID!;
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
       client_reference_id: user.id,
-      line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
         metadata: { user_id: user.id },
       },

@@ -5,12 +5,23 @@ import { Button } from "@/components/ui/button";
 
 type View = "loading" | "login" | "upgrade" | "pro";
 
+const FEATURES: { label: string; free: string; pro: string }[] = [
+  { label: "Preflight analyses", free: "25 / month", pro: "Unlimited" },
+  { label: "Risk history & drift tracking", free: "—", pro: "✓" },
+  { label: "Model comparison matrix", free: "—", pro: "✓" },
+  { label: "Batch analysis (up to 50)", free: "—", pro: "✓" },
+  { label: "Saved prompts (cloud)", free: "—", pro: "✓" },
+  { label: "PDF export", free: "—", pro: "✓" },
+  { label: "Shareable links", free: "✓", pro: "✓" },
+];
+
 export default function UpgradePage() {
   const [view, setView] = useState<View>("loading");
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [plan, setPlan] = useState<"monthly" | "annual">("monthly");
 
   useEffect(() => {
     fetch("/api/me")
@@ -53,7 +64,11 @@ export default function UpgradePage() {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/checkout", { method: "POST" });
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
       if (res.status === 401) {
         setView("login");
         setError("Please log in first.");
@@ -92,11 +107,53 @@ export default function UpgradePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">CostGuardAI Pro</h1>
-          <p className="text-muted-foreground text-sm">$29 / month</p>
+    <div className="min-h-screen bg-background flex items-start justify-center px-4 py-16">
+      <div className="w-full max-w-md space-y-8">
+
+        {/* Header */}
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            CostGuardAI Pro
+          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Ship AI features without cost surprises or production failures.
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            The preflight layer between your prompts and production. Catch token overflow, cost drift, and failure risk before a request ships.
+          </p>
+        </div>
+
+        {/* Feature comparison table — always visible */}
+        <div className="glass-card p-6 space-y-3">
+          <div className="grid grid-cols-[1fr_72px_64px] gap-2 pb-1 border-b border-white/5">
+            <span />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground text-right">
+              Free
+            </span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-indigo-400 text-right">
+              Pro
+            </span>
+          </div>
+          {FEATURES.map(({ label, free, pro }) => (
+            <div
+              key={label}
+              className="grid grid-cols-[1fr_72px_64px] gap-2 items-center"
+            >
+              <span className="text-xs text-muted-foreground">{label}</span>
+              <span className="text-xs text-muted-foreground text-right font-mono tabular-nums">
+                {free}
+              </span>
+              <span
+                className={`text-xs text-right font-mono tabular-nums ${
+                  pro === "—"
+                    ? "text-muted-foreground"
+                    : "text-emerald-400 font-semibold"
+                }`}
+              >
+                {pro}
+              </span>
+            </div>
+          ))}
         </div>
 
         {view === "loading" && (
@@ -105,7 +162,7 @@ export default function UpgradePage() {
 
         {view === "pro" && (
           <div className="space-y-4">
-            <p className="text-sm font-medium">You&apos;re on Pro.</p>
+            <p className="text-sm font-medium text-emerald-400">You&apos;re on Pro.</p>
             <Button onClick={handleBilling} disabled={busy} className="w-full">
               {busy ? "Redirecting..." : "Manage Billing"}
             </Button>
@@ -113,7 +170,7 @@ export default function UpgradePage() {
         )}
 
         {view === "login" && !emailSent && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Enter your email to log in, then upgrade.
             </p>
@@ -141,12 +198,87 @@ export default function UpgradePage() {
         )}
 
         {view === "upgrade" && (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Unlock all Pro features — saved prompts, batch analysis, model comparison, PDF export, and more.
+          <div className="space-y-4">
+            {/* Plan toggle */}
+            <div className="flex items-center gap-1 bg-muted/20 border border-white/10 rounded-lg p-1 w-fit">
+              <button
+                type="button"
+                onClick={() => setPlan("monthly")}
+                className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
+                  plan === "monthly"
+                    ? "bg-white/10 text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlan("annual")}
+                className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
+                  plan === "annual"
+                    ? "bg-white/10 text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Annual
+                <span className="ml-2 text-xs text-emerald-400 font-medium">
+                  Save $149
+                </span>
+              </button>
+            </div>
+
+            {/* Price display */}
+            <div className="space-y-0.5">
+              {plan === "monthly" ? (
+                <>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-4xl font-black font-mono tracking-tight">
+                      $29
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      / month
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Cancel anytime.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-4xl font-black font-mono tracking-tight">
+                      $199
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      / year
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    $16.58/month billed annually.{" "}
+                    <span className="text-emerald-400 font-medium">
+                      Save $149 vs monthly.
+                    </span>
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Risk reversal */}
+            <p className="text-xs text-muted-foreground">
+              If CostGuardAI doesn&apos;t surface a real cost, overflow, or risk issue in your first 7 days, email us for a full refund. No forms.
             </p>
-            <Button onClick={handleUpgrade} disabled={busy} className="w-full">
-              {busy ? "Redirecting..." : "Upgrade to Pro — $29/month"}
+
+            <Button
+              onClick={handleUpgrade}
+              disabled={busy}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white border-0"
+            >
+              {busy
+                ? "Redirecting..."
+                : plan === "monthly"
+                ? "Upgrade to Pro — $29/month"
+                : "Upgrade to Pro — $199/year"}
             </Button>
           </div>
         )}
