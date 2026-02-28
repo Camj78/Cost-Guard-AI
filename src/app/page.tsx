@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { usePreflight } from "@/hooks/use-preflight";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
@@ -9,19 +8,11 @@ import { ModelSelector } from "@/components/model-selector";
 import { OutputSlider } from "@/components/output-slider";
 import { CompressionPanel } from "@/components/compression-panel";
 import { ResultsPanel } from "@/components/results-panel";
-import { CostAtScalePanel } from "@/components/cost-at-scale-panel";
 import { ModelAssumptions } from "@/components/model-assumptions";
 import { Button } from "@/components/ui/button";
 import { Zap, Check } from "lucide-react";
-import ProGate from "@/components/pro/ProGate";
-import { SavedPromptsPanel } from "@/components/pro/saved-prompts-panel";
-import { RiskHistoryPanel } from "@/components/pro/risk-history-panel";
-import { ModelComparisonPanel } from "@/components/pro/model-comparison-panel";
-import { BatchAnalysisPanel } from "@/components/pro/batch-analysis-panel";
 import { PdfExportButton } from "@/components/pro/pdf-export-button";
 import { ShareButton } from "@/components/share-button";
-import { getSavedPrompts } from "@/lib/saved-prompts";
-import { addHistoryEntry } from "@/lib/analysis-history";
 import { useUsage } from "@/hooks/use-usage";
 import { UsageMeter } from "@/components/usage-meter";
 
@@ -54,27 +45,6 @@ export default function Page() {
 
   const hasPrompt = prompt.trim().length > 0;
 
-  // Pro: saved prompts + history state
-  const [selectedSavedPromptId, setSelectedSavedPromptId] = useState<string | null>(null);
-  const [historyVersion, setHistoryVersion] = useState(0);
-
-  function handleLoadSavedPrompt(loadedPrompt: string, loadedModelId: string, id: string) {
-    setPrompt(loadedPrompt);
-    setModelId(loadedModelId);
-    setSelectedSavedPromptId(id);
-  }
-
-  function handleRunPreflight() {
-    if (!analysis || !selectedSavedPromptId) return;
-    // Only write if current prompt exactly matches the saved prompt text
-    const savedPrompts = getSavedPrompts();
-    const saved = savedPrompts.find((p) => p.id === selectedSavedPromptId);
-    if (saved && prompt === saved.prompt) {
-      addHistoryEntry(selectedSavedPromptId, analysis);
-      setHistoryVersion((v) => v + 1);
-    }
-  }
-
   return (
     <div className="flex flex-col min-h-screen bg-background relative">
       {/* Radial glow overlay */}
@@ -93,22 +63,43 @@ export default function Page() {
         <div className="mx-auto max-w-5xl">
           <div className="max-w-2xl space-y-4">
             <h1 className="text-5xl font-black tracking-tight">
-              Preflight safety system for AI products in production.
+              Preflight safety for AI products in production.
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-              Detect token overflow, cost drift, and production risk before you ship.
+              Detect token overflow, cost drift, and failure risk before you deploy.
             </p>
             <p className="text-sm text-muted-foreground">
               Used by AI founders before every deploy.
             </p>
-            <div className="pt-2">
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <Button
                 className="gap-2 bg-indigo-600 hover:bg-indigo-500 text-white border-0"
                 onClick={() => window.scrollTo({ top: 500, behavior: "smooth" })}
               >
                 Run Preflight <Zap className="w-4 h-4" />
               </Button>
+              {isAuthed && (
+                <a
+                  href="/dashboard"
+                  className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Open Command Center →
+                </a>
+              )}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* TRUST BAR */}
+      <section className="px-4 sm:px-6 pb-4">
+        <div className="mx-auto max-w-5xl">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+            <span>Exact token counts (OpenAI tiktoken)</span>
+            <span className="hidden sm:inline text-border">·</span>
+            <span>Cost at scale projection</span>
+            <span className="hidden sm:inline text-border">·</span>
+            <span>Failure risk score heuristic</span>
           </div>
         </div>
       </section>
@@ -215,57 +206,59 @@ export default function Page() {
                 </div>
               )}
 
-              {/* Pro: Run Preflight + PDF Export */}
-              <ProGate>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRunPreflight}
-                    disabled={!analysis || !selectedSavedPromptId}
-                    className="gap-1.5 text-xs border-white/10 hover:bg-white/10"
-                  >
-                    <Zap className="w-3 h-3" />
-                    Run Preflight
-                  </Button>
-                  {analysis && (
-                    <PdfExportButton
-                      analysis={analysis}
-                      model={model}
-                      prompt={prompt}
-                      compressionDelta={compressionDelta}
-                    />
-                  )}
-                </div>
-              </ProGate>
+              {/* Pro: PDF Export */}
+              {isPro && analysis && (
+                <PdfExportButton
+                  analysis={analysis}
+                  model={model}
+                  prompt={prompt}
+                  compressionDelta={compressionDelta}
+                />
+              )}
             </div>
 
           </div>
         </div>
       </main>
 
-      {/* PRO: Saved Prompts + Risk History */}
-      <ProGate moment="history_locked">
-        <section className="glass-section">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="glass-card p-6">
-                <SavedPromptsPanel
-                  prompt={prompt}
-                  modelId={modelId}
-                  onLoad={handleLoadSavedPrompt}
-                />
-              </div>
-              <div className="glass-card p-6">
-                <RiskHistoryPanel
-                  savedPromptId={selectedSavedPromptId}
-                  historyVersion={historyVersion}
-                />
-              </div>
-            </div>
+      {/* HOW PREFLIGHT WORKS */}
+      <section className="glass-section">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              How Preflight Works
+            </h2>
           </div>
-        </section>
-      </ProGate>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+
+            <div className="glass-card p-6 space-y-3">
+              <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">1</span>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Analyze</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Estimate tokens, cost, compression, and risk before deployment.
+              </p>
+            </div>
+
+            <div className="glass-card p-6 space-y-3">
+              <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">2</span>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Simulate</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Adjust output length and compare models to understand scale impact.
+              </p>
+            </div>
+
+            <div className="glass-card p-6 space-y-3">
+              <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">3</span>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Deploy Safely</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Ship with predictable cost and reduced production risk.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
 
       {/* WHY THIS MATTERS */}
       <section className="glass-section">
@@ -323,74 +316,6 @@ export default function Page() {
         </div>
       </section>
 
-      {/* PRIMARY UPGRADE CTA — single canonical section */}
-      <section className="glass-section">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12">
-          <div className="glass-card p-8 max-w-lg mx-auto text-center space-y-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              Pro Features
-            </p>
-            <h2 className="text-2xl font-semibold tracking-tight">
-              Unlock Advanced Risk Intelligence
-            </h2>
-            <div className="flex flex-wrap justify-center gap-2">
-              {["Model comparison", "Risk history", "Saved prompts", "Cost at scale"].map((f) => (
-                <span
-                  key={f}
-                  className="text-xs text-muted-foreground border border-border rounded-full px-3 py-1 bg-muted"
-                >
-                  {f}
-                </span>
-              ))}
-            </div>
-            <Button
-              asChild
-              className="bg-indigo-600 hover:bg-indigo-500 active:scale-[0.97] text-white px-6"
-            >
-              <a href="/upgrade">Upgrade to Pro</a>
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              No prompt data ever leaves your browser.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <ProGate>
-        <section className="glass-section">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
-            <CostAtScalePanel
-              analysis={analysis}
-              model={model}
-            />
-          </div>
-        </section>
-      </ProGate>
-
-      {/* PRO: Model Comparison */}
-      <ProGate moment="compare_locked">
-        <section className="glass-section">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
-            <ModelComparisonPanel
-              prompt={prompt}
-              expectedOutputTokens={expectedOutputTokens}
-            />
-          </div>
-        </section>
-      </ProGate>
-
-      {/* PRO: Batch Analysis */}
-      <ProGate moment="batch_locked">
-        <section className="glass-section">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
-            <BatchAnalysisPanel
-              model={model}
-              expectedOutputTokens={expectedOutputTokens}
-            />
-          </div>
-        </section>
-      </ProGate>
-
       {/* WHO THIS IS FOR */}
       <section className="glass-section">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
@@ -420,45 +345,6 @@ export default function Page() {
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">AI Infrastructure Engineers</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Preventing overflow, runaway costs, and silent degradation.
-              </p>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section className="glass-section">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-16">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              How Preflight Works
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-
-            <div className="glass-card p-6 space-y-3">
-              <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">1</span>
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Analyze</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Estimate tokens, cost, compression, and risk before deployment.
-              </p>
-            </div>
-
-            <div className="glass-card p-6 space-y-3">
-              <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">2</span>
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Simulate</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Adjust output length and compare models to understand scale impact.
-              </p>
-            </div>
-
-            <div className="glass-card p-6 space-y-3">
-              <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">3</span>
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Deploy Safely</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Ship with predictable cost and reduced production risk.
               </p>
             </div>
 
@@ -551,6 +437,41 @@ export default function Page() {
           </div>
         </div>
       </section>
+
+      {/* UPGRADE CTA — conditional, only for non-Pro users, directly beneath Pricing */}
+      {isPro === false && (
+        <section className="glass-section">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12">
+            <div className="glass-card p-8 max-w-lg mx-auto text-center space-y-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Pro Features
+              </p>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                Unlock Advanced Risk Intelligence
+              </h2>
+              <div className="flex flex-wrap justify-center gap-2">
+                {["Model comparison", "Risk history", "Saved prompts", "Cost at scale"].map((f) => (
+                  <span
+                    key={f}
+                    className="text-xs text-muted-foreground border border-border rounded-full px-3 py-1 bg-muted"
+                  >
+                    {f}
+                  </span>
+                ))}
+              </div>
+              <Button
+                asChild
+                className="bg-indigo-600 hover:bg-indigo-500 active:scale-[0.97] text-white px-6"
+              >
+                <a href="/upgrade">Upgrade to Pro</a>
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                No prompt data ever leaves your browser.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       <Footer />
     </div>
