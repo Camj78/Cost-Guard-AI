@@ -124,6 +124,8 @@ export function usePreflight(options?: { onRecorded?: () => void }): PreflightSt
   const [needsManualAnalyze, setNeedsManualAnalyze] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onRecordedRef = useRef<(() => void) | undefined>(options?.onRecorded);
+  useEffect(() => { onRecordedRef.current = options?.onRecorded; }, [options?.onRecorded]);
 
   // Resolve model from id
   const model = useMemo(
@@ -184,7 +186,7 @@ export function usePreflight(options?: { onRecorded?: () => void }): PreflightSt
       setAnalysis(result);
 
       // Record to server (fire-and-forget, silently no-ops if not signed in)
-      recordAnalysis(result, text, mdl.id, options?.onRecorded, setLastAnalysisId);
+      recordAnalysis(result, text, mdl.id, onRecordedRef.current, setLastAnalysisId);
 
       // Compression metrics (precomputed here for ResultsPanel diff card)
       const compCostTotal =

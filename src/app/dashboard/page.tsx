@@ -81,6 +81,7 @@ export default function DashboardPage() {
   const [loadingPrompts, setLoadingPrompts] = useState(true);
   const [loadingAnalyses, setLoadingAnalyses] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [needsUpgradeRedirect, setNeedsUpgradeRedirect] = useState(false);
 
   // ── Save form state ────────────────────────────────────────────────────────
   const [isSaving, setIsSaving] = useState(false);
@@ -94,25 +95,26 @@ export default function DashboardPage() {
   const [selectedSavedPromptId, setSelectedSavedPromptId] = useState<string | null>(null);
 
   // ── Fetch callbacks (defined before usePreflight so we can pass fetchAnalyses) ──
-  const fetchPrompts = useCallback(async () => {
+  const fetchPrompts = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await fetch("/api/prompts");
+      const res = await fetch("/api/prompts", { signal });
       if (res.status === 401) {
-        router.replace("/upgrade?next=/dashboard");
+        setNeedsUpgradeRedirect(true);
         return;
       }
       const d = await res.json();
       setPrompts(d.prompts ?? []);
-    } catch {
+    } catch (err) {
+      if ((err as { name?: string })?.name === "AbortError") return;
       setError("Failed to load saved prompts.");
     } finally {
       setLoadingPrompts(false);
     }
-  }, [router]);
+  }, []);
 
-  const fetchAnalyses = useCallback(async () => {
+  const fetchAnalyses = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await fetch("/api/analyses");
+      const res = await fetch("/api/analyses", { signal });
       if (res.ok) {
         const d = await res.json();
         setAnalyses(d.analyses ?? []);
@@ -123,6 +125,12 @@ export default function DashboardPage() {
       setLoadingAnalyses(false);
     }
   }, []);
+
+  // Redirect on 401 — kept in a dedicated effect so fetchPrompts stays stable ([] deps)
+  useEffect(() => {
+    if (!needsUpgradeRedirect) return;
+    router.replace("/upgrade?next=/dashboard");
+  }, [needsUpgradeRedirect, router]);
 
   // ── Preflight tool ─────────────────────────────────────────────────────────
   const {
@@ -150,8 +158,10 @@ export default function DashboardPage() {
   } = usePreflight({ onRecorded: fetchAnalyses });
 
   useEffect(() => {
-    fetchPrompts();
-    fetchAnalyses();
+    const controller = new AbortController();
+    fetchPrompts(controller.signal);
+    fetchAnalyses(controller.signal);
+    return () => controller.abort();
   }, [fetchPrompts, fetchAnalyses]);
 
   const hasPrompt = prompt.trim().length > 0;
