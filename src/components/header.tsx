@@ -84,16 +84,6 @@ export function Header() {
             </a>
           )}
 
-          {/* Waitlist CTA — confirmed logged-out users only */}
-          {user === null && (
-            <a
-              href="/waitlist"
-              className="inline-flex items-center justify-center rounded-md border border-white/10 px-4 py-2 text-sm font-medium hover:bg-white/5 transition-colors"
-            >
-              Join Pro Waitlist
-            </a>
-          )}
-
           <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground bg-white/5 border border-white/10 rounded-full px-3 py-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
             <span>Analysis runs locally. Signed-in history stores token counts only.</span>

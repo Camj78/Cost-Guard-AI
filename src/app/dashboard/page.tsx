@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { MODELS } from "@/config/models";
@@ -211,6 +212,10 @@ export default function DashboardPage() {
       {/* STATUS BAR */}
       <div className="border-b border-white/5 bg-white/[0.02] px-4 sm:px-6 py-3">
         <div className="mx-auto max-w-5xl flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+          <Link href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            ← Home
+          </Link>
+          <span className="text-border">·</span>
           {isPro && (
             <span className="inline-flex items-center font-medium text-indigo-400 border border-indigo-500/30 rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.08em]">
               Pro
