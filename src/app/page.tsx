@@ -76,7 +76,7 @@ export default function Page() {
               </p>
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <Button
-                  className="gap-2 bg-indigo-600 hover:bg-indigo-500 text-white border-0"
+                  className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 border-0"
                   onClick={() => window.scrollTo({ top: 500, behavior: "smooth" })}
                 >
                   Run Preflight <Zap className="w-4 h-4" />
@@ -100,7 +100,7 @@ export default function Page() {
                   <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                     Preflight Analysis
                   </span>
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-indigo-400">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">
                     gpt-4o
                   </span>
                 </div>
@@ -158,13 +158,13 @@ export default function Page() {
       <section className="px-4 sm:px-6 pb-4">
         <div className="mx-auto max-w-5xl">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground border border-white/10 bg-white/[0.04] rounded-full px-3 py-1">
+            <span className="text-xs text-muted-foreground border border-white/[0.07] bg-white/[0.03] rounded-full px-3 py-1">
               Exact token counts (OpenAI tiktoken)
             </span>
-            <span className="text-xs text-muted-foreground border border-white/10 bg-white/[0.04] rounded-full px-3 py-1">
+            <span className="text-xs text-muted-foreground border border-white/[0.07] bg-white/[0.03] rounded-full px-3 py-1">
               Cost at scale projection
             </span>
-            <span className="text-xs text-muted-foreground border border-white/10 bg-white/[0.04] rounded-full px-3 py-1">
+            <span className="text-xs text-muted-foreground border border-white/[0.07] bg-white/[0.03] rounded-full px-3 py-1">
               Failure risk score heuristic
             </span>
           </div>
@@ -202,7 +202,7 @@ export default function Page() {
               {needsManualAnalyze && (
                 <Button
                   onClick={triggerManualAnalyze}
-                  className="w-full gap-2 bg-indigo-600 hover:bg-indigo-500 text-white border-0"
+                  className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 border-0"
                   size="default"
                 >
                   <Zap className="w-4 h-4" />
@@ -266,7 +266,7 @@ export default function Page() {
                   </p>
                   <a
                     href="/upgrade"
-                    className="inline-flex items-center text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+                    className="inline-flex items-center text-xs text-primary/80 hover:text-primary font-medium transition-colors"
                   >
                     Unlock risk history to track drift →
                   </a>
@@ -300,7 +300,7 @@ export default function Page() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
 
             <div className="glass-card p-6 space-y-3">
-              <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">1</span>
+              <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">1</span>
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Analyze</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Estimate tokens, cost, compression, and risk before deployment.
@@ -308,7 +308,7 @@ export default function Page() {
             </div>
 
             <div className="glass-card p-6 space-y-3">
-              <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">2</span>
+              <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">2</span>
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Simulate</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Adjust output length and compare models to understand scale impact.
@@ -316,7 +316,7 @@ export default function Page() {
             </div>
 
             <div className="glass-card p-6 space-y-3">
-              <span className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">3</span>
+              <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">3</span>
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Deploy Safely</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Ship with predictable cost and reduced production risk.
@@ -447,7 +447,7 @@ export default function Page() {
             </div>
 
             {/* Pro */}
-            <div className="rounded-2xl bg-indigo-500/10 border-2 border-indigo-500/60 backdrop-blur-xl p-8 space-y-4" style={{ boxShadow: "0 10px 40px rgba(0,0,0,0.3)" }}>
+            <div className="rounded-xl bg-primary/[0.06] border-2 border-primary/40 p-8 space-y-4">
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Pro</h3>
               <ul className="space-y-2 text-sm">
                 <li className="flex gap-2">
@@ -528,7 +528,7 @@ export default function Page() {
               </div>
               <Button
                 asChild
-                className="bg-indigo-600 hover:bg-indigo-500 active:scale-[0.97] text-white px-6"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.97] px-6"
               >
                 <a href="/upgrade">Upgrade to Pro</a>
               </Button>

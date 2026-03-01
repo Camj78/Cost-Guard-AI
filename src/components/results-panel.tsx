@@ -102,7 +102,7 @@ export function ResultsPanel({
     <div className="space-y-4">
       {/* 1. Failure Risk Score — THE moat */}
       <Card className="glass-card shadow-none relative animate-data-arrive transition-all duration-100 hover:-translate-y-[1px] hover:border-white/[0.14]" style={{ animationDelay: "0ms" }}>
-        <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-indigo-500/50 via-indigo-400/30 to-transparent" />
+        <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-primary/50 via-primary/20 to-transparent" />
         <CardContent className="pt-5 pb-4">
           <RiskScore
             score={analysis.riskScore}

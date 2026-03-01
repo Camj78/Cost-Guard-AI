@@ -22,7 +22,7 @@ export function UpgradeButton({
       size={size}
       className={
         variant === "default"
-          ? "bg-indigo-600 hover:bg-indigo-500 text-white border-0"
+          ? "bg-primary text-primary-foreground hover:bg-primary/90 border-0"
           : undefined
       }
     >
