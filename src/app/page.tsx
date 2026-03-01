@@ -61,32 +61,95 @@ export default function Page() {
       {/* HERO SECTION */}
       <section className="py-16 px-4 sm:px-6">
         <div className="mx-auto max-w-5xl">
-          <div className="max-w-2xl space-y-4">
-            <h1 className="text-5xl font-black tracking-tight">
-              Preflight safety for AI products in production.
-            </h1>
-            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-              Detect token overflow, cost drift, and failure risk before you deploy.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Used by AI founders before every deploy.
-            </p>
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Button
-                className="gap-2 bg-indigo-600 hover:bg-indigo-500 text-white border-0"
-                onClick={() => window.scrollTo({ top: 500, behavior: "smooth" })}
-              >
-                Run Preflight <Zap className="w-4 h-4" />
-              </Button>
-              {isAuthed && (
-                <a
-                  href="/dashboard"
-                  className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-center">
+
+            {/* Left: text content */}
+            <div className="space-y-4 animate-fade-in-up">
+              <h1 className="text-5xl md:text-6xl font-black tracking-tight">
+                Preflight safety for AI products in production.
+              </h1>
+              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+                Detect token overflow, cost drift, and failure risk before you deploy.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Used by AI founders before every deploy.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Button
+                  className="gap-2 bg-indigo-600 hover:bg-indigo-500 text-white border-0"
+                  onClick={() => window.scrollTo({ top: 500, behavior: "smooth" })}
                 >
-                  Open Command Center →
-                </a>
-              )}
+                  Run Preflight <Zap className="w-4 h-4" />
+                </Button>
+                {isAuthed && (
+                  <a
+                    href="/dashboard"
+                    className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Open Command Center →
+                  </a>
+                )}
+              </div>
             </div>
+
+            {/* Right: static product preview — no animation, pointer-events-none */}
+            <div className="hidden lg:block">
+              <div className="glass-card p-6 space-y-4 pointer-events-none select-none">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    Preflight Analysis
+                  </span>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-indigo-400">
+                    gpt-4o
+                  </span>
+                </div>
+
+                {/* Risk Score */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                      Risk Score
+                    </span>
+                    <span className="text-[11px] font-semibold text-amber-400">HIGH RISK</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-5xl font-black font-mono tabular-nums text-amber-400">72</span>
+                    <span className="text-sm text-muted-foreground">/ 100</span>
+                  </div>
+                  <div className="flex gap-1 h-1.5">
+                    <div className="flex-1 rounded-full bg-emerald-500/60" />
+                    <div className="flex-1 rounded-full bg-amber-500/80" />
+                    <div className="flex-1 rounded-full bg-red-500/25" />
+                  </div>
+                </div>
+
+                {/* Token + Cost */}
+                <div className="border-t border-white/10 pt-4 grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Input tokens</span>
+                    <div className="text-lg font-mono tabular-nums font-bold">4,293</div>
+                    <span className="text-xs text-muted-foreground">3.3% of 128K ctx</span>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Cost / call</span>
+                    <div className="text-lg font-mono tabular-nums font-bold">$0.0043</div>
+                    <span className="text-xs text-muted-foreground">$430/day @ 100K</span>
+                  </div>
+                </div>
+
+                {/* Top risk driver */}
+                <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3 space-y-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-400">
+                    Top Risk Factor
+                  </span>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Long instruction block with ambiguous scope raises hallucination probability at scale.
+                  </p>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
@@ -94,12 +157,16 @@ export default function Page() {
       {/* TRUST BAR */}
       <section className="px-4 sm:px-6 pb-4">
         <div className="mx-auto max-w-5xl">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
-            <span>Exact token counts (OpenAI tiktoken)</span>
-            <span className="hidden sm:inline text-border">·</span>
-            <span>Cost at scale projection</span>
-            <span className="hidden sm:inline text-border">·</span>
-            <span>Failure risk score heuristic</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground border border-white/10 bg-white/[0.04] rounded-full px-3 py-1">
+              Exact token counts (OpenAI tiktoken)
+            </span>
+            <span className="text-xs text-muted-foreground border border-white/10 bg-white/[0.04] rounded-full px-3 py-1">
+              Cost at scale projection
+            </span>
+            <span className="text-xs text-muted-foreground border border-white/10 bg-white/[0.04] rounded-full px-3 py-1">
+              Failure risk score heuristic
+            </span>
           </div>
         </div>
       </section>

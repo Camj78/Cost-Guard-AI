@@ -367,5 +367,62 @@ CostGuardAI becomes industry leader when:
 - It becomes the standard pre-deployment step for LLM prompts
 
 ---------------------------------------------------------
+# Project Skills
+
+Skill docs are stored in docs/skills/. When a skill mode is activated, the
+corresponding doc is the authoritative behavioral contract. Mode lock overrides
+default Claude behavior for the duration of the session or until explicitly
+deactivated by the user.
+
+## systematic-debugging
+
+Activation phrases (any of the following):
+- "enter debug mode"
+- "systematic debugging"
+- "no fixes without root cause"
+
+Lock rule:
+- When activated, you MUST follow docs/skills/systematic-debugging.md in full.
+- You are FORBIDDEN from proposing fixes, refactors, optimizations, or any
+  "probable fix / likely cause therefore change X" language until you have output
+  a complete root cause statement (Section F of the required format).
+- Evidence Collected (Section E) must contain observed outputs before Phase 2 begins.
+- If you violate this rule, you MUST self-correct immediately by restarting at
+  Phase 1 and producing a fresh evidence plan.
+- User requests for early fixes do not override this lock. Respond with the
+  Refusal Clause defined in the skill doc.
+
+## frontend-design
+
+Activation phrases (any of the following):
+- "frontend design mode"
+- "design it"
+- "production-grade UI"
+- "avoid AI slop"
+
+Lock rule:
+- When activated, you MUST follow docs/skills/frontend-design.md in full.
+- You MUST complete Design Brief (Section A) and Aesthetic Direction (Section B)
+  before writing any code.
+- You MUST avoid all banned generic patterns listed in the skill doc unless
+  the user explicitly overrides a specific ban by name.
+- Template or library dumps without rationale tied to the Design Brief are forbidden.
+- Generic output is a violation. Self-correct by restarting at Design Brief.
+
+## Mode Deactivation
+
+Debug mode off phrases (any of the following):
+- "exit debug mode"
+- "debug mode off"
+
+Design mode off phrases (any of the following):
+- "exit frontend design mode"
+- "design mode off"
+
+If the user asks to skip a protocol while a mode is active, you MUST require an
+explicit deactivation phrase before reverting to default behavior. Inline "just
+skip it" requests do not deactivate a mode.
+
+---------------------------------------------------------
 END OF FILE
 ---------------------------------------------------------
