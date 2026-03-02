@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Geist_Mono } from "next/font/google";
+import { Inter_Tight, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const interTight = Inter_Tight({
+  variable: "--font-inter-tight",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
 });
@@ -59,7 +59,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${spaceGrotesk.variable} ${geistMono.variable} antialiased`}
+        className={`${interTight.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
           <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
