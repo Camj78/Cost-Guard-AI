@@ -10,6 +10,7 @@ import { CompressionPanel } from "@/components/compression-panel";
 import { ResultsPanel } from "@/components/results-panel";
 import { ModelAssumptions } from "@/components/model-assumptions";
 import { Button } from "@/components/ui/button";
+import { AnimatedShaderHero } from "@/components/ui/animated-shader-hero";
 import { Zap, Check } from "lucide-react";
 import { PdfExportButton } from "@/components/pro/pdf-export-button";
 import { ShareButton } from "@/components/share-button";
@@ -59,8 +60,9 @@ export default function Page() {
       )}
 
       {/* HERO SECTION */}
-      <section className="py-16 px-4 sm:px-6">
-        <div className="mx-auto max-w-5xl">
+      <section className="relative py-16 px-4 sm:px-6 overflow-hidden">
+        <AnimatedShaderHero />
+        <div className="relative z-10 mx-auto max-w-5xl">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-center">
 
             {/* Left: text content */}

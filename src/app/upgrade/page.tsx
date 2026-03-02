@@ -158,7 +158,7 @@ export default function UpgradePage() {
             <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground text-right">
               Free
             </span>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-indigo-400 text-right">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-primary text-right">
               Pro
             </span>
           </div>
@@ -309,7 +309,7 @@ export default function UpgradePage() {
             <Button
               onClick={handleUpgrade}
               disabled={busy}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white border-0"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 border-0"
             >
               {busy
                 ? "Redirecting..."

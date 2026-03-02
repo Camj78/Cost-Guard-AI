@@ -227,7 +227,7 @@ export default function DashboardPage() {
           </Link>
           <span className="text-border">·</span>
           {isPro && (
-            <span className="inline-flex items-center font-medium text-indigo-400 border border-indigo-500/30 rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.08em]">
+            <span className="inline-flex items-center font-medium text-primary border border-primary/30 rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.08em]">
               Pro
             </span>
           )}
@@ -300,7 +300,7 @@ export default function DashboardPage() {
                 {needsManualAnalyze && (
                   <Button
                     onClick={triggerManualAnalyze}
-                    className="w-full gap-2 bg-indigo-600 hover:bg-indigo-500 text-white border-0"
+                    className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 border-0"
                     size="default"
                   >
                     <Zap className="w-4 h-4" />
@@ -426,7 +426,7 @@ export default function DashboardPage() {
                         type="submit"
                         size="sm"
                         disabled={saveBusy}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white border-0 text-xs"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 border-0 text-xs"
                       >
                         {saveBusy ? "Saving…" : "Save"}
                       </Button>
@@ -464,7 +464,7 @@ export default function DashboardPage() {
                         <div
                           key={p.id}
                           className={`flex items-center justify-between gap-4 px-6 py-4 transition-colors ${
-                            selectedSavedPromptId === p.id ? "bg-indigo-500/5" : ""
+                            selectedSavedPromptId === p.id ? "bg-primary/5" : ""
                           }`}
                         >
                           <div className="min-w-0 flex-1">
