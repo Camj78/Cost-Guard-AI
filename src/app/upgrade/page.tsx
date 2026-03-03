@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -346,9 +347,9 @@ export default function UpgradePage() {
           <p className="text-sm text-destructive">{error}</p>
         )}
 
-        <a href="/" className="block text-xs text-muted-foreground hover:underline">
+        <Link href="/" className="block text-xs text-muted-foreground hover:underline">
           ← Back to app
-        </a>
+        </Link>
       </div>
     </div>
   );

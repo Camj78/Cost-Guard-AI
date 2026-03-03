@@ -265,13 +265,13 @@ Reject it.
 BUILD PHASES (LOCKED)
 ---------------------------------------------------------
 
-D1 — Auth + Saved State          ✓ Complete
-D2 — Usage gating + Pro tier     ✓ Complete
-D3 — Public API endpoint
-D4 — CLI wrapper
-D5 — Shareable analysis links
-D6 — Risk intelligence refinement
-D7 — Marketing + distribution engine
+D1 — Auth + Saved State               ✓ Complete
+D2 — Usage gating + Pro tier          ✓ Complete
+D3 — Public API endpoint              ⏳ Not Started
+D4 — CLI wrapper                      ⏳ Not Started
+D5 — Shareable analysis links         ✓ Complete
+D6 — Risk intelligence refinement     ⏳ In Progress
+D7 — Marketing + distribution engine  ⏳ In Progress (Phase A complete)
 
 Do not skip ahead.
 Do not add new categories.
@@ -422,6 +422,57 @@ Design mode off phrases (any of the following):
 If the user asks to skip a protocol while a mode is active, you MUST require an
 explicit deactivation phrase before reverting to default behavior. Inline "just
 skip it" requests do not deactivate a mode.
+
+---------------------------------------------------------
+SCREENSHOT LOOP (PUPPETEER)
+---------------------------------------------------------
+
+Purpose:
+  Agent-driven visual iteration workflow:
+    Pass 1: capture routes → diff vs targets → report mismatches
+    Claude: reads report → patches UI code
+    Pass 2: recapture → verify fixes landed
+
+  The script does NOT modify code. Code fixes are Claude's job.
+  The loop is: capture → agent fixes → recapture.
+
+Commands:
+  pnpm shot:once   # single capture pass of all routes
+  pnpm shot:loop   # pass 1 capture + diff report + pass 2 recapture
+  pnpm shot:clean  # wipe temporary_screenshots/
+
+Folder:
+  temporary_screenshots/   (gitignored, delete freely)
+
+Naming convention:
+  <route>__pass<N>__<section|full>__<timestamp>.png
+
+  Examples:
+    root__pass1__full__20260301T120000.png
+    dashboard__pass2__full__20260301T120015.png
+    dashboard__pass1__hero__20260301T120000.png  (when SELECTORS used)
+    dashboard__diff.png                          (pixel diff artifact)
+
+Viewport (fixed, deterministic):
+  1440x900 @ 2x device pixel ratio
+
+Optional targets:
+  Drop reference PNGs into brand_assets/target_screens/<route>__target.png
+  e.g.  brand_assets/target_screens/dashboard__target.png
+  The loop computes pixel diff (%) and writes a visual diff PNG.
+  Without targets, shot:loop runs a sanity double-capture only.
+
+Environment overrides:
+  BASE_URL=http://localhost:3000   (default)
+  ROUTES=/,/dashboard              (comma-separated, default)
+  SELECTORS=                       (comma-separated CSS selectors; empty = full page only)
+  DIFF_THRESHOLD=2                 (% pixel diff to flag; default 2)
+  WAIT_MS=250                      (ms to settle after page load; default 250)
+  WAIT_UNTIL=networkidle0          (Puppeteer waitUntil strategy; default networkidle0)
+
+Cleanup:
+  pnpm shot:clean wipes the folder entirely.
+  Delete old screenshots regularly — they accumulate fast.
 
 ---------------------------------------------------------
 END OF FILE

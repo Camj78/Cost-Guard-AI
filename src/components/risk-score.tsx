@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { type RiskLevel, type RiskDriver, getRiskLevel } from "@/lib/risk";
-import { Badge } from "@/components/ui/badge";
 
 interface RiskScoreProps {
   score: number;
@@ -63,6 +62,7 @@ export function RiskScore({ score, level, explanation, riskDrivers }: RiskScoreP
   const [isSettled, setIsSettled] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsSettled(false);
     const target = score;
     const start = performance.now();
@@ -86,17 +86,16 @@ export function RiskScore({ score, level, explanation, riskDrivers }: RiskScoreP
 
   return (
     <div className="space-y-3">
-      {/* Score + badge row */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-baseline gap-2">
-          <span className={`text-4xl font-bold font-mono tabular-nums ${config.scoreClass} ${isSettled ? "animate-count-settle" : ""}`}>
-            {displayScore}
-          </span>
-          <span className="text-sm text-muted-foreground">/100</span>
-        </div>
-        <Badge variant="outline" className={config.badgeClass}>
-          {config.label}
-        </Badge>
+      {/* Tier label — visual lead (Level 3 type, semantic color) */}
+      <p className={`text-[11px] font-semibold uppercase tracking-[0.08em] ${config.color}`}>
+        {config.label} Risk
+      </p>
+      {/* Score — subordinate precision */}
+      <div className="flex items-baseline gap-2">
+        <span className={`text-4xl font-bold font-mono tabular-nums ${config.scoreClass} ${isSettled ? "animate-count-settle" : ""}`}>
+          {displayScore}
+        </span>
+        <span className="text-sm text-muted-foreground">/100</span>
       </div>
 
       {/* Severity meter — 3-segment pill */}
@@ -118,12 +117,13 @@ export function RiskScore({ score, level, explanation, riskDrivers }: RiskScoreP
         </p>
       )}
 
-      {/* Top Risk Drivers */}
+      {/* Top Risk Drivers — collapsed by default */}
       {drivers.length > 0 && (
-        <div className="space-y-2 pt-1 border-t border-white/[0.07]">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        <details className="group border-t border-white/[0.07] pt-1">
+          <summary className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground cursor-pointer list-none select-none marker:hidden [&::-webkit-details-marker]:hidden hover:text-foreground/60 transition-colors duration-100">
             Top Risk Drivers
-          </p>
+          </summary>
+          <div className="space-y-2 pt-2">
           {drivers.map((driver) => {
             const driverLevel = getRiskLevel(driver.impact);
             const driverConfig = LEVEL_CONFIG[driverLevel];
@@ -161,7 +161,8 @@ export function RiskScore({ score, level, explanation, riskDrivers }: RiskScoreP
               </div>
             );
           })}
-        </div>
+          </div>
+        </details>
       )}
     </div>
   );

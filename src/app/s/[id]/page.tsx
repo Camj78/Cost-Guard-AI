@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-ssr";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
@@ -46,12 +47,12 @@ function ErrorCard() {
           <p className="text-sm text-muted-foreground">
             It may have been revoked or expired.
           </p>
-          <a
+          <Link
             href="/"
             className="inline-block text-xs text-muted-foreground hover:text-foreground transition-colors mt-2"
           >
             Run your own analysis
-          </a>
+          </Link>
         </div>
       </main>
       <Footer />
@@ -194,12 +195,12 @@ export default async function SharedAnalysisPage({
 
       {/* Conversion hook */}
       <div className="mx-auto max-w-lg w-full px-4 pt-6 pb-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <a
+        <Link
           href="/?ref=share"
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           Run your own preflight →
-        </a>
+        </Link>
         {isAuthedNotPro && (
           <UpgradeButton moment="share_cta" variant="outline" size="sm" />
         )}

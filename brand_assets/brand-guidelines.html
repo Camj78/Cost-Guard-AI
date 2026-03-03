@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CostGuardAI — Brand Guidelines</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Brand Tokens ───────────────────────────────────── */
+    :root {
+      --bg-base:       #0B0D14;
+      --bg-card:       #131620;
+      --bg-secondary:  #1A1E2A;
+      --accent:        #97E635;
+      --fg:            #F4F5FA;
+      --fg-muted:      rgba(244,245,250,0.45);
+      --border:        rgba(255,255,255,0.07);
+      --border-strong: rgba(255,255,255,0.14);
+
+      --risk-safe:     #34D399;
+      --risk-low:      #60A5FA;
+      --risk-warn:     #FBBF24;
+      --risk-high:     #FB923C;
+      --risk-crit:     #F87171;
+
+      --font-sans:  'Space Grotesk', sans-serif;
+      --font-mono:  'Geist Mono', monospace;
+
+      --sp-1: 4px;
+      --sp-2: 8px;
+      --sp-3: 16px;
+      --sp-4: 32px;
+      --sp-5: 64px;
+    }
+
+    /* ── Page ───────────────────────────────────────────── */
+    html, body {
+      width: 210mm;
+      min-height: 297mm;
+      background: var(--bg-base);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      font-size: 10px;
+      line-height: 1.5;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    @media print {
+      html, body { width: 210mm; height: 297mm; overflow: hidden; }
+      .page { page-break-after: avoid; }
+    }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 28px 32px 24px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 20px;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    .header {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-strong);
+    }
+
+    .logo-lockup {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-lockup img {
+      height: 32px;
+      width: auto;
+    }
+
+    .brand-name {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--fg);
+    }
+
+    .header-center {
+      text-align: center;
+    }
+
+    .doc-label {
+      font-size: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--fg-muted);
+    }
+
+    .tagline {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: -0.01em;
+      margin-top: 2px;
+    }
+
+    .header-meta {
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: 7.5px;
+      color: var(--fg-muted);
+      line-height: 1.7;
+    }
+
+    /* ── Body Grid ──────────────────────────────────────── */
+    .body-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: auto auto auto auto;
+      gap: 14px;
+    }
+
+    /* ── Section Card ───────────────────────────────────── */
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .section-label {
+      font-size: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--fg-muted);
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── Color Palette ──────────────────────────────────── */
+    .section--colors {
+      grid-column: 1 / 3;
+    }
+
+    .color-groups {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .color-group-label {
+      font-size: 7.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--fg-muted);
+      margin-bottom: 6px;
+    }
+
+    .color-swatches {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .swatch {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .swatch-block {
+      width: 28px;
+      height: 18px;
+      border-radius: 3px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .swatch-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .swatch-name {
+      font-size: 8px;
+      font-weight: 500;
+      color: var(--fg);
+      line-height: 1;
+    }
+
+    .swatch-hex {
+      font-family: var(--font-mono);
+      font-size: 7.5px;
+      color: var(--fg-muted);
+      line-height: 1;
+    }
+
+    /* Risk row */
+    .risk-swatches {
+      display: flex;
+      gap: 4px;
+    }
+
+    .risk-swatch {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .risk-block {
+      width: 100%;
+      height: 18px;
+      border-radius: 3px;
+    }
+
+    .risk-label {
+      font-size: 7px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--fg-muted);
+    }
+
+    /* ── Typography ─────────────────────────────────────── */
+    .section--typography {
+      grid-column: 3;
+      grid-row: 1 / 3;
+    }
+
+    .type-sample {
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .type-sample:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .type-meta {
+      font-family: var(--font-mono);
+      font-size: 7px;
+      color: var(--fg-muted);
+      margin-bottom: 3px;
+      line-height: 1;
+    }
+
+    .type-h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--fg);
+      line-height: 1;
+    }
+
+    .type-h2 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--fg);
+      line-height: 1.1;
+    }
+
+    .type-body {
+      font-size: 10px;
+      font-weight: 400;
+      color: var(--fg);
+      line-height: 1.5;
+    }
+
+    .type-mono {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 400;
+      color: var(--accent);
+      line-height: 1.4;
+    }
+
+    .type-card-label {
+      font-size: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--fg-muted);
+      line-height: 1;
+    }
+
+    /* ── Logo Usage ─────────────────────────────────────── */
+    .section--logo {
+      grid-column: 1 / 2;
+    }
+
+    .logo-examples {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .logo-example {
+      border-radius: 5px;
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 64px;
+    }
+
+    .logo-example--correct {
+      background: var(--bg-base);
+      border: 1px solid var(--border-strong);
+    }
+
+    .logo-example--wrong-light {
+      background: #ffffff;
+      border: 1px solid transparent;
+    }
+
+    .logo-example--wrong-distort {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .logo-example img {
+      height: 22px;
+      width: auto;
+    }
+
+    .logo-example--wrong-distort img {
+      height: 22px;
+      width: 50px;
+      object-fit: fill;
+    }
+
+    .logo-example-tag {
+      font-size: 7px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .tag--correct { color: var(--risk-safe); }
+    .tag--incorrect { color: var(--risk-crit); }
+
+    .logo-example-desc {
+      font-size: 7px;
+      color: var(--fg-muted);
+      text-align: center;
+    }
+
+    /* ── Spacing ─────────────────────────────────────────── */
+    .section--spacing {
+      grid-column: 2 / 3;
+    }
+
+    .spacing-items {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .spacing-row {
+      display: grid;
+      grid-template-columns: 40px 1fr 32px;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .spacing-label {
+      font-family: var(--font-mono);
+      font-size: 8px;
+      color: var(--accent);
+    }
+
+    .spacing-bar-track {
+      height: 6px;
+      background: var(--bg-secondary);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .spacing-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      opacity: 0.75;
+    }
+
+    .spacing-use {
+      font-size: 7px;
+      color: var(--fg-muted);
+      text-align: right;
+    }
+
+    /* ── Risk Badge UI Example ──────────────────────────── */
+    .section--ui-example {
+      grid-column: 1 / 3;
+    }
+
+    .ui-example-desc {
+      font-size: 8px;
+      color: var(--fg-muted);
+      margin-bottom: 10px;
+    }
+
+    .risk-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .risk-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 8.5px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      letter-spacing: 0.03em;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .risk-badge--safe     { background: rgba(52,211,153,0.12); color: #34D399; border: 1px solid rgba(52,211,153,0.25); }
+    .risk-badge--low      { background: rgba(96,165,250,0.12); color: #60A5FA; border: 1px solid rgba(96,165,250,0.25); }
+    .risk-badge--warning  { background: rgba(251,191,36,0.12);  color: #FBBF24; border: 1px solid rgba(251,191,36,0.25); }
+    .risk-badge--high     { background: rgba(251,146,60,0.12);  color: #FB923C; border: 1px solid rgba(251,146,60,0.25); }
+    .risk-badge--critical { background: rgba(248,113,113,0.12); color: #F87171; border: 1px solid rgba(248,113,113,0.25); }
+
+    .risk-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .risk-score-example {
+      margin-top: 10px;
+      background: var(--bg-secondary);
+      border-radius: 5px;
+      padding: 8px 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+    }
+
+    .score-label {
+      font-size: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--fg-muted);
+    }
+
+    .score-value {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--risk-warn);
+      letter-spacing: -0.02em;
+    }
+
+    .score-subtext {
+      font-size: 7.5px;
+      color: var(--fg-muted);
+      margin-top: 1px;
+    }
+
+    /* ── Design Principles ──────────────────────────────── */
+    .section--principles {
+      grid-column: 3;
+    }
+
+    .principles-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .principle {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .principle-name {
+      font-size: 8.5px;
+      font-weight: 600;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .principle-desc {
+      font-size: 8px;
+      color: var(--fg-muted);
+      line-height: 1.45;
+    }
+
+    /* ── Voice & Tone ───────────────────────────────────── */
+    .section--voice {
+      grid-column: 1 / 3;
+    }
+
+    .voice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .voice-col-label {
+      font-size: 7.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 5px;
+    }
+
+    .voice-col-label--do { color: var(--risk-safe); }
+    .voice-col-label--dont { color: var(--risk-crit); }
+
+    .voice-items {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .voice-item {
+      font-size: 8px;
+      color: var(--fg-muted);
+      display: flex;
+      gap: 5px;
+      align-items: flex-start;
+      line-height: 1.45;
+    }
+
+    .voice-item::before {
+      font-size: 8px;
+      flex-shrink: 0;
+      margin-top: 0.5px;
+    }
+
+    .voice-item--do::before { content: "→"; color: var(--risk-safe); }
+    .voice-item--dont::before { content: "✕"; color: var(--risk-crit); }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    .footer {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-brand {
+      font-size: 8px;
+      font-weight: 600;
+      color: var(--fg-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .footer-version {
+      font-family: var(--font-mono);
+      font-size: 7.5px;
+      color: var(--fg-muted);
+    }
+
+    .footer-accent {
+      width: 24px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 1px;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── HEADER ────────────────────────────────────────── -->
+  <header class="header">
+    <div class="logo-lockup">
+      <img src="./logo.svg" alt="CostGuardAI Logo" />
+      <span class="brand-name">CostGuardAI</span>
+    </div>
+    <div class="header-center">
+      <div class="doc-label">Brand Guidelines</div>
+      <div class="tagline">"Know before you send."</div>
+    </div>
+    <div class="header-meta">
+      Version 1.0<br/>
+      March 2026<br/>
+      Confidential
+    </div>
+  </header>
+
+  <!-- ── BODY ──────────────────────────────────────────── -->
+  <div class="body-grid">
+
+    <!-- COLOR PALETTE -->
+    <section class="section section--colors">
+      <div class="section-label">Color Palette</div>
+      <div class="color-groups">
+
+        <!-- Primary -->
+        <div>
+          <div class="color-group-label">Primary</div>
+          <div class="color-swatches">
+            <div class="swatch">
+              <div class="swatch-block" style="background:#97E635;"></div>
+              <div class="swatch-info">
+                <span class="swatch-name">Lime Accent</span>
+                <span class="swatch-hex">#97E635</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-block" style="background:#F4F5FA;"></div>
+              <div class="swatch-info">
+                <span class="swatch-name">Foreground</span>
+                <span class="swatch-hex">#F4F5FA</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Neutrals -->
+        <div>
+          <div class="color-group-label">Neutral Stack</div>
+          <div class="color-swatches">
+            <div class="swatch">
+              <div class="swatch-block" style="background:#0B0D14; border-color:rgba(255,255,255,0.15);"></div>
+              <div class="swatch-info">
+                <span class="swatch-name">Base BG</span>
+                <span class="swatch-hex">#0B0D14</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-block" style="background:#131620;"></div>
+              <div class="swatch-info">
+                <span class="swatch-name">Card Surface</span>
+                <span class="swatch-hex">#131620</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-block" style="background:#1A1E2A;"></div>
+              <div class="swatch-info">
+                <span class="swatch-name">Secondary</span>
+                <span class="swatch-hex">#1A1E2A</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk Scale -->
+        <div>
+          <div class="color-group-label">Risk Semantic Scale</div>
+          <div class="risk-swatches">
+            <div class="risk-swatch">
+              <div class="risk-block" style="background:#34D399;"></div>
+              <div class="risk-label">Safe</div>
+            </div>
+            <div class="risk-swatch">
+              <div class="risk-block" style="background:#60A5FA;"></div>
+              <div class="risk-label">Low</div>
+            </div>
+            <div class="risk-swatch">
+              <div class="risk-block" style="background:#FBBF24;"></div>
+              <div class="risk-label">Warn</div>
+            </div>
+            <div class="risk-swatch">
+              <div class="risk-block" style="background:#FB923C;"></div>
+              <div class="risk-label">High</div>
+            </div>
+            <div class="risk-swatch">
+              <div class="risk-block" style="background:#F87171;"></div>
+              <div class="risk-label">Crit</div>
+            </div>
+          </div>
+          <div style="margin-top:8px; font-size:7px; color:var(--fg-muted); line-height:1.5;">
+            Color is always semantic, never decorative. Do not use risk colors for non-risk UI.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TYPOGRAPHY -->
+    <section class="section section--typography">
+      <div class="section-label">Typography</div>
+
+      <div class="type-sample">
+        <div class="type-meta">Space Grotesk 700 · 40px · H1</div>
+        <div class="type-h1">CostGuard</div>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-meta">Space Grotesk 600 · 24px · H2</div>
+        <div class="type-h2">Preflight Analysis</div>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-meta">Space Grotesk 600 · 8px · Card Label</div>
+        <div class="type-card-label">Token Usage</div>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-meta">Space Grotesk 400 · 10px · Body</div>
+        <div class="type-body">Run analysis before deployment. Unpredictable token costs and silent truncation are preventable.</div>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-meta">Geist Mono 400 · 9.5px · Data</div>
+        <div class="type-mono">4,218 tokens · $0.0084 · 62.1%</div>
+      </div>
+
+    </section>
+
+    <!-- LOGO USAGE -->
+    <section class="section section--logo">
+      <div class="section-label">Logo Usage</div>
+      <div class="logo-examples">
+        <div class="logo-example logo-example--correct">
+          <img src="./logo.svg" alt="Logo correct usage" />
+          <span class="logo-example-tag tag--correct">✓ Correct</span>
+          <span class="logo-example-desc">Dark background only</span>
+        </div>
+        <div class="logo-example logo-example--wrong-light">
+          <img src="./logo.svg" alt="Logo incorrect light bg" style="filter:invert(1) opacity(0.5);" />
+          <span class="logo-example-tag tag--incorrect" style="color:#F87171;">✕ Light BG</span>
+          <span class="logo-example-desc" style="color:#888;">Never on light surfaces</span>
+        </div>
+        <div class="logo-example logo-example--correct" style="gap:4px; padding: 8px;">
+          <img src="./logo.svg" alt="Logo clear space" style="outline: 1px dashed rgba(151,230,53,0.35); outline-offset:5px;" />
+          <span class="logo-example-tag tag--correct">✓ Clear Space</span>
+          <span class="logo-example-desc">Min. 5px padding on all sides</span>
+        </div>
+        <div class="logo-example logo-example--wrong-distort">
+          <img src="./logo.svg" alt="Logo distorted" style="height:22px; width:48px; object-fit:fill;" />
+          <span class="logo-example-tag tag--incorrect">✕ Distorted</span>
+          <span class="logo-example-desc" style="color:#888;">Never stretch or crop</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SPACING -->
+    <section class="section section--spacing">
+      <div class="section-label">Spacing System</div>
+      <div class="spacing-items">
+        <div class="spacing-row">
+          <span class="spacing-label">4px</span>
+          <div class="spacing-bar-track"><div class="spacing-bar-fill" style="width:6.25%;"></div></div>
+          <span class="spacing-use">Inline</span>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">8px</span>
+          <div class="spacing-bar-track"><div class="spacing-bar-fill" style="width:12.5%;"></div></div>
+          <span class="spacing-use">Intra</span>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">16px</span>
+          <div class="spacing-bar-track"><div class="spacing-bar-fill" style="width:25%;"></div></div>
+          <span class="spacing-use">Component</span>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">32px</span>
+          <div class="spacing-bar-track"><div class="spacing-bar-fill" style="width:50%;"></div></div>
+          <span class="spacing-use">Card pad</span>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">64px</span>
+          <div class="spacing-bar-track"><div class="spacing-bar-fill" style="width:100%;"></div></div>
+          <span class="spacing-use">Section</span>
+        </div>
+      </div>
+      <div style="margin-top:10px; font-size:7px; color:var(--fg-muted); line-height:1.5;">
+        No ad-hoc values. Only approved scale tokens.
+      </div>
+    </section>
+
+    <!-- UI EXAMPLE: RISK BADGE SCALE -->
+    <section class="section section--ui-example">
+      <div class="section-label">UI Usage — Risk Badge Scale</div>
+      <div class="ui-example-desc">Semantic risk colors applied as they appear in-app. Color communicates state, not decoration.</div>
+
+      <div class="risk-badge-row">
+        <div class="risk-badge risk-badge--safe">
+          <span class="risk-dot"></span> Safe
+        </div>
+        <div class="risk-badge risk-badge--low">
+          <span class="risk-dot"></span> Low
+        </div>
+        <div class="risk-badge risk-badge--warning">
+          <span class="risk-dot"></span> Warning
+        </div>
+        <div class="risk-badge risk-badge--high">
+          <span class="risk-dot"></span> High
+        </div>
+        <div class="risk-badge risk-badge--critical">
+          <span class="risk-dot"></span> Critical
+        </div>
+      </div>
+
+      <div class="risk-score-example">
+        <div>
+          <div class="score-label">Failure Risk Score</div>
+          <div class="score-subtext">Context pressure + instruction ambiguity + output collision</div>
+        </div>
+        <div class="score-value">67</div>
+      </div>
+    </section>
+
+    <!-- DESIGN PRINCIPLES -->
+    <section class="section section--principles">
+      <div class="section-label">Design Principles</div>
+      <div class="principles-list">
+        <div class="principle">
+          <span class="principle-name">Clarity</span>
+          <span class="principle-desc">Information is immediately scannable. No cognitive tax.</span>
+        </div>
+        <div class="principle">
+          <span class="principle-name">Precision</span>
+          <span class="principle-desc">Data is presented without interpretation bias. Numbers are exact.</span>
+        </div>
+        <div class="principle">
+          <span class="principle-name">Authority</span>
+          <span class="principle-desc">Visual restraint conveys trust. Developers don't need flash.</span>
+        </div>
+        <div class="principle">
+          <span class="principle-name">Restraint</span>
+          <span class="principle-desc">No visual noise, no decoration without function.</span>
+        </div>
+      </div>
+
+      <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
+        <div style="font-size:7.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--fg-muted); margin-bottom:5px;">Motion Rules</div>
+        <div style="font-size:7.5px; color:var(--fg-muted); line-height:1.6;">
+          Max 200ms · No loops · No parallax<br/>
+          Motion communicates state, never decorates
+        </div>
+      </div>
+    </section>
+
+    <!-- VOICE & TONE -->
+    <section class="section section--voice">
+      <div class="section-label">Voice &amp; Tone</div>
+      <div class="voice-grid">
+        <div>
+          <div class="voice-col-label voice-col-label--do">Write Like This</div>
+          <div class="voice-items">
+            <div class="voice-item voice-item--do">Precise, direct, no fluff.</div>
+            <div class="voice-item voice-item--do">Use exact numbers. "4,218 tokens" not "thousands of tokens."</div>
+            <div class="voice-item voice-item--do">Confidence through specificity. State facts.</div>
+            <div class="voice-item voice-item--do">Treat readers as technical operators.</div>
+          </div>
+        </div>
+        <div>
+          <div class="voice-col-label voice-col-label--dont">Never Write Like This</div>
+          <div class="voice-items">
+            <div class="voice-item voice-item--dont">Marketing superlatives ("best," "revolutionary").</div>
+            <div class="voice-item voice-item--dont">Emoji in functional UI or documentation.</div>
+            <div class="voice-item voice-item--dont">Vague risk language ("might fail," "could be an issue").</div>
+            <div class="voice-item voice-item--dont">Hedging. State the risk, name the score.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <span class="footer-brand">COSTGUARDAI — BRAND GUIDELINES v1.0</span>
+      <div class="footer-accent"></div>
+      <span class="footer-version">costguardai.com · March 2026</span>
+    </div>
+
+  </div><!-- /body-grid -->
+</div><!-- /page -->
+</body>
+</html>

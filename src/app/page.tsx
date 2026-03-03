@@ -45,6 +45,7 @@ export default function Page() {
   } = usePreflight({ onRecorded: refetch });
 
   const hasPrompt = prompt.trim().length > 0;
+  const currentStage = analysis ? "review" : isAnalyzing ? "analyze" : "input";
 
   return (
     <div className="flex flex-col min-h-screen bg-background relative">
@@ -92,6 +93,17 @@ export default function Page() {
                   </a>
                 )}
               </div>
+              {/* Integration signal chips — credibility, no links */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {["API", "CLI", "CI/CD"].map((chip) => (
+                  <span
+                    key={chip}
+                    className="text-xs font-mono text-muted-foreground border border-white/[0.07] bg-transparent px-3 py-1 rounded-full"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
             </div>
 
             {/* Right: static product preview — no animation, pointer-events-none */}
@@ -107,14 +119,11 @@ export default function Page() {
                   </span>
                 </div>
 
-                {/* Risk Score */}
+                {/* Risk Score — tier first, score subordinate */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                      Risk Score
-                    </span>
-                    <span className="text-[11px] font-semibold text-amber-400">HIGH RISK</span>
-                  </div>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-400">
+                    HIGH RISK
+                  </span>
                   <div className="flex items-baseline gap-2">
                     <span className="text-5xl font-black font-mono tabular-nums text-amber-400">72</span>
                     <span className="text-sm text-muted-foreground">/ 100</span>
@@ -158,17 +167,29 @@ export default function Page() {
 
       {/* TRUST BAR */}
       <section className="px-4 sm:px-6 pb-4">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-5xl space-y-2">
+          {/* Row 1: Provider badges with precision tier */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground border border-white/[0.07] bg-white/[0.03] rounded-full px-3 py-1">
-              Exact token counts (OpenAI tiktoken)
+            <span className="flex items-center gap-1.5 text-xs font-mono border border-white/[0.07] bg-white/[0.03] rounded-full px-3 py-1">
+              <span className="text-muted-foreground">OpenAI</span>
+              <span className="text-[10px] text-emerald-400">exact</span>
             </span>
-            <span className="text-xs text-muted-foreground border border-white/[0.07] bg-white/[0.03] rounded-full px-3 py-1">
-              Cost at scale projection
+            <span className="flex items-center gap-1.5 text-xs font-mono border border-white/[0.07] bg-white/[0.03] rounded-full px-3 py-1">
+              <span className="text-muted-foreground">Anthropic</span>
+              <span className="text-[10px] text-foreground/60">±5–8%</span>
             </span>
-            <span className="text-xs text-muted-foreground border border-white/[0.07] bg-white/[0.03] rounded-full px-3 py-1">
-              Failure risk score heuristic
+            <span className="flex items-center gap-1.5 text-xs font-mono border border-white/[0.07] bg-white/[0.03] rounded-full px-3 py-1">
+              <span className="text-muted-foreground">Gemini</span>
+              <span className="text-[10px] text-foreground/60">±5–8%</span>
             </span>
+          </div>
+          {/* Row 2: Workflow integration chips */}
+          <div className="flex flex-wrap items-center gap-2">
+            {["API", "CLI", "CI/CD"].map((chip) => (
+              <span key={chip} className="text-xs font-mono text-muted-foreground border border-white/[0.07] bg-white/[0.03] rounded-full px-3 py-1">
+                {chip}
+              </span>
+            ))}
           </div>
         </div>
       </section>
@@ -176,6 +197,17 @@ export default function Page() {
       {/* MAIN CONTENT */}
       <main className="flex-1 px-4 sm:px-6 py-6">
         <div className="mx-auto max-w-5xl">
+          {/* Stage indicator — system state label, no decoration */}
+          <div className="mb-4 flex items-center text-xs font-mono">
+            {(["input", "analyze", "review", "ship"] as const).map((s, i) => (
+              <span key={s}>
+                {i > 0 && <span className="mx-2 text-muted-foreground/20">·</span>}
+                <span className={currentStage === s ? "text-foreground" : "text-muted-foreground/30"}>
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                </span>
+              </span>
+            ))}
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-start">
 
             {/* LEFT COLUMN: Input Controls */}
@@ -317,7 +349,7 @@ export default function Page() {
               </p>
             </div>
 
-            <div className="glass-card p-6 space-y-3">
+            <div className="glass-card p-6 space-y-3 border border-primary/20">
               <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">3</span>
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Deploy Safely</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -340,42 +372,42 @@ export default function Page() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
 
-            <div className="glass-card p-6 space-y-2">
+            <div className="glass-card p-4 space-y-1">
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Token Overflow</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Truncation → broken outputs → silent failure in production.
               </p>
             </div>
 
-            <div className="glass-card p-6 space-y-2">
+            <div className="glass-card p-4 space-y-1">
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Cost Drift</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Margins collapse at scale when token usage expands unnoticed.
               </p>
             </div>
 
-            <div className="glass-card p-6 space-y-2">
+            <div className="glass-card p-4 space-y-1">
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Risk Score</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Signal of production instability — not legal advice, just operational risk.
               </p>
             </div>
 
-            <div className="glass-card p-6 space-y-2">
+            <div className="glass-card p-4 space-y-1">
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Drift Tracking</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Monitor token and cost drift across model versions over time.
               </p>
             </div>
 
-            <div className="glass-card p-6 space-y-2">
+            <div className="glass-card p-4 space-y-1">
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Batch Analysis</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Run preflight checks on multiple prompts simultaneously.
               </p>
             </div>
 
-            <div className="glass-card p-6 space-y-2">
+            <div className="glass-card p-4 space-y-1">
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Model Comparison</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Compare cost and risk across models before committing to one.
@@ -438,11 +470,13 @@ export default function Page() {
             {/* Free */}
             <div className="glass-card p-8 space-y-4">
               <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Free</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>• Single preflight analysis</li>
-                <li>• Token + cost + risk visibility</li>
-                <li>• Manual usage</li>
-              </ul>
+              <div className="flex flex-wrap gap-2">
+                {["Single preflight", "Token + cost + risk", "Manual usage"].map((f) => (
+                  <span key={f} className="text-xs text-muted-foreground border border-white/[0.07] bg-white/[0.03] rounded-full px-3 py-1">
+                    {f}
+                  </span>
+                ))}
+              </div>
               <div className="pt-2">
                 <span className="text-3xl font-semibold font-mono">$0</span>
               </div>
@@ -450,7 +484,7 @@ export default function Page() {
 
             {/* Pro */}
             <div className="rounded-xl bg-primary/[0.06] border-2 border-primary/40 p-8 space-y-4">
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Pro</h3>
+              <h3 className="text-2xl font-semibold tracking-tight">Pro</h3>
               <ul className="space-y-2 text-sm">
                 <li className="flex gap-2">
                   <Check className="mt-0.5 size-3.5 text-emerald-400 shrink-0" />
@@ -482,14 +516,9 @@ export default function Page() {
                   <span className="text-4xl font-black font-mono tracking-tight">$29</span>
                   <span className="text-sm text-muted-foreground">/ month</span>
                 </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs text-muted-foreground">or</span>
-                  <span className="font-mono tabular-nums text-sm font-semibold">$199</span>
-                  <span className="text-xs text-muted-foreground">/ year</span>
-                  <span className="text-xs font-medium text-emerald-400 border border-emerald-500/30 rounded px-1.5 py-0.5 leading-none">
-                    Save $149
-                  </span>
-                </div>
+                <p className="text-xs font-mono text-muted-foreground">
+                  $199 / yr · <span className="text-emerald-400">Save $149</span>
+                </p>
                 <div className="text-xs text-muted-foreground">
                   Pays for itself at ~10K req/day
                 </div>
@@ -501,6 +530,7 @@ export default function Page() {
               >
                 <a href="/upgrade">Upgrade to Pro</a>
               </Button>
+              <p className="text-xs text-muted-foreground text-center">No credit card stored. Cancel anytime.</p>
             </div>
 
           </div>

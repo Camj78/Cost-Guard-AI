@@ -26,7 +26,6 @@ export function PdfExportButton({
     const contentWidth = pageWidth - margin * 2;
     let y = margin;
 
-    const lineHeight = 14;
     const sectionGap = 20;
 
     function addLine(text: string, opts?: { bold?: boolean; size?: number; color?: [number, number, number] }) {

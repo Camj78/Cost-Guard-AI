@@ -25,6 +25,7 @@ export function SavedPromptsPanel({ prompt, modelId, onLoad }: SavedPromptsPanel
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     reload();
   }, [reload]);
 

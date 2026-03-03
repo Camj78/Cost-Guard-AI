@@ -88,6 +88,7 @@ export function useUsage(): UsageState {
 
       poll();
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchUsage();
     }
 
