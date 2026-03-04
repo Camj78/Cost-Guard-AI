@@ -1,10 +1,16 @@
 "use client";
 
+import { useEffect } from "react";
 import { Lock } from "lucide-react";
 import { copyByMoment, type UpgradeMoment } from "@/config/monetization";
 import { UpgradeButton } from "@/components/upgrade-button";
+import { trackEvent } from "@/lib/analytics/posthog";
 
 export default function FakeGate({ moment }: { moment?: UpgradeMoment }) {
+  useEffect(() => {
+    trackEvent("pro_feature_blocked");
+  }, []);
+
   const copy = moment ? copyByMoment[moment] : null;
 
   // Show upgrade preview for ANY named moment (bullets optional)

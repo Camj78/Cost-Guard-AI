@@ -23,6 +23,7 @@ import { BatchAnalysisPanel } from "@/components/pro/batch-analysis-panel";
 import { RiskHistoryPanel } from "@/components/pro/risk-history-panel";
 import { ShareButton } from "@/components/share-button";
 import { PdfExportButton } from "@/components/pro/pdf-export-button";
+import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
 import { Zap } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -74,6 +75,13 @@ function riskLabel(score: number): string {
 export default function DashboardPage() {
   const router = useRouter();
   const { isPro, isAuthed } = useUsage();
+
+  // ── Onboarding state ───────────────────────────────────────────────────────
+  const [onboardingCompleted, setOnboardingCompleted] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("cg_onboarding_completed") === "true";
+  });
+  const [onboardingModalVisible, setOnboardingModalVisible] = useState(true);
 
   // ── Server data state ──────────────────────────────────────────────────────
   const [prompts, setPrompts] = useState<SavedPrompt[]>([]);
@@ -158,7 +166,11 @@ export default function DashboardPage() {
     setExpectedOutputTokens,
     applyCompression,
     triggerManualAnalyze,
-  } = usePreflight({ onRecorded: fetchAnalyses });
+  } = usePreflight({
+    onRecorded: fetchAnalyses,
+    plan: isPro === null ? undefined : isPro ? "pro" : "free",
+    onOnboardingComplete: useCallback(() => setOnboardingCompleted(true), []),
+  });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -170,6 +182,11 @@ export default function DashboardPage() {
   const hasPrompt = prompt.trim().length > 0;
 
   // ── Handlers ───────────────────────────────────────────────────────────────
+
+  function handleLoadExample(examplePrompt: string) {
+    setPrompt(examplePrompt);
+    setOnboardingModalVisible(false);
+  }
 
   async function handleDelete(id: string) {
     const res = await fetch(`/api/prompts/${id}`, { method: "DELETE" });
@@ -220,6 +237,10 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
+      {!onboardingCompleted && onboardingModalVisible && (
+        <OnboardingModal onLoadExample={handleLoadExample} />
+      )}
+
       <Header />
 
       {/* STATUS BAR */}

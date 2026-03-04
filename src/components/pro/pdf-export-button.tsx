@@ -3,6 +3,7 @@
 import type { RiskAssessment } from "@/lib/risk";
 import type { ModelConfig } from "@/config/models";
 import { formatCost, formatNumber, formatPercent } from "@/lib/formatters";
+import { trackEvent } from "@/lib/analytics/posthog";
 
 interface PdfExportButtonProps {
   analysis: RiskAssessment;
@@ -59,6 +60,7 @@ export function PdfExportButton({
   compressionDelta,
 }: PdfExportButtonProps) {
   async function handleExport() {
+    trackEvent("export_pdf_clicked");
     const { jsPDF } = await import("jspdf");
     const doc = new jsPDF({ unit: "pt", format: "letter" });
 
