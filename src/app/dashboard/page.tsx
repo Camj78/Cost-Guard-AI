@@ -102,6 +102,9 @@ export default function DashboardPage() {
         setNeedsUpgradeRedirect(true);
         return;
       }
+      if (res.status === 403) {
+        return;
+      }
       const d = await res.json();
       setPrompts(d.prompts ?? []);
     } catch (err) {
@@ -364,7 +367,8 @@ export default function DashboardPage() {
               Step 2 — Track
             </p>
 
-            {/* Saved Prompts + Risk History */}
+            {/* Saved Prompts + Risk History — Pro only */}
+            {isPro === true && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
               {/* Saved Prompts */}
@@ -508,6 +512,7 @@ export default function DashboardPage() {
               </div>
 
             </div>
+            )}
 
             {/* Analysis History */}
             <div className="space-y-3">

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-ssr";
 import { validateClientSnapshot } from "@/lib/share-schema";
-import { MODELS, pricingLastUpdated } from "@/config/models";
+import { resolveModel, pricingLastUpdated } from "@/lib/ai/models";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     }
 
     // Server injects model metadata — never from client
-    const modelConfig = MODELS.find((m) => m.id === validated.modelId);
+    const modelConfig = resolveModel(validated.modelId);
     const modelName = modelConfig?.name ?? validated.modelId;
 
     const snapshot = {

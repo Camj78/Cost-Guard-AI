@@ -11,7 +11,7 @@ import {
   type RiskFactor,
   type TruncationLevel,
 } from "@/lib/risk";
-import { MODELS } from "@/config/models";
+import { resolveModel } from "@/lib/ai/models";
 
 const TRUNCATION_LEVELS = ["safe", "warning", "danger"] as const;
 const SNAPSHOT_SIZE_LIMIT = 16_384; // 16 KB
@@ -42,7 +42,7 @@ export function validateClientSnapshot(
   // --- modelId ---
   const modelId = obj.modelId;
   if (typeof modelId !== "string") return null;
-  if (!MODELS.some((m) => m.id === modelId)) return null;
+  if (!resolveModel(modelId)) return null;
 
   // --- analysis ---
   const a = obj.analysis;

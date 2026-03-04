@@ -123,7 +123,7 @@ export default async function SharedAnalysisPage({
 
           {/* Risk Score */}
           <Card className="glass-card shadow-none relative">
-            <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-primary/50 via-primary/20 to-transparent" />
+            <div className="absolute top-0 left-6 right-6 h-px bg-primary/30" />
             <CardContent className="pt-5 pb-4">
               <RiskScore
                 score={analysis.riskScore}

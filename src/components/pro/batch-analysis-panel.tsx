@@ -93,7 +93,15 @@ export function BatchAnalysisPanel({ model, expectedOutputTokens }: BatchAnalysi
       <div className="space-y-2">
         <textarea
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            const val = e.target.value;
+            setInput(val);
+            if (!val.trim()) {
+              setResults(null);
+              setTruncated(false);
+              setTotalCost(0);
+            }
+          }}
           placeholder={`One prompt per line (max ${MAX_BATCH})\nExample prompt 1\nExample prompt 2`}
           rows={6}
           className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none font-mono"

@@ -17,6 +17,16 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { data: userRow } = await supabase
+      .from("users")
+      .select("pro")
+      .eq("id", user.id)
+      .single();
+
+    if (userRow?.pro !== true) {
+      return NextResponse.json({ error: "Pro required" }, { status: 403 });
+    }
+
     const { id } = await params;
     const body = await req.json();
     const updates: Record<string, string> = {};
@@ -61,6 +71,16 @@ export async function DELETE(
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: userRow } = await supabase
+      .from("users")
+      .select("pro")
+      .eq("id", user.id)
+      .single();
+
+    if (userRow?.pro !== true) {
+      return NextResponse.json({ error: "Pro required" }, { status: 403 });
     }
 
     const { id } = await params;

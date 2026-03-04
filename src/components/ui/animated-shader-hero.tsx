@@ -389,7 +389,7 @@ export function AnimatedShaderHero({
       />
       {/* Tint overlay — blends shader with warm dark theme */}
       <div
-        className="absolute inset-0 bg-background/40 backdrop-blur-[1px] pointer-events-none z-0"
+        className="absolute inset-0 bg-background/40 pointer-events-none z-0"
         aria-hidden="true"
       />
       {children}
@@ -446,7 +446,7 @@ const Hero: FC<HeroProps> = ({
       <div className="relative z-10 flex flex-col items-center justify-center text-foreground">
         {trustBadge && (
           <div className="mb-8 shader-hero-fade-down">
-            <div className="flex items-center gap-2 px-6 py-3 bg-primary/10 border border-primary/30 rounded-full text-sm backdrop-blur-md">
+            <div className="flex items-center gap-2 px-6 py-3 bg-primary/10 border border-primary/30 rounded-full text-sm">
               {trustBadge.icons && (
                 <div className="flex">
                   {trustBadge.icons.map((icon, index) => (
@@ -466,10 +466,10 @@ const Hero: FC<HeroProps> = ({
 
         <div className="text-center space-y-6 max-w-5xl mx-auto px-4">
           <div className="space-y-2">
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent shader-hero-fade-up shader-hero-delay-200">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-primary shader-hero-fade-up shader-hero-delay-200">
               {headline.line1}
             </h1>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold bg-gradient-to-r from-primary/70 via-primary to-primary/80 bg-clip-text text-transparent shader-hero-fade-up shader-hero-delay-400">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-primary shader-hero-fade-up shader-hero-delay-400">
               {headline.line2}
             </h1>
           </div>
@@ -493,7 +493,7 @@ const Hero: FC<HeroProps> = ({
               {buttons.secondary && (
                 <button
                   onClick={buttons.secondary.onClick}
-                  className="px-8 py-4 bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 text-foreground rounded-full font-semibold text-lg transition-colors duration-200 backdrop-blur-sm"
+                  className="px-8 py-4 bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 text-foreground rounded-full font-semibold text-lg transition-colors duration-200"
                 >
                   {buttons.secondary.text}
                 </button>

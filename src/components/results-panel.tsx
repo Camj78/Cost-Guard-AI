@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2, Info, ScanLine } from "lucide-react";
+import { useState } from "react";
+import { Loader2, Info, ScanLine, Copy, Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { RiskScore } from "@/components/risk-score";
@@ -52,6 +53,16 @@ export function ResultsPanel({
   costDelta,
   compressionDeltaPct,
 }: ResultsPanelProps) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    if (!compressedText) return;
+    navigator.clipboard.writeText(compressedText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    });
+  }
+
   // Empty state
   if (!hasPrompt && !isAnalyzing) {
     return (
@@ -102,7 +113,7 @@ export function ResultsPanel({
     <div className="space-y-4">
       {/* 1. Failure Risk Score — THE moat */}
       <Card className="glass-card shadow-none relative animate-data-arrive transition-all duration-100 hover:-translate-y-[1px] hover:border-white/[0.14]" style={{ animationDelay: "0ms" }}>
-        <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-primary/50 via-primary/20 to-transparent" />
+        <div className="absolute top-0 left-6 right-6 h-px bg-primary/30" />
         <CardContent className="pt-5 pb-4">
           <RiskScore
             score={analysis.riskScore}
@@ -173,7 +184,7 @@ export function ResultsPanel({
               {/* Original */}
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Original</p>
-                <div className="rounded border border-white/10 bg-white/5 p-2 text-xs whitespace-pre-wrap line-clamp-6">
+                <div className="rounded border border-white/10 bg-white/5 p-2 text-xs whitespace-pre-wrap max-h-40 overflow-y-auto">
                   {originalText}
                 </div>
                 <div className="space-y-1 text-xs">
@@ -189,8 +200,24 @@ export function ResultsPanel({
               </div>
               {/* Compressed */}
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Compressed</p>
-                <div className="rounded border border-white/10 bg-white/5 p-2 text-xs whitespace-pre-wrap line-clamp-6 font-mono">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Compressed</p>
+                  <button
+                    onClick={handleCopy}
+                    aria-label="Copy compressed text"
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors duration-150"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copied</span>
+                      </>
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+                <div className="rounded border border-white/10 bg-white/5 p-2 text-xs whitespace-pre-wrap max-h-40 overflow-y-auto font-mono">
                   {compressedText}
                 </div>
                 <div className="space-y-1 text-xs">

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in to CostGuardAI</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0d1117;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+  <!-- Wrapper -->
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0"
+         width="100%" style="background-color:#0d1117;">
+    <tr>
+      <td align="center" style="padding:48px 16px;">
+
+        <!-- Card -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"
+               width="480" style="max-width:480px;width:100%;
+                                  background-color:#161b22;
+                                  border:1px solid #30363d;
+                                  border-radius:8px;">
+          <tr>
+            <!-- Header -->
+            <td align="center" style="padding:32px 32px 24px 32px;border-bottom:1px solid #21262d;">
+              <!--
+                Logo: PNG only — SVG is not supported by most email clients.
+                URL constructed from NEXT_PUBLIC_SITE_URL + /logo.png
+                In Supabase Dashboard → Auth → Email Templates, use {{ .SiteURL }}/logo.png
+                In production this resolves to: https://costguardai.com/logo.png
+              -->
+              <img
+                src="{{ .SiteURL }}/logo.png"
+                alt="CostGuardAI"
+                width="48"
+                height="48"
+                style="display:block;border:0;outline:none;text-decoration:none;" />
+              <p style="margin:16px 0 0 0;
+                        font-size:11px;
+                        font-weight:600;
+                        letter-spacing:0.08em;
+                        text-transform:uppercase;
+                        color:#6e7681;">
+                CostGuardAI
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <!-- Body -->
+            <td style="padding:32px;">
+              <h1 style="margin:0 0 8px 0;
+                         font-size:20px;
+                         font-weight:600;
+                         color:#e6edf3;
+                         letter-spacing:-0.01em;">
+                Sign in to your account
+              </h1>
+              <p style="margin:0 0 24px 0;
+                        font-size:14px;
+                        line-height:1.6;
+                        color:#8b949e;">
+                Click the button below to sign in. This link expires in 1 hour
+                and can only be used once.
+              </p>
+
+              <!-- CTA button -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td align="center">
+                    <a href="{{ .ConfirmationURL }}"
+                       style="display:inline-block;
+                              padding:12px 32px;
+                              background-color:#10b981;
+                              color:#ffffff;
+                              font-size:14px;
+                              font-weight:600;
+                              text-decoration:none;
+                              border-radius:6px;
+                              letter-spacing:-0.01em;">
+                      Sign in to CostGuardAI
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:24px 0 0 0;
+                        font-size:12px;
+                        line-height:1.6;
+                        color:#6e7681;">
+                If you didn't request this, you can safely ignore this email.
+                Your account won't be affected.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <!-- Footer -->
+            <td style="padding:16px 32px;
+                       border-top:1px solid #21262d;">
+              <p style="margin:0;
+                        font-size:11px;
+                        color:#6e7681;
+                        text-align:center;">
+                Sent to {{ .Email }} &middot;
+                <a href="{{ .SiteURL }}"
+                   style="color:#6e7681;text-decoration:underline;">
+                  costguardai.com
+                </a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Card -->
+
+      </td>
+    </tr>
+  </table>
+  <!-- /Wrapper -->
+
+</body>
+</html>
