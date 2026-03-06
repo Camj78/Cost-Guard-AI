@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { createSupabaseServerClient } from "@/lib/supabase-ssr";
 import { recordAnalysisRun } from "@/lib/telemetry/analysis-run";
+import { recordAiUsageEvent } from "@/lib/telemetry/ai-usage-event";
 
 export const dynamic = "force-dynamic";
 
@@ -144,6 +145,16 @@ export async function POST(req: Request) {
             });
           }
         );
+
+        // AI usage event — observability telemetry
+        void recordAiUsageEvent({
+          endpoint: "/api/analyses",
+          model: model_id,
+          tokensIn: input_tokens,
+          tokensOut: output_tokens,
+          latencyMs: Date.now() - start,
+          orgId: user.id,
+        });
 
         let result: NextResponse;
 

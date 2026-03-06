@@ -1,19 +1,16 @@
+import { resolveGitHubToken } from "./app-auth";
+
 const GITHUB_API = "https://api.github.com";
 const TIMEOUT_MS = 10_000;
 
 /** Maximum diff bytes to retrieve — prevents runaway memory on giant PRs. */
 export const MAX_DIFF_BYTES = 200_000;
 
-function getToken(): string {
-  const token = process.env.GITHUB_TOKEN;
-  if (!token) throw new Error("GITHUB_TOKEN is not configured");
-  return token;
-}
-
 async function githubRequest(
   url: string,
   options: RequestInit = {}
 ): Promise<Response> {
+  const token = await resolveGitHubToken();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -22,7 +19,7 @@ async function githubRequest(
       ...options,
       signal: controller.signal,
       headers: {
-        Authorization: `Bearer ${getToken()}`,
+        Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
         ...(options.headers ?? {}),
@@ -89,6 +86,18 @@ export async function updateIssueComment(
   );
 }
 
+/** Delete a single issue comment. GitHub returns 204 No Content on success. */
+export async function deleteIssueComment(
+  owner: string,
+  repo: string,
+  commentId: number
+): Promise<void> {
+  await githubRequest(
+    `${GITHUB_API}/repos/${owner}/${repo}/issues/comments/${commentId}`,
+    { method: "DELETE" }
+  );
+}
+
 /**
  * Fetch the unified diff for a PR (Accept: application/vnd.github.v3.diff).
  * Returns at most MAX_DIFF_BYTES characters.
@@ -98,6 +107,7 @@ export async function fetchPullRequestDiff(
   repo: string,
   prNumber: number
 ): Promise<string> {
+  const token = await resolveGitHubToken();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -107,7 +117,7 @@ export async function fetchPullRequestDiff(
       {
         signal: controller.signal,
         headers: {
-          Authorization: `Bearer ${getToken()}`,
+          Authorization: `Bearer ${token}`,
           Accept: "application/vnd.github.v3.diff",
           "X-GitHub-Api-Version": "2022-11-28",
         },

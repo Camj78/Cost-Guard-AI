@@ -110,6 +110,41 @@ src/
 
 ---
 
+## CLI Usage
+
+Run preflight analysis directly from your terminal — no browser required.
+
+```bash
+npx costguard analyze prompt.txt --api-key $COSTGUARD_API_KEY
+```
+
+**Options**
+
+| Flag | Description | Default |
+|---|---|---|
+| `--api-key` | Your CostGuardAI API key (or set `COSTGUARD_API_KEY`) | — |
+| `--host` | API base URL | `https://costguardai.io` |
+| `--model` | Model ID to analyze against | `gpt-4o-mini` |
+| `--requests` | Requests/month for monthly cost estimate | `1000` |
+
+**Example output**
+
+```
+CostGuardAI Report
+
+Risk:                HIGH
+Estimated Cost:      $24.80
+Truncation Risk:     37%
+
+Recommended Model:   gpt-4o-mini
+
+Share: https://costguardai.io/s/<uuid>
+```
+
+**Generate an API key** in your dashboard under Settings → API Keys.
+
+---
+
 ## V2 ideas
 
 - User accounts + prompt history

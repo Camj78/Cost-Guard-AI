@@ -1,0 +1,41 @@
+{
+  "score_version": "1",
+  "ruleset_hash": "486cf68fa2ae6ac8",
+  "files": [
+    {
+      "file": "fixtures/cli/minimal.txt",
+      "input_hash": "8ed0cbd31f40b02a9e5cd1ea9e26987bc9c126b91e9112c621f78398b132efde",
+      "model_id": "gpt-4o-mini",
+      "input_tokens": 43,
+      "is_estimated": false,
+      "risk_score": 8,
+      "risk_level": "SAFE",
+      "context_usage_pct": 0,
+      "estimated_cost_per_request": 0.0003,
+      "truncation": "safe",
+      "risk_drivers": [
+        {
+          "name": "Output Volatility Risk",
+          "impact": 30
+        },
+        {
+          "name": "Length Risk",
+          "impact": 5
+        },
+        {
+          "name": "Context Saturation Risk",
+          "impact": 5
+        }
+      ],
+      "score_version": "1",
+      "ruleset_hash": "486cf68fa2ae6ac8"
+    }
+  ],
+  "summary": {
+    "total_files": 1,
+    "max_risk_score": 8,
+    "max_risk_level": "SAFE",
+    "above_threshold": false,
+    "threshold": null
+  }
+}

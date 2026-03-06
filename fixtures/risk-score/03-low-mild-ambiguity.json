@@ -1,0 +1,21 @@
+{
+  "name": "low-mild-ambiguity",
+  "description": "Single-sentence prompt with one ambiguous term match ('improvements' contains 'improve'). Ambiguity density at 1/36=2.8%, bucket=45.",
+  "input": {
+    "prompt": "This code has some issues. Can you help me analyze it and suggest specific improvements? I need a solution that handles edge cases properly and returns correct results. Please provide the function with proper error handling.",
+    "inputTokens": 50,
+    "contextWindow": 128000,
+    "expectedOutputTokens": 256,
+    "maxOutputTokens": 16384
+  },
+  "expected": {
+    "score_range": [31, 41],
+    "risk_band": "low",
+    "top_risk_drivers": [
+      "Structural Risk",
+      "Ambiguity Risk",
+      "Output Volatility Risk"
+    ]
+  },
+  "notes": "Structural=100, Ambiguity bucket=45 (1 match, density=0.028), Volatility bucket=30 (256>2*50=100). Score=36."
+}

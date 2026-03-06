@@ -7,10 +7,20 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx tests/run-golden.ts",
+    "test:webhook": "tsx tests/github-webhook.test.ts",
+    "test:resilience": "tsx tests/github-webhook-resilience.test.ts",
+    "e2e": "playwright test",
+    "audit": "pnpm audit --prod",
     "golden": "tsx tests/run-golden.ts",
     "shot:once": "node scripts/screenshot-loop.mjs",
     "shot:loop": "PASSES=2 node scripts/screenshot-loop.mjs",
-    "shot:clean": "node scripts/clean-screenshots.mjs"
+    "shot:clean": "node scripts/clean-screenshots.mjs",
+    "build:cli": "npm run build --prefix packages/cli",
+    "test:cli": "node packages/cli/scripts/test-golden.mjs",
+    "test:risk-score": "tsx tests/run-risk-score.ts",
+    "test:explainability": "tsx tests/explainability-test.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.42.0",
@@ -32,6 +42,7 @@
   },
   "devDependencies": {
     "@next/swc-darwin-x64": "16.1.6",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -51,6 +62,9 @@
     "onlyBuiltDependencies": [
       "puppeteer",
       "esbuild"
-    ]
+    ],
+    "overrides": {
+      "@fastify/otel>minimatch": "^10.2.4"
+    }
   }
 }

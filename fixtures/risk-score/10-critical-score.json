@@ -1,0 +1,21 @@
+{
+  "name": "critical-score",
+  "description": "Maximum risk scenario: near-full context, maximum saturation, high ambiguity, multiple volatility phrases. All five components near peak.",
+  "input": {
+    "prompt": "write a detailed comprehensive optimization. improve and optimize everything to be better quality. write a detailed plan.",
+    "inputTokens": 110000,
+    "contextWindow": 128000,
+    "expectedOutputTokens": 16000,
+    "maxOutputTokens": 16384
+  },
+  "expected": {
+    "score_range": [82, 92],
+    "risk_band": "critical",
+    "top_risk_drivers": [
+      "Structural Risk",
+      "Context Saturation Risk",
+      "Length Risk"
+    ]
+  },
+  "notes": "Length 110000/128000=0.859→bucket=90. Context (126000/128000)=0.984→bucket=95. Ambiguity: improve+optimize+better=3 matches/17 words=0.176→bucket=90. Structural=100. Volatility: write a detailed(+25)+comprehensive(+25)=50→bucket=50. Score=87."
+}
