@@ -145,6 +145,30 @@ Share: https://costguardai.io/s/<uuid>
 
 ---
 
+## Pricing
+
+| | Free | Pro | Team |
+|---|---|---|---|
+| **Price** | $0 | $29 / developer / month | $99 / organization / month |
+| CLI analysis | ✓ | ✓ | ✓ |
+| RiskScore + explainability | ✓ | ✓ | ✓ |
+| Shareable reports | ✓ | ✓ | ✓ |
+| Analyses per month | 100 | Unlimited | Unlimited |
+| Basic CI usage | ✓ | ✓ | ✓ |
+| CI guardrails (`--fail-on-risk`) | — | ✓ | ✓ |
+| PR comments | — | ✓ | ✓ |
+| Observability dashboard | — | ✓ | ✓ |
+| Replay support | — | ✓ | ✓ |
+| Organization dashboard | — | — | ✓ |
+| Team risk policies | — | — | ✓ |
+| Repo-level thresholds | — | — | ✓ |
+| Cross-project cost tracking | — | — | ✓ |
+| Audit logs | — | — | ✓ |
+
+→ [Full pricing details](docs/pricing.md)
+
+---
+
 ## V2 ideas
 
 - User accounts + prompt history

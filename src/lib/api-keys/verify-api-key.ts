@@ -20,6 +20,37 @@ async function hashKey(key: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+const FREE_TIER_MONTHLY_LIMIT = 100;
+
+/**
+ * Check whether a free-tier API key has exceeded its monthly analysis limit.
+ * Counts calls in ai_usage_events for the current calendar month (UTC).
+ * Fails open (returns allowed=true) if the admin client is unavailable.
+ */
+export async function checkFreeTierLimit(
+  keyId: string
+): Promise<{ allowed: boolean; count: number }> {
+  const admin = getAdminClient();
+  if (!admin) return { allowed: true, count: 0 };
+
+  try {
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+
+    const { count } = await admin
+      .from("ai_usage_events")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", keyId)
+      .gte("ts", monthStart.toISOString());
+
+    const n = count ?? 0;
+    return { allowed: n < FREE_TIER_MONTHLY_LIMIT, count: n };
+  } catch {
+    return { allowed: true, count: 0 };
+  }
+}
+
 /**
  * Verify an API key by hashing it and checking against api_keys table.
  * Returns null if the key is missing, unknown, or revoked.

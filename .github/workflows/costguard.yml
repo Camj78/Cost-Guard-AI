@@ -1,0 +1,64 @@
+# CostGuard CI — Preflight risk check on pull requests.
+#
+# Required secret:  COSTGUARD_API_KEY  (your CostGuard API key)
+# Optional vars:    COSTGUARD_PROMPT_FILE  (path to prompt file, default: prompt.txt)
+#                   COSTGUARD_FAIL_ON_RISK (risk threshold 0-100, default: 80)
+#
+# Exit codes enforced:
+#   0  Risk below threshold — build passes
+#   1  Risk threshold exceeded — build fails
+#   2  Runtime error — build fails
+
+name: CostGuard CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  preflight:
+    name: Preflight Risk Check
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run CostGuard analysis
+        id: costguard
+        env:
+          COSTGUARD_API_KEY: ${{ secrets.COSTGUARD_API_KEY }}
+          COSTGUARD_PROMPT_FILE: ${{ vars.COSTGUARD_PROMPT_FILE || 'prompt.txt' }}
+          COSTGUARD_FAIL_ON_RISK: ${{ vars.COSTGUARD_FAIL_ON_RISK || '80' }}
+        run: |
+          set +e
+          node cli/index.js ci "$COSTGUARD_PROMPT_FILE" \
+            --fail-on-risk "$COSTGUARD_FAIL_ON_RISK" \
+            --json > costguard-result.json
+          COSTGUARD_EXIT=$?
+          echo "exit_code=${COSTGUARD_EXIT}" >> "$GITHUB_OUTPUT"
+          set -e
+
+      - name: Post PR comment
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: npx --yes tsx scripts/post-pr-comment.ts costguard-result.json
+
+      - name: Enforce risk threshold
+        if: steps.costguard.outputs.exit_code == '1'
+        run: |
+          echo "::error::CostGuard risk threshold exceeded. See PR comment for details."
+          exit 1

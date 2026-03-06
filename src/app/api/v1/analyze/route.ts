@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { verifyApiKey } from "@/lib/api-keys/verify-api-key";
+import { verifyApiKey, checkFreeTierLimit } from "@/lib/api-keys/verify-api-key";
 import { countTokens } from "@/lib/tokenizer";
 import { assessRisk } from "@/lib/risk";
 import { createShareReport } from "@/lib/reports/create-share-report";
 import { recordAiUsageEvent } from "@/lib/telemetry/ai-usage-event";
+import { ANALYSIS_VERSION, RULESET_HASH, hashInput } from "@/lib/trust";
+import { estimateCostImpact } from "@/lib/cost-estimator";
 import {
   MODEL_CATALOG,
   DEFAULT_MODEL,
@@ -19,6 +21,7 @@ function formatCostValue(amount: number): number {
 
 export async function POST(req: Request) {
   const _start = Date.now();
+  const analysisId = crypto.randomUUID();
   // 1. Verify API key
   const apiKey = req.headers.get("x-api-key") ?? "";
   const keyRecord = await verifyApiKey(apiKey);
@@ -27,6 +30,17 @@ export async function POST(req: Request) {
       { error: "Invalid or missing API key" },
       { status: 401 }
     );
+  }
+
+  // 1b. Enforce free-tier monthly limit
+  if (keyRecord.plan === "free") {
+    const { allowed } = await checkFreeTierLimit(keyRecord.id);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Free tier monthly analysis limit reached", plan: "free", limit: 100 },
+        { status: 429 }
+      );
+    }
   }
 
   // 2. Parse and validate body
@@ -44,6 +58,7 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+  const inputHash = hashInput(prompt);
 
   const modelId =
     typeof body.model === "string" ? body.model : DEFAULT_MODEL;
@@ -57,7 +72,7 @@ export async function POST(req: Request) {
   const requestsPerMonth =
     typeof body.requests_per_month === "number"
       ? Math.max(1, Math.floor(body.requests_per_month))
-      : 1000;
+      : 100_000;
 
   // 3. Run analysis on the requested model
   const inputTokens = countTokens(prompt, model);
@@ -116,18 +131,27 @@ export async function POST(req: Request) {
   });
 
   // 7. Build and return response
-  const costPerRequest = assessment.estimatedCostTotal;
-  const estimatedMonthlyCost = costPerRequest * requestsPerMonth;
+  const costImpact = estimateCostImpact({
+    tokens_in: assessment.inputTokens,
+    tokens_out: expectedOutputTokens,
+    model: model.id,
+  });
+  const estimatedMonthlyCostUserSpecified = assessment.estimatedCostTotal * requestsPerMonth;
 
   return NextResponse.json({
+    analysis_id: analysisId,
+    analysis_version: ANALYSIS_VERSION,
+    score_version: assessment.score_version,
+    ruleset_hash: RULESET_HASH,
+    input_hash: inputHash,
     risk: assessment.riskLevel.toUpperCase(),
     risk_score: assessment.riskScore,
-    score_version: assessment.score_version,
     model: model.id,
     input_tokens: assessment.inputTokens,
     is_estimated: assessment.isEstimated,
-    estimated_cost_per_request: formatCostValue(costPerRequest),
-    estimated_monthly_cost: formatCostValue(estimatedMonthlyCost),
+    estimated_cost_per_request: formatCostValue(costImpact.estimated_cost_per_call),
+    estimated_cost_per_1k_calls: formatCostValue(costImpact.estimated_cost_per_1k_calls),
+    estimated_monthly_cost: formatCostValue(estimatedMonthlyCostUserSpecified),
     recommended_model: recommendedModelId,
     share_url: shareResult?.absoluteUrl ?? null,
     explanation: assessment.explanation,

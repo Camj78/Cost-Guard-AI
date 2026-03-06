@@ -70,6 +70,11 @@ export async function POST(req: Request) {
         const risk_score = Number(body.risk_score);
         const truncated = body.truncated === true;
         const compressionUsed = Boolean(body.compressionUsed ?? body.compression_used ?? false);
+        // Trust fields (optional, gracefully absent for legacy callers)
+        const analysis_version = typeof body.analysis_version === "string" ? body.analysis_version.trim() : "1.0.0";
+        const score_version    = typeof body.score_version    === "string" ? body.score_version.trim()    : "v1.0";
+        const ruleset_hash     = typeof body.ruleset_hash     === "string" ? body.ruleset_hash.trim()     : null;
+        const input_hash       = typeof body.input_hash       === "string" ? body.input_hash.trim()       : null;
 
         span.setAttribute("model", model_id);
         span.setAttribute("truncated", truncated);
@@ -167,7 +172,7 @@ export async function POST(req: Request) {
                 p_user_id: user.id,
                 p_created_at: new Date().toISOString(),
                 p_payload: { prompt_hash, model_id, input_tokens, output_tokens, cost_total, risk_score },
-                p_limit: 25,
+                p_limit: 100,
               });
 
               if (rpcErr) {
@@ -199,6 +204,10 @@ export async function POST(req: Request) {
                   output_tokens,
                   cost_total,
                   risk_score,
+                  analysis_version,
+                  score_version,
+                  ruleset_hash,
+                  input_hash,
                 })
                 .select("id")
                 .single();
