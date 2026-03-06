@@ -20,7 +20,7 @@ async function hashKey(key: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-const FREE_TIER_MONTHLY_LIMIT = 100;
+const FREE_TIER_MONTHLY_LIMIT = 25;
 
 /**
  * Check whether a free-tier API key has exceeded its monthly analysis limit.

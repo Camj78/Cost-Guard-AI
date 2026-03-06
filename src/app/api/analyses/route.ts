@@ -172,7 +172,7 @@ export async function POST(req: Request) {
                 p_user_id: user.id,
                 p_created_at: new Date().toISOString(),
                 p_payload: { prompt_hash, model_id, input_tokens, output_tokens, cost_total, risk_score },
-                p_limit: 100,
+                p_limit: 25,
               });
 
               if (rpcErr) {

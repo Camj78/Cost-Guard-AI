@@ -15,10 +15,10 @@ For developers evaluating CostGuardAI or running lightweight audits.
 - CLI analysis (`costguard analyze`)
 - RiskScore + explainability output
 - Shareable reports (`/s/<id>`)
-- 100 analyses per month
+- 25 analyses per month
 - Basic CI usage (output only, no enforcement)
 
-**Limit:** 100 analyses/month resets on the first of each calendar month.
+**Limit:** 25 analyses/month resets on the first of each calendar month.
 Analyses are counted per API call, whether from the CLI, the web app, or direct API.
 
 ---
@@ -62,7 +62,7 @@ One subscription covers the entire organization regardless of developer count.
 | RiskScore (0–100) | ✓ | ✓ | ✓ |
 | Explainability output | ✓ | ✓ | ✓ |
 | Shareable reports | ✓ | ✓ | ✓ |
-| Analyses per month | 100 | Unlimited | Unlimited |
+| Analyses per month | 25 | Unlimited | Unlimited |
 | Basic CI output | ✓ | ✓ | ✓ |
 | CI guardrails (`--fail-on-risk`) | — | ✓ | ✓ |
 | PR comments | — | ✓ | ✓ |
@@ -80,7 +80,7 @@ One subscription covers the entire organization regardless of developer count.
 
 ```
 Free → Pro
-  When: you hit the 100/month limit, or need CI enforcement
+  When: you hit the 25/month limit, or need CI enforcement
   How:  Dashboard → Settings → Upgrade → Pro
 
 Pro → Team

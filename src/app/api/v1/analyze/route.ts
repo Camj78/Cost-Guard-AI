@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     const { allowed } = await checkFreeTierLimit(keyRecord.id);
     if (!allowed) {
       return NextResponse.json(
-        { error: "Free tier monthly analysis limit reached", plan: "free", limit: 100 },
+        { error: "Free tier monthly analysis limit reached", plan: "free", limit: 25 },
         { status: 429 }
       );
     }

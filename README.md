@@ -153,7 +153,7 @@ Share: https://costguardai.io/s/<uuid>
 | CLI analysis | ✓ | ✓ | ✓ |
 | RiskScore + explainability | ✓ | ✓ | ✓ |
 | Shareable reports | ✓ | ✓ | ✓ |
-| Analyses per month | 100 | Unlimited | Unlimited |
+| Analyses per month | 25 | Unlimited | Unlimited |
 | Basic CI usage | ✓ | ✓ | ✓ |
 | CI guardrails (`--fail-on-risk`) | — | ✓ | ✓ |
 | PR comments | — | ✓ | ✓ |
