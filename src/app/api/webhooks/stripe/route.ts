@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     return new Response("Invalid signature", { status: 400 });
   }
 
-  console.log("[stripe/webhook] event.type:", event.type, "| id:", event.id);
+  console.info("[stripe/webhook] received:", event.type, event.id);
 
   // Idempotency: skip duplicates; fail-open if stripe_events table is absent
   const { error: insertErr } = await supabaseAdmin
@@ -69,7 +69,6 @@ export async function POST(req: Request) {
       insertErr.message?.includes("duplicate") ||
       insertErr.details?.includes("already exists");
     if (isDuplicate) {
-      console.log("[stripe/webhook] duplicate event, skipping:", event.id);
       return new Response("ok", { status: 200 });
     }
     // Table may not exist or transient error — log and continue processing
@@ -85,11 +84,6 @@ export async function POST(req: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       const customerId = session.customer as string;
       const subscriptionId = session.subscription as string;
-
-      console.log(
-        "[stripe/webhook] checkout.session.completed | customer:",
-        customerId
-      );
 
       // Primary: client_reference_id set in /api/checkout
       let userId = session.client_reference_id ?? "";
@@ -107,7 +101,7 @@ export async function POST(req: Request) {
         break;
       }
 
-      const { data: d1, error: e1 } = await supabaseAdmin
+      const { error: e1 } = await supabaseAdmin
         .from("users")
         .update({
           stripe_customer_id: customerId,
@@ -118,30 +112,15 @@ export async function POST(req: Request) {
         })
         .eq("id", userId);
 
-      console.log(
-        "[stripe/webhook] checkout update | userId:",
-        userId,
-        "| data:",
-        d1,
-        "| error:",
-        e1
-      );
+      if (e1) {
+        console.error("[stripe/webhook] checkout update error:", e1.message);
+      }
       break;
     }
 
     case "customer.subscription.created":
     case "customer.subscription.updated": {
       const sub = event.data.object as Stripe.Subscription;
-      console.log(
-        "[stripe/webhook]",
-        event.type,
-        "| sub.id:",
-        sub.id,
-        "| status:",
-        sub.status,
-        "| customer:",
-        sub.customer
-      );
 
       const userId =
         sub.metadata?.user_id ||
@@ -162,7 +141,7 @@ export async function POST(req: Request) {
       }
 
       const isPro = sub.status === "active" || sub.status === "trialing";
-      const { data: d2, error: e2 } = await supabaseAdmin
+      const { error: e2 } = await supabaseAdmin
         .from("users")
         .update({
           pro: isPro,
@@ -172,29 +151,19 @@ export async function POST(req: Request) {
         })
         .eq("id", userId);
 
-      console.log(
-        "[stripe/webhook]",
-        event.type,
-        "update | userId:",
-        userId,
-        "| isPro:",
-        isPro,
-        "| data:",
-        d2,
-        "| error:",
-        e2
-      );
+      if (e2) {
+        console.error(
+          "[stripe/webhook]",
+          event.type,
+          "update error:",
+          e2.message
+        );
+      }
       break;
     }
 
     case "customer.subscription.deleted": {
       const sub = event.data.object as Stripe.Subscription;
-      console.log(
-        "[stripe/webhook] customer.subscription.deleted | sub.id:",
-        sub.id,
-        "| customer:",
-        sub.customer
-      );
 
       const userId =
         sub.metadata?.user_id ||
@@ -212,7 +181,7 @@ export async function POST(req: Request) {
         break;
       }
 
-      const { data: d3, error: e3 } = await supabaseAdmin
+      const { error: e3 } = await supabaseAdmin
         .from("users")
         .update({
           pro: false,
@@ -222,14 +191,12 @@ export async function POST(req: Request) {
         })
         .eq("id", userId);
 
-      console.log(
-        "[stripe/webhook] subscription.deleted update | userId:",
-        userId,
-        "| data:",
-        d3,
-        "| error:",
-        e3
-      );
+      if (e3) {
+        console.error(
+          "[stripe/webhook] subscription.deleted update error:",
+          e3.message
+        );
+      }
       break;
     }
 
@@ -243,16 +210,6 @@ export async function POST(req: Request) {
       if (!invoice.subscription) break;
 
       const customerId = invoice.customer as string;
-      const subscriptionRef =
-        typeof invoice.subscription === "string"
-          ? invoice.subscription
-          : (invoice.subscription as Stripe.Subscription).id;
-      console.log(
-        "[stripe/webhook] invoice.payment_succeeded | customer:",
-        customerId,
-        "| subscription:",
-        subscriptionRef
-      );
 
       const userId = await getUserIdFromCustomer(
         customerId,
@@ -268,7 +225,7 @@ export async function POST(req: Request) {
         break;
       }
 
-      const { data: d4, error: e4 } = await supabaseAdmin
+      const { error: e4 } = await supabaseAdmin
         .from("users")
         .update({
           pro: true,
@@ -277,14 +234,12 @@ export async function POST(req: Request) {
         })
         .eq("id", userId);
 
-      console.log(
-        "[stripe/webhook] invoice.payment_succeeded update | userId:",
-        userId,
-        "| data:",
-        d4,
-        "| error:",
-        e4
-      );
+      if (e4) {
+        console.error(
+          "[stripe/webhook] invoice.payment_succeeded update error:",
+          e4.message
+        );
+      }
       break;
     }
   }
