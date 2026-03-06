@@ -56,7 +56,7 @@ pnpm dev
 **Model pricing and limits** are in a single file:
 
 ```
-src/config/models.ts
+src/lib/ai/models.ts
 ```
 
 To update a price or add a model, edit that file. The `pricingLastUpdated` string is shown in the footer. No other files need to change.
@@ -70,17 +70,19 @@ To update a price or add a model, edit that file. The `pricingLastUpdated` strin
 vercel --prod
 ```
 
-Or connect the repo in the Vercel dashboard. Zero configuration needed — it's a static Next.js app.
+Or connect the repo in the Vercel dashboard. Set the env vars from `.env.example` in Vercel's environment panel.
 
-Set `NEXT_PUBLIC_APP_URL` to your production URL in Vercel's environment variables for correct OpenGraph metadata.
+Set `NEXT_PUBLIC_APP_URL` to your production URL for correct OpenGraph metadata.
 
 ---
 
 ## Stack
 
-- **Next.js 15** (App Router, static output)
+- **Next.js 16** (App Router)
+- **Supabase** (auth + Postgres)
 - **Tailwind CSS v4** + **shadcn/ui** (new-york)
 - **js-tiktoken** for OpenAI token counting
+- **Stripe** (billing) · **Sentry** (error tracking) · **PostHog** (analytics)
 - **pnpm** package manager
 
 ---
@@ -89,23 +91,31 @@ Set `NEXT_PUBLIC_APP_URL` to your production URL in Vercel's environment variabl
 
 ```
 src/
-  config/models.ts          ← Single source of truth (edit here to update pricing)
   lib/
-    tokenizer.ts            ← Token counting (js-tiktoken wrapper)
+    ai/models.ts            ← Model catalog + pricing (edit here to update pricing)
     risk.ts                 ← Failure Risk Score engine
+    tokenizer.ts            ← Token counting (js-tiktoken wrapper)
     compressor.ts           ← Rule-based prompt compression
     formatters.ts           ← Number/currency formatting
+    trust.ts                ← Reproducibility: version + hash exports
   hooks/
-    use-preflight.ts        ← Main hook (debounce, perf guard, model-switch clamping)
+    use-preflight.ts        ← Main analysis hook
   components/
-    risk-score.tsx          ← Score + badge + deterministic explanation
-    compression-panel.tsx   ← Compression preview and apply
-    model-assumptions.tsx   ← Read-only model config modal
+    risk-score.tsx          ← Score + badge + explainability
     results-panel.tsx       ← Composes all result cards
     ...
   app/
-    page.tsx                ← The single page
-    layout.tsx              ← Root layout + metadata
+    page.tsx                ← Main preflight page
+    dashboard/
+      observability/        ← Token/cost/risk trend charts
+    report/[id]/            ← Public shareable report
+    s/[id]/                 ← Short URL redirect
+    api/v1/analyze/         ← Public REST API
+    upgrade/                ← Pricing + Stripe checkout
+cli/
+  index.js                  ← costguard CLI (analyze, ci, replay)
+.github/
+  workflows/costguard.yml   ← GitHub Action (PR analysis + comments)
 ```
 
 ---
@@ -169,14 +179,11 @@ Share: https://costguardai.io/s/<uuid>
 
 ---
 
-## V2 ideas
+## Roadmap
 
-- User accounts + prompt history
 - Live pricing sync from provider APIs
-- Browser extension
-- Team/workspace sharing
-- API endpoint for CI/CD prompt validation
-- Dark mode
+- Browser extension (VSCode + Chrome)
+- Team risk policies and repo-level thresholds
 
 ---
 
