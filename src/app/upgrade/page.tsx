@@ -39,6 +39,14 @@ export default function UpgradePage() {
     }
     return "monthly";
   });
+  const [intent] = useState<"free" | "pro" | null>(() => {
+    if (typeof window !== "undefined") {
+      const v = new URLSearchParams(window.location.search).get("intent");
+      if (v === "free") return "free";
+      if (v === "pro") return "pro";
+    }
+    return null;
+  });
   const [tier, setTier] = useState<"pro" | "team">("pro");
 
   useEffect(() => {
@@ -169,14 +177,23 @@ export default function UpgradePage() {
         {/* Header */}
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            CostGuardAI {tier === PLANS.TEAM ? "Team" : "Pro"}
+            {intent === "free" ? "CostGuardAI Free" : `CostGuardAI ${tier === PLANS.TEAM ? "Team" : "Pro"}`}
           </p>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Ship AI features without cost surprises or production failures.
+            {intent === "free"
+              ? "Start Free"
+              : "Ship AI features without cost surprises or production failures."}
           </h1>
           <p className="text-sm text-muted-foreground">
-            The preflight layer between your prompts and production. Catch token overflow, cost drift, and failure risk before a request ships.
+            {intent === "free"
+              ? "Create your account to begin using CostGuardAI with limited free preflight access."
+              : "The preflight layer between your prompts and production. Catch token overflow, cost drift, and failure risk before a request ships."}
           </p>
+          {intent === "free" && (
+            <p className="text-xs text-muted-foreground">
+              Upgrade to Pro later for command center access, history, and deeper workflow tools.
+            </p>
+          )}
         </div>
 
         {/* Feature comparison table — always visible */}
@@ -230,7 +247,9 @@ export default function UpgradePage() {
         {view === "login" && !emailSent && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Enter your email to log in, then upgrade.
+              {intent === "free"
+                ? "Enter your email to create your free account."
+                : "Enter your email to log in, then upgrade."}
             </p>
             <form onSubmit={handleLogin} className="space-y-3">
               <input
@@ -353,7 +372,10 @@ export default function UpgradePage() {
           <div className="space-y-3">
             <p className="text-sm font-medium">Check your email.</p>
             <p className="text-sm text-muted-foreground">
-              We sent a magic link to <strong>{email}</strong>. Click it to log in, then come back here to upgrade.
+              We sent a magic link to <strong>{email}</strong>. Click it to{" "}
+              {intent === "free"
+                ? "access your free account."
+                : "log in, then come back here to upgrade."}
             </p>
             {cooldownSecs > 0 ? (
               <p className="text-xs text-muted-foreground">

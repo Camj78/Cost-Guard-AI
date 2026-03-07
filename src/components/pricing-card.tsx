@@ -28,7 +28,7 @@ export function PricingCard({
       : "/ month";
 
   const ctaHref = isFree
-    ? "/upgrade"
+    ? "/upgrade?intent=free"
     : isPro
     ? interval === "annual"
       ? "/upgrade?plan=annual"
