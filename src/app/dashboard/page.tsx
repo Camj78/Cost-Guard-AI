@@ -2,8 +2,9 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import Link from "next/link";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -243,6 +244,11 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [needsUpgradeRedirect, setNeedsUpgradeRedirect] = useState(false);
 
+  // ── Personalized greeting (free-gate locked state) ─────────────────────────
+  const [userName, setUserName] = useState("");
+  const [sessionGreeting, setSessionGreeting] = useState("");
+  const greetingInitRef = useRef(false);
+
   // ── Save form state ────────────────────────────────────────────────────────
   const [isSaving, setIsSaving] = useState(false);
   const [saveName, setSaveName] = useState("");
@@ -294,6 +300,40 @@ export default function DashboardPage() {
     if (!needsUpgradeRedirect) return;
     router.replace("/upgrade?next=/dashboard");
   }, [needsUpgradeRedirect, router]);
+
+  // ── Greeting init (runs once per mount, session-stable) ────────────────────
+  useEffect(() => {
+    if (greetingInitRef.current) return;
+    greetingInitRef.current = true;
+
+    const WITTY: string[] = [
+      "Ready to catch token drift before production does?",
+      "Let's make sure your prompts don't cost you sleep tonight.",
+      "Time to run preflight before you ship.",
+      "Your prompts are waiting for a safety check.",
+      "Cheaper tokens start with smarter preflight.",
+    ];
+
+    const KEY = "cg_session_greeting";
+    const stored = sessionStorage.getItem(KEY);
+    if (stored) {
+      setSessionGreeting(stored);
+    } else {
+      const chosen = WITTY[Math.floor(Math.random() * WITTY.length)];
+      sessionStorage.setItem(KEY, chosen);
+      setSessionGreeting(chosen);
+    }
+
+    const sb = getSupabaseBrowser();
+    sb.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const meta = (user.user_metadata ?? {}) as Record<string, string>;
+      const fullName = (meta.full_name ?? meta.name ?? "").trim();
+      const firstName = fullName.split(" ")[0] ?? "";
+      const emailPrefix = (user.email ?? "").split("@")[0];
+      setUserName(firstName || emailPrefix || "");
+    });
+  }, []);
 
   // ── Preflight tool ─────────────────────────────────────────────────────────
   const {
@@ -408,18 +448,41 @@ export default function DashboardPage() {
       {/* Free plan gate */}
       {isAuthed && isPro === false ? (
         <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-20">
-          <div className="max-w-md w-full border border-white/[0.07] rounded-lg p-8 text-center space-y-6">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-3">
+          <div className="max-w-md w-full border border-white/[0.07] rounded-lg p-8 space-y-6">
+            {/* Personalized greeting */}
+            <div className="space-y-1">
+              <h2 className="text-2xl font-semibold tracking-tight">
+                {userName ? `Hi, ${userName},` : "Hi there,"}
+              </h2>
+              {sessionGreeting && (
+                <p className="text-sm text-muted-foreground">{sessionGreeting}</p>
+              )}
+            </div>
+
+            {/* Gate label + Pro benefits */}
+            <div className="space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 AI Cost Command Center
               </p>
-              <h2 className="text-2xl font-semibold tracking-tight">
-                Pro feature
-              </h2>
+              <p className="text-sm text-muted-foreground">
+                Pro unlocks three things you need once you&apos;re shipping:
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <span className="mt-1.5 shrink-0 w-1 h-1 rounded-full bg-muted-foreground" />
+                  Historical usage visibility
+                </li>
+                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <span className="mt-1.5 shrink-0 w-1 h-1 rounded-full bg-muted-foreground" />
+                  Saved analysis workflow
+                </li>
+                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <span className="mt-1.5 shrink-0 w-1 h-1 rounded-full bg-muted-foreground" />
+                  Personal AI cost command center
+                </li>
+              </ul>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Upgrade to Pro to unlock historical usage visibility, saved analysis workflow, and your personal command center.
-            </p>
+
             <a
               href="/pricing"
               className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2.5 text-sm font-medium transition-colors"
