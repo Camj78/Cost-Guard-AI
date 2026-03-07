@@ -9,6 +9,12 @@ import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { MODELS } from "@/config/models";
 import { formatCost, formatNumber } from "@/lib/formatters";
+import {
+  deriveAlerts,
+  estimateCostSaved,
+  type DerivedAlert,
+  type AlertSeverity,
+} from "@/lib/alerts/deriveAlerts";
 import { usePreflight } from "@/hooks/use-preflight";
 import { useUsage } from "@/hooks/use-usage";
 import { PromptInput } from "@/components/prompt-input";
@@ -71,84 +77,89 @@ function riskLabel(score: number): string {
   return "Critical";
 }
 
-// ─── Mock data for Dashboard V1 (replace with live API in V2) ─────────────────
+// ─── Dashboard helpers ─────────────────────────────────────────────────────────
 
-const MOCK_KPI = {
-  riskScore: 72,
-  aiCostToday: 18.42,
-  projectedMonthly: 542,
-  activeAlerts: 2,
-};
-
-type AlertSeverity = "high" | "medium";
 type RepoStatus = "alert" | "warning" | "ok";
 
-interface MockAlert {
-  id: string;
-  severity: AlertSeverity;
-  title: string;
-  repo: string;
-  detail: string;
+function riskToStatus(score: number): RepoStatus {
+  if (score >= 70) return "alert";
+  if (score >= 50) return "warning";
+  return "ok";
 }
 
-interface MockRepo {
-  name: string;
-  status: RepoStatus;
-  riskScore: number;
-  costPerDay: string;
+function timeAgo(isoStr: string): string {
+  const ms = Date.now() - new Date(isoStr).getTime();
+  const min = Math.floor(ms / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} hr ago`;
+  return `${Math.floor(hr / 24)} days ago`;
 }
 
-interface MockScan {
-  repo: string;
-  ago: string;
-  riskScore: number;
-  status: RepoStatus;
+function getTodayCost(analyses: AnalysisEntry[]): number {
+  const today = new Date().toDateString();
+  return analyses
+    .filter((a) => new Date(a.created_at).toDateString() === today)
+    .reduce((sum, a) => sum + a.cost_total, 0);
 }
 
-const MOCK_ALERTS: MockAlert[] = [
-  {
-    id: "a1",
-    severity: "high",
-    title: "Prompt injection risk detected",
-    repo: "checkout-service",
-    detail: "Untrusted user input detected in system prompt template.",
-  },
-  {
-    id: "a2",
-    severity: "medium",
-    title: "Token usage spike detected",
-    repo: "summarizer-worker",
-    detail: "Token usage 340% above 7-day baseline.",
-  },
-];
+function getProjectedMonthly(analyses: AnalysisEntry[]): number {
+  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const recent = analyses.filter(
+    (a) => new Date(a.created_at).getTime() >= cutoff
+  );
+  if (recent.length === 0) return 0;
+  const total = recent.reduce((sum, a) => sum + a.cost_total, 0);
+  return (total / 7) * 30;
+}
 
-const MOCK_COST_TREND: Record<string, string | number>[] = [
-  { day: "02-22", cost: 12.4 }, { day: "02-23", cost: 14.8 }, { day: "02-24", cost: 11.2 },
-  { day: "02-25", cost: 15.6 }, { day: "02-26", cost: 13.9 }, { day: "02-27", cost: 16.2 },
-  { day: "02-28", cost: 17.4 }, { day: "03-01", cost: 14.1 }, { day: "03-02", cost: 18.9 },
-  { day: "03-03", cost: 16.5 }, { day: "03-04", cost: 15.8 }, { day: "03-05", cost: 19.2 },
-  { day: "03-06", cost: 17.6 }, { day: "03-07", cost: 18.4 },
-];
+function buildCostTrend(
+  analyses: AnalysisEntry[],
+  days = 14
+): Record<string, string | number>[] {
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  const inWindow = analyses.filter(
+    (a) => new Date(a.created_at).getTime() >= cutoff
+  );
+  const byDay = new Map<string, number>();
+  inWindow.forEach((a) => {
+    const day = new Date(a.created_at).toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+    });
+    byDay.set(day, (byDay.get(day) ?? 0) + a.cost_total);
+  });
+  return Array.from(byDay.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([day, cost]) => ({ day, cost }));
+}
 
-const MOCK_RISK_TREND: Record<string, string | number>[] = [
-  { day: "02-22", score: 58 }, { day: "02-23", score: 62 }, { day: "02-24", score: 55 },
-  { day: "02-25", score: 68 }, { day: "02-26", score: 64 }, { day: "02-27", score: 70 },
-  { day: "02-28", score: 66 }, { day: "03-01", score: 72 }, { day: "03-02", score: 75 },
-  { day: "03-03", score: 69 }, { day: "03-04", score: 71 }, { day: "03-05", score: 78 },
-  { day: "03-06", score: 74 }, { day: "03-07", score: 72 },
-];
-
-const MOCK_REPOS: MockRepo[] = [
-  { name: "checkout-service",  status: "alert",   riskScore: 72, costPerDay: "$8.40/day" },
-  { name: "summarizer-worker", status: "warning",  riskScore: 58, costPerDay: "$6.20/day" },
-  { name: "support-bot",       status: "ok",       riskScore: 31, costPerDay: "$3.82/day" },
-];
-
-const MOCK_RECENT_SCANS: MockScan[] = [
-  { repo: "checkout-service",  ago: "12 min ago", riskScore: 72, status: "alert"   },
-  { repo: "summarizer-worker", ago: "26 min ago", riskScore: 58, status: "warning" },
-  { repo: "support-bot",       ago: "1 hr ago",   riskScore: 31, status: "ok"      },
-];
+function buildRiskTrend(
+  analyses: AnalysisEntry[],
+  days = 14
+): Record<string, string | number>[] {
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  const inWindow = analyses.filter(
+    (a) => new Date(a.created_at).getTime() >= cutoff
+  );
+  const byDay = new Map<string, number[]>();
+  inWindow.forEach((a) => {
+    const day = new Date(a.created_at).toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const arr = byDay.get(day) ?? [];
+    arr.push(a.risk_score);
+    byDay.set(day, arr);
+  });
+  return Array.from(byDay.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([day, scores]) => ({
+      day,
+      score: Math.round(scores.reduce((s, v) => s + v, 0) / scores.length),
+    }));
+}
 
 // ─── Mini bar chart (inline SVG, no dependencies) ─────────────────────────────
 
@@ -322,6 +333,16 @@ export default function DashboardPage() {
 
   const hasPrompt = prompt.trim().length > 0;
 
+  // ── Derived dashboard metrics ───────────────────────────────────────────────
+  const derivedAlerts: DerivedAlert[] = deriveAlerts({ analysisHistory: analyses });
+  const aiCostToday = getTodayCost(analyses);
+  const projectedMonthly = getProjectedMonthly(analyses);
+  const latestRiskScore = analyses[0]?.risk_score ?? null;
+  const costSaved = estimateCostSaved(analyses);
+  const costTrend = buildCostTrend(analyses);
+  const riskTrend = buildRiskTrend(analyses);
+  const recentScans = analyses.slice(0, 5);
+
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   function handleLoadExample(examplePrompt: string) {
@@ -433,17 +454,25 @@ export default function DashboardPage() {
 
           {/* ── KPI Strip ───────────────────────────────────────────────────── */}
           <section>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
 
               {/* RiskScore */}
               <div className="glass-card p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-2">
                   RiskScore
                 </p>
-                <p className="font-mono tabular-nums text-2xl font-semibold leading-none text-orange-400">
-                  {MOCK_KPI.riskScore}
-                </p>
-                <p className="text-xs mt-1 text-orange-400">High</p>
+                {latestRiskScore !== null ? (
+                  <>
+                    <p className={`font-mono tabular-nums text-2xl font-semibold leading-none ${riskBadgeClass(latestRiskScore).split(" ")[0]}`}>
+                      {latestRiskScore}
+                    </p>
+                    <p className={`text-xs mt-1 ${riskBadgeClass(latestRiskScore).split(" ")[0]}`}>
+                      {riskLabel(latestRiskScore)}
+                    </p>
+                  </>
+                ) : (
+                  <p className="font-mono tabular-nums text-2xl font-semibold leading-none text-muted-foreground">—</p>
+                )}
               </div>
 
               {/* AI Cost Today */}
@@ -452,7 +481,7 @@ export default function DashboardPage() {
                   AI Cost Today
                 </p>
                 <p className="font-mono tabular-nums text-2xl font-semibold leading-none">
-                  ${MOCK_KPI.aiCostToday.toFixed(2)}
+                  {aiCostToday > 0 ? formatCost(aiCostToday) : "—"}
                 </p>
               </div>
 
@@ -462,7 +491,7 @@ export default function DashboardPage() {
                   Projected Monthly
                 </p>
                 <p className="font-mono tabular-nums text-2xl font-semibold leading-none">
-                  ${MOCK_KPI.projectedMonthly}
+                  {projectedMonthly > 0 ? formatCost(projectedMonthly) : "—"}
                 </p>
               </div>
 
@@ -471,10 +500,36 @@ export default function DashboardPage() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-2">
                   Active Alerts
                 </p>
-                <p className="font-mono tabular-nums text-2xl font-semibold leading-none text-red-400">
-                  {MOCK_KPI.activeAlerts}
+                {derivedAlerts.length > 0 ? (
+                  <>
+                    <p className="font-mono tabular-nums text-2xl font-semibold leading-none text-red-400">
+                      {derivedAlerts.length}
+                    </p>
+                    <p className="text-xs mt-1 text-red-400">Needs attention</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-mono tabular-nums text-2xl font-semibold leading-none text-emerald-400">0</p>
+                    <p className="text-xs mt-1 text-emerald-400">All clear</p>
+                  </>
+                )}
+              </div>
+
+              {/* Estimated Cost Saved */}
+              <div className="glass-card p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-2">
+                  Est. Cost Saved
                 </p>
-                <p className="text-xs mt-1 text-red-400">Needs attention</p>
+                {costSaved > 0 ? (
+                  <>
+                    <p className="font-mono tabular-nums text-2xl font-semibold leading-none text-emerald-400">
+                      {formatCost(costSaved)}
+                    </p>
+                    <p className="text-xs mt-1 text-emerald-400">via risk flags</p>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1">No savings calculated yet</p>
+                )}
               </div>
 
             </div>
@@ -486,31 +541,44 @@ export default function DashboardPage() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 Active Alerts
               </p>
-              <span className="inline-flex items-center rounded-full bg-red-500/10 border border-red-500/20 px-2 py-0.5 text-[10px] font-semibold text-red-400 font-mono tabular-nums">
-                {MOCK_KPI.activeAlerts}
-              </span>
+              {derivedAlerts.length > 0 && (
+                <span className="inline-flex items-center rounded-full bg-red-500/10 border border-red-500/20 px-2 py-0.5 text-[10px] font-semibold text-red-400 font-mono tabular-nums">
+                  {derivedAlerts.length}
+                </span>
+              )}
             </div>
 
             <div className="glass-card divide-y divide-border">
-              {MOCK_ALERTS.map((alert) => (
-                <div key={alert.id} className="flex items-start gap-4 px-6 py-4">
-                  <span className={`mt-0.5 shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] border ${
-                    alert.severity === "high"
-                      ? "bg-red-500/10 text-red-400 border-red-500/20"
-                      : "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                  }`}>
-                    {alert.severity}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium leading-snug">{alert.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      <span className="font-mono">{alert.repo}</span>
-                      {" · "}
-                      {alert.detail}
-                    </p>
+              {derivedAlerts.length === 0 ? (
+                <p className="text-sm text-muted-foreground px-6 py-5 text-center">
+                  No active alerts.
+                </p>
+              ) : (
+                derivedAlerts.map((alert) => (
+                  <div key={alert.id} className="flex items-start gap-4 px-6 py-4">
+                    <span className={`mt-0.5 shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] border ${
+                      alert.severity === "high"
+                        ? "bg-red-500/10 text-red-400 border-red-500/20"
+                        : alert.severity === "medium"
+                        ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                        : "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                    }`}>
+                      {alert.severity}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium leading-snug">{alert.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        <span className="font-mono">{alert.repo}</span>
+                        {" · "}
+                        {alert.detail}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
+                        Detected {timeAgo(alert.detectedAt)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </section>
 
@@ -528,15 +596,19 @@ export default function DashboardPage() {
                     AI Cost Over Time
                   </p>
                   <p className="font-mono tabular-nums text-xs text-muted-foreground">
-                    ${MOCK_KPI.aiCostToday.toFixed(2)} today
+                    {aiCostToday > 0 ? `${formatCost(aiCostToday)} today` : "No data yet"}
                   </p>
                 </div>
-                <MiniBarChart
-                  data={MOCK_COST_TREND}
-                  valueKey="cost"
-                  labelKey="day"
-                  height={80}
-                />
+                {costTrend.length > 0 ? (
+                  <MiniBarChart
+                    data={costTrend}
+                    valueKey="cost"
+                    labelKey="day"
+                    height={80}
+                  />
+                ) : (
+                  <p className="text-xs text-muted-foreground">Run a preflight to start tracking.</p>
+                )}
               </div>
 
               {/* RiskScore Trend */}
@@ -545,17 +617,23 @@ export default function DashboardPage() {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                     RiskScore Trend
                   </p>
-                  <p className="font-mono tabular-nums text-xs text-orange-400">
-                    {MOCK_KPI.riskScore} today
-                  </p>
+                  {latestRiskScore !== null && (
+                    <p className={`font-mono tabular-nums text-xs ${riskBadgeClass(latestRiskScore).split(" ")[0]}`}>
+                      {latestRiskScore} today
+                    </p>
+                  )}
                 </div>
-                <MiniBarChart
-                  data={MOCK_RISK_TREND}
-                  valueKey="score"
-                  labelKey="day"
-                  height={80}
-                  colorClass="fill-orange-500"
-                />
+                {riskTrend.length > 0 ? (
+                  <MiniBarChart
+                    data={riskTrend}
+                    valueKey="score"
+                    labelKey="day"
+                    height={80}
+                    colorClass="fill-orange-500"
+                  />
+                ) : (
+                  <p className="text-xs text-muted-foreground">Run a preflight to start tracking.</p>
+                )}
               </div>
 
             </div>
@@ -580,23 +658,16 @@ export default function DashboardPage() {
                     + Add repo
                   </Link>
                 </div>
-                <div className="divide-y divide-border">
-                  {MOCK_REPOS.map((repo) => (
-                    <div key={repo.name} className="flex items-center justify-between gap-4 px-6 py-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <StatusDot status={repo.status} />
-                        <p className="text-sm font-mono truncate">{repo.name}</p>
-                      </div>
-                      <div className="flex items-center gap-4 shrink-0">
-                        <span className={`font-mono tabular-nums text-xs rounded-full px-2 py-0.5 font-medium ${riskBadgeClass(repo.riskScore)}`}>
-                          {repo.riskScore}
-                        </span>
-                        <span className="text-xs text-muted-foreground font-mono tabular-nums">
-                          {repo.costPerDay}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                <div className="px-6 py-8 text-center space-y-2">
+                  <p className="text-sm text-muted-foreground">No repositories connected.</p>
+                  <Link
+                    href={GITHUB_APP_INSTALL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Install the GitHub app to monitor repos →
+                  </Link>
                 </div>
               </div>
 
@@ -604,27 +675,33 @@ export default function DashboardPage() {
               <div className="glass-card overflow-hidden">
                 <div className="px-6 py-4 border-b border-border">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                    Recent Scans
+                    Recent Preflight Runs
                   </p>
                 </div>
-                <div className="divide-y divide-border">
-                  {MOCK_RECENT_SCANS.map((scan, i) => (
-                    <div key={i} className="flex items-center justify-between gap-4 px-6 py-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <StatusDot status={scan.status} />
-                        <p className="text-sm font-mono truncate">{scan.repo}</p>
+                {recentScans.length === 0 ? (
+                  <p className="text-sm text-muted-foreground px-6 py-5 text-center">
+                    No analyses recorded yet.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {recentScans.map((scan) => (
+                      <div key={scan.id} className="flex items-center justify-between gap-4 px-6 py-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <StatusDot status={riskToStatus(scan.risk_score)} />
+                          <p className="text-sm font-mono truncate">{getModelName(scan.model_id)}</p>
+                        </div>
+                        <div className="flex items-center gap-4 shrink-0">
+                          <span className={`font-mono tabular-nums text-xs rounded-full px-2 py-0.5 font-medium ${riskBadgeClass(scan.risk_score)}`}>
+                            {scan.risk_score}
+                          </span>
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            {timeAgo(scan.created_at)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 shrink-0">
-                        <span className={`font-mono tabular-nums text-xs rounded-full px-2 py-0.5 font-medium ${riskBadgeClass(scan.riskScore)}`}>
-                          {scan.riskScore}
-                        </span>
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {scan.ago}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
             </div>
