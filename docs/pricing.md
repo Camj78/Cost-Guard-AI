@@ -39,9 +39,12 @@ Teams of developers each need their own Pro subscription, or use the Team tier.
 
 ---
 
-### Team — $99 / organization / month
+### Team — $99 / organization / month _(available on request)_
 
 For engineering teams enforcing consistent risk policies across repositories.
+
+Backend infrastructure is complete. Self-serve checkout is coming soon.
+Contact [team@costguardai.io](mailto:team@costguardai.io) to activate a Team plan.
 
 - Everything in Pro
 - **Organization dashboard** — aggregate risk and cost across all members and repos
@@ -85,7 +88,7 @@ Free → Pro
 
 Pro → Team
   When: multiple developers need a shared policy layer
-  How:  Dashboard → Settings → Upgrade → Team
+  How:  Contact team@costguardai.io — self-serve checkout coming soon
 ```
 
 Downgrading takes effect at the end of the current billing period.

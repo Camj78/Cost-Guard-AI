@@ -159,7 +159,7 @@ Share: https://costguardai.io/s/<uuid>
 
 | | Free | Pro | Team |
 |---|---|---|---|
-| **Price** | $0 | $29 / developer / month | $99 / organization / month |
+| **Price** | $0 | $29 / month | $99 / month _(on request)_ |
 | CLI analysis | ✓ | ✓ | ✓ |
 | RiskScore + explainability | ✓ | ✓ | ✓ |
 | Shareable reports | ✓ | ✓ | ✓ |
@@ -174,6 +174,8 @@ Share: https://costguardai.io/s/<uuid>
 | Repo-level thresholds | — | — | ✓ |
 | Cross-project cost tracking | — | — | ✓ |
 | Audit logs | — | — | ✓ |
+
+> Team plan is backend-ready. Self-serve checkout coming soon — contact [team@costguardai.io](mailto:team@costguardai.io) to activate.
 
 → [Full pricing details](docs/pricing.md)
 
