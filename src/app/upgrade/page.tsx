@@ -261,7 +261,7 @@ export default function UpgradePage() {
               >
                 Annual
                 <span className="ml-2 text-xs text-emerald-400 font-medium">
-                  Save $149
+                  Save $58
                 </span>
               </button>
             </div>
@@ -286,16 +286,16 @@ export default function UpgradePage() {
                 <>
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-4xl font-black font-mono tracking-tight">
-                      $199
+                      $290
                     </span>
                     <span className="text-sm text-muted-foreground">
                       / year
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    $16.58/month billed annually.{" "}
+                    $24.17/month billed annually.{" "}
                     <span className="text-emerald-400 font-medium">
-                      Save $149 vs monthly.
+                      Save $58 vs monthly.
                     </span>
                   </p>
                 </>
@@ -316,7 +316,7 @@ export default function UpgradePage() {
                 ? "Redirecting..."
                 : plan === "monthly"
                 ? "Upgrade to Pro — $29/month"
-                : "Upgrade to Pro — $199/year"}
+                : "Upgrade to Pro — $290/year"}
             </Button>
           </div>
         )}
