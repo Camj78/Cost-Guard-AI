@@ -399,45 +399,75 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {!onboardingCompleted && onboardingModalVisible && (
+      {!onboardingCompleted && onboardingModalVisible && isPro === true && (
         <OnboardingModal onLoadExample={handleLoadExample} />
       )}
 
       <Header />
 
-      {/* STATUS BAR */}
-      <div className="border-b border-white/5 bg-white/[0.02] px-4 sm:px-6 py-3">
-        <div className="mx-auto max-w-5xl flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-          <Link href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-            ← Home
-          </Link>
-          <span className="text-border">·</span>
-          {isPro && (
-            <span className="inline-flex items-center font-medium text-primary border border-primary/30 rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.08em]">
-              Pro
-            </span>
-          )}
-          <span>Pro plan active</span>
-          <span className="text-border">·</span>
-          <span>Priority features enabled</span>
-          {analyses[0] && (
-            <>
-              <span className="text-border">·</span>
-              <span>
-                Last run:{" "}
-                {new Date(analyses[0].created_at).toLocaleString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
+      {/* Free plan gate */}
+      {isAuthed && isPro === false ? (
+        <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-20">
+          <div className="max-w-md w-full border border-white/[0.07] rounded-lg p-8 text-center space-y-6">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-3">
+                AI Cost Command Center
+              </p>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                Pro feature
+              </h2>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Upgrade to Pro to unlock historical usage visibility, saved analysis workflow, and your personal command center.
+            </p>
+            <a
+              href="/pricing"
+              className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2.5 text-sm font-medium transition-colors"
+            >
+              View pricing
+            </a>
+            <p className="text-xs text-muted-foreground">
+              <Link href="/" className="hover:underline">← Back to preflight tool</Link>
+            </p>
+          </div>
+        </main>
+      ) : (
+        <>
+          {/* STATUS BAR */}
+          <div className="border-b border-white/5 bg-white/[0.02] px-4 sm:px-6 py-3">
+            <div className="mx-auto max-w-5xl flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+              <Link href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                ← Home
+              </Link>
+              {isPro && (
+                <>
+                  <span className="text-border">·</span>
+                  <span className="inline-flex items-center font-medium text-primary border border-primary/30 rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.08em]">
+                    Pro
+                  </span>
+                  <span>Pro plan active</span>
+                  <span className="text-border">·</span>
+                  <span>Priority features enabled</span>
+                </>
+              )}
+              {analyses[0] && (
+                <>
+                  <span className="text-border">·</span>
+                  <span>
+                    Last run:{" "}
+                    {new Date(analyses[0].created_at).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
 
-      <main className="flex-1 px-4 sm:px-6 py-10">
+          <main className="flex-1 px-4 sm:px-6 py-10">
         <div className="mx-auto max-w-5xl space-y-12">
 
           {/* Page heading */}
@@ -1076,6 +1106,8 @@ export default function DashboardPage() {
 
         </div>
       </main>
+      </>
+    )}
     </div>
   );
 }

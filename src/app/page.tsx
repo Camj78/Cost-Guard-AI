@@ -10,11 +10,14 @@ import { CompressionPanel } from "@/components/compression-panel";
 import { ResultsPanel } from "@/components/results-panel";
 import { ModelAssumptions } from "@/components/model-assumptions";
 import { Button } from "@/components/ui/button";
-import { Zap, Check } from "lucide-react";
+import { Zap } from "lucide-react";
 import { PdfExportButton } from "@/components/pro/pdf-export-button";
 import { ShareButton } from "@/components/share-button";
 import { useUsage } from "@/hooks/use-usage";
 import { UsageMeter } from "@/components/usage-meter";
+import { PricingCard } from "@/components/pricing-card";
+import { PRICING } from "@/config/pricing";
+import { PLANS } from "@/config/plans";
 
 export default function Page() {
   const { isPro, isAuthed, usedThisMonth, limit, refetch, proJustActivated } = useUsage();
@@ -463,74 +466,15 @@ export default function Page() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-
-            {/* Free */}
-            <div className="glass-card p-8 space-y-4">
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Free</h3>
-              <div className="flex flex-wrap gap-2">
-                {["Single preflight", "Token + cost + risk", "Manual usage"].map((f) => (
-                  <span key={f} className="text-xs text-muted-foreground border border-white/[0.07] bg-white/[0.03] rounded-full px-3 py-1">
-                    {f}
-                  </span>
-                ))}
-              </div>
-              <div className="pt-2">
-                <span className="text-3xl font-semibold font-mono">$0</span>
-              </div>
-            </div>
-
-            {/* Pro */}
-            <div className="rounded-xl bg-primary/[0.06] border-2 border-primary/40 p-8 space-y-4">
-              <h3 className="text-2xl font-semibold tracking-tight">Pro</h3>
-              <ul className="space-y-2 text-sm">
-                <li className="flex gap-2">
-                  <Check className="mt-0.5 size-3.5 text-emerald-400 shrink-0" />
-                  <span className="font-semibold">Unlimited preflights</span>
-                </li>
-                <li className="flex gap-2">
-                  <Check className="mt-0.5 size-3.5 text-emerald-400 shrink-0" />
-                  <span className="font-semibold">Model comparison matrix</span>
-                </li>
-                <li className="flex gap-2">
-                  <Check className="mt-0.5 size-3.5 text-emerald-400 shrink-0" />
-                  <span className="font-semibold">Historical drift tracking</span>
-                </li>
-                <li className="flex gap-2">
-                  <Check className="mt-0.5 size-3.5 text-emerald-400 shrink-0" />
-                  <span className="font-semibold">Batch analysis</span>
-                </li>
-                <li className="flex gap-2">
-                  <Check className="mt-0.5 size-3.5 text-emerald-400 shrink-0" />
-                  <span className="font-semibold">Team dashboard</span>
-                </li>
-                <li className="flex gap-2">
-                  <Check className="mt-0.5 size-3.5 text-emerald-400 shrink-0" />
-                  <span className="font-semibold">Priority support</span>
-                </li>
-              </ul>
-              <div className="pt-2 space-y-1">
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-4xl font-black font-mono tracking-tight">$29</span>
-                  <span className="text-sm text-muted-foreground">/ month</span>
-                </div>
-                <p className="text-xs font-mono text-muted-foreground">
-                  $290 / yr · <span className="text-emerald-400">Save 17%</span>
-                </p>
-                <div className="text-xs text-muted-foreground">
-                  Pays for itself at ~10K req/day
-                </div>
-              </div>
-              <Button
-                asChild
-                variant="outline"
-                className="w-full active:scale-[0.97]"
-              >
-                <a href="/upgrade">Upgrade to Pro</a>
-              </Button>
-              <p className="text-xs text-muted-foreground text-center">No credit card stored. Cancel anytime.</p>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {PRICING.filter((t) => t.id !== PLANS.ENTERPRISE).map((tier) => (
+              <PricingCard
+                key={tier.id}
+                tier={tier}
+                interval="monthly"
+                comingSoon={tier.id === PLANS.TEAM}
+              />
+            ))}
           </div>
         </div>
       </section>
