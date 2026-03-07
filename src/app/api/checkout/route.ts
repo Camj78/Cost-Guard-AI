@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseServerClient } from "@/lib/supabase-ssr";
+import { getPriceId, type BillingInterval } from "@/lib/stripe/price-lookup";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -63,11 +64,9 @@ export async function POST(req: Request) {
         .eq("id", user.id);
     }
 
-    // Create Checkout session
-    const priceId =
-      plan === "annual"
-        ? (process.env.STRIPE_ANNUAL_PRICE_ID ?? process.env.STRIPE_PRICE_ID!)
-        : process.env.STRIPE_PRICE_ID!;
+    // Create Checkout session — Pro plan only; team tier not yet exposed in UI
+    const interval: BillingInterval = plan === "annual" ? "yearly" : "monthly";
+    const priceId = getPriceId("pro", interval);
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",

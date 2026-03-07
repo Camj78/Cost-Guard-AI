@@ -21,7 +21,8 @@
     "test:cli": "node packages/cli/scripts/test-golden.mjs",
     "test:risk-score": "tsx tests/run-risk-score.ts",
     "test:explainability": "tsx tests/explainability-test.ts",
-    "test:cost-impact": "tsx tests/cost-impact.test.ts"
+    "test:cost-impact": "tsx tests/cost-impact.test.ts",
+    "test:stripe-price-lookup": "tsx tests/stripe-price-lookup.test.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.42.0",
