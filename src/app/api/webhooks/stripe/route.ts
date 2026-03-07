@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { resolvePlanFromPriceId } from "@/lib/stripe/price-lookup";
+import { PLANS } from "@/config/plans";
 
 export const runtime = "nodejs";
 
@@ -102,14 +103,16 @@ export async function POST(req: Request) {
         break;
       }
 
-      // Resolve plan from session metadata (set by /api/checkout)
-      const sessionPlan = session.metadata?.plan ?? "pro";
+      // Resolve plan from session metadata (set by /api/checkout).
+      // Default to FREE — customer.subscription.created fires next and will
+      // set the correct plan via price ID lookup, so this is self-correcting.
+      const sessionPlan = session.metadata?.plan ?? PLANS.FREE;
       const { error: e1 } = await supabaseAdmin
         .from("users")
         .update({
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
-          pro: true,
+          pro: sessionPlan !== PLANS.FREE,
           pro_status: "pending",
           plan: sessionPlan,
           updated_at: new Date().toISOString(),
@@ -144,11 +147,22 @@ export async function POST(req: Request) {
         break;
       }
 
-      // Resolve plan: prefer metadata set by /api/checkout, then price ID lookup
+      // Resolve plan: prefer metadata set by /api/checkout, then price ID lookup.
+      // Default to FREE — never escalate access for unrecognized price IDs.
       const metaPlan = sub.metadata?.plan;
       const priceId = sub.items?.data[0]?.price?.id;
       const resolvedPlan =
-        metaPlan ?? (priceId ? resolvePlanFromPriceId(priceId) : null) ?? "pro";
+        metaPlan ?? (priceId ? resolvePlanFromPriceId(priceId) : null) ?? PLANS.FREE;
+
+      if (!metaPlan && !resolvePlanFromPriceId(priceId ?? "")) {
+        console.warn(
+          "[stripe/webhook]",
+          event.type,
+          ": could not resolve plan from metadata or price ID",
+          priceId,
+          "— defaulting to free"
+        );
+      }
 
       const isPro = sub.status === "active" || sub.status === "trialing";
       const { error: e2 } = await supabaseAdmin
@@ -212,6 +226,10 @@ export async function POST(req: Request) {
       break;
     }
 
+    // invoice.paid is the preferred modern event; invoice.payment_succeeded is
+    // the legacy alias. Both fire for the same payment — idempotency via
+    // stripe_events prevents double-processing.
+    case "invoice.paid":
     case "invoice.payment_succeeded": {
       // Cast to include subscription field — present in webhook payloads but
       // removed from the TypeScript type in API version 2026-01-28+
@@ -231,12 +249,17 @@ export async function POST(req: Request) {
 
       if (!userId) {
         console.warn(
-          "[stripe/webhook] invoice.payment_succeeded: could not resolve userId",
+          "[stripe/webhook]",
+          event.type,
+          ": could not resolve userId",
           customerId
         );
         break;
       }
 
+      // Renewal: restore active status. The plan column is authoritative and
+      // was set by subscription.created/updated — no need to re-derive it here
+      // unless the subscription's price ID changes (handled by subscription.updated).
       const { error: e4 } = await supabaseAdmin
         .from("users")
         .update({
@@ -248,8 +271,56 @@ export async function POST(req: Request) {
 
       if (e4) {
         console.error(
-          "[stripe/webhook] invoice.payment_succeeded update error:",
+          "[stripe/webhook]",
+          event.type,
+          "update error:",
           e4.message
+        );
+      }
+      break;
+    }
+
+    case "invoice.payment_failed": {
+      // Cast to include subscription field (same as invoice.paid handling above)
+      const invoice = event.data.object as Stripe.Invoice & {
+        subscription?: string | Stripe.Subscription | null;
+      };
+      // Only process subscription invoices, not one-off charges
+      if (!invoice.subscription) break;
+
+      const customerId = invoice.customer as string;
+
+      const userId = await getUserIdFromCustomer(
+        customerId,
+        stripe,
+        supabaseAdmin
+      );
+
+      if (!userId) {
+        console.warn(
+          "[stripe/webhook] invoice.payment_failed: could not resolve userId",
+          customerId
+        );
+        break;
+      }
+
+      // Policy: mark pro_status as past_due for observability only.
+      // Do NOT revoke plan access here — Stripe will retry the charge per
+      // dunning settings. If all retries fail, Stripe fires
+      // customer.subscription.updated (status: "past_due"/"unpaid") or
+      // customer.subscription.deleted, which handle the actual downgrade.
+      const { error: e5 } = await supabaseAdmin
+        .from("users")
+        .update({
+          pro_status: "past_due",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+
+      if (e5) {
+        console.error(
+          "[stripe/webhook] invoice.payment_failed update error:",
+          e5.message
         );
       }
       break;

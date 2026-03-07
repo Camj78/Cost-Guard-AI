@@ -515,7 +515,7 @@ export default function Page() {
                   <span className="text-sm text-muted-foreground">/ month</span>
                 </div>
                 <p className="text-xs font-mono text-muted-foreground">
-                  $290 / yr · <span className="text-emerald-400">Save $58</span>
+                  $290 / yr · <span className="text-emerald-400">Save 17%</span>
                 </p>
                 <div className="text-xs text-muted-foreground">
                   Pays for itself at ~10K req/day

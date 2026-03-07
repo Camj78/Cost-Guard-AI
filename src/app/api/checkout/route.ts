@@ -6,6 +6,8 @@ import {
   type BillingInterval,
   type StripePlan,
 } from "@/lib/stripe/price-lookup";
+import { hasProAccess } from "@/lib/entitlement";
+import { PLANS } from "@/config/plans";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -40,13 +42,17 @@ export async function POST(req: Request) {
 
     const { data: userRow } = await supabase
       .from("users")
-      .select("pro, stripe_customer_id")
+      .select("pro, plan, stripe_customer_id")
       .eq("id", user.id)
       .single();
 
-    // Already subscribed — redirect to billing portal to manage plan
-    if (userRow?.pro) {
-      const customerId = userRow.stripe_customer_id;
+    // Already subscribed — redirect to billing portal to manage plan.
+    // Use plan column (source of truth); fall back to legacy pro boolean
+    // only if plan is absent (e.g., pre-migration row).
+    const isAlreadyPaid =
+      hasProAccess(userRow?.plan ?? PLANS.FREE) || userRow?.pro === true;
+    if (isAlreadyPaid) {
+      const customerId = userRow?.stripe_customer_id;
       if (customerId) {
         const portalSession = await stripe.billingPortal.sessions.create({
           customer: customerId,

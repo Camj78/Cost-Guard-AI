@@ -6,8 +6,16 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
 
+const PLAN_LABEL: Record<string, string> = {
+  free: "Free plan",
+  pro: "Pro plan active",
+  team: "Team plan active",
+  enterprise: "Enterprise plan",
+};
+
 export function Header() {
   const [user, setUser] = useState<User | null | undefined>(undefined); // undefined = loading
+  const [plan, setPlan] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -26,6 +34,49 @@ export function Header() {
       listener.subscription.unsubscribe();
     };
   }, []);
+
+  // Fetch plan whenever auth state resolves to a logged-in user.
+  // After checkout=success, poll until plan flips to a paid tier.
+  useEffect(() => {
+    if (!user) {
+      setPlan(null);
+      return;
+    }
+
+    const isCheckoutSuccess =
+      typeof window !== "undefined" &&
+      window.location.search.includes("checkout=success");
+
+    if (!isCheckoutSuccess) {
+      fetch("/api/me")
+        .then((r) => r.json())
+        .then((d) => setPlan((d.plan as string) ?? "free"))
+        .catch(() => setPlan("free"));
+      return;
+    }
+
+    // Poll until plan reflects paid status (max 5 attempts × 3s)
+    let attempts = 0;
+    let cancelled = false;
+    const poll = () => {
+      fetch("/api/me")
+        .then((r) => r.json())
+        .then((d) => {
+          if (cancelled) return;
+          const resolved = (d.plan as string) ?? "free";
+          setPlan(resolved);
+          if (resolved === "free" && attempts < 5) {
+            attempts++;
+            setTimeout(poll, 3000);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setPlan("free");
+        });
+    };
+    poll();
+    return () => { cancelled = true; };
+  }, [user]);
 
   async function handleSignOut() {
     await getSupabaseBrowser().auth.signOut();
@@ -68,6 +119,11 @@ export function Header() {
               >
                 Dashboard
               </a>
+              {plan && (
+                <span className="hidden md:inline-flex items-center rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1 text-xs font-mono tabular-nums text-muted-foreground">
+                  {PLAN_LABEL[plan] ?? "Free plan"}
+                </span>
+              )}
               <button
                 onClick={handleSignOut}
                 className="inline-flex items-center justify-center rounded-md border border-white/[0.07] px-4 py-2 text-sm font-medium hover:bg-white/[0.04] transition-colors"

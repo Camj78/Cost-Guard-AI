@@ -13,11 +13,11 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       if (!user) return;
       fetch("/api/me")
         .then((r) => (r.ok ? r.json() : null))
-        .then((data: { pro?: boolean } | null) => {
+        .then((data: { pro?: boolean; plan?: string } | null) => {
           if (!data) return;
           identifyUser(user.id, {
             email: user.email,
-            plan: data.pro ? "pro" : "free",
+            plan: data.plan ?? "free",
           });
         })
         .catch(() => {});

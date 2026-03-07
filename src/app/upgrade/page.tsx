@@ -3,8 +3,17 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { PRICING } from "@/config/pricing";
+import { PLANS } from "@/config/plans";
 
 type View = "loading" | "login" | "upgrade" | "pro";
+
+const PLAN_LABEL: Record<string, string> = {
+  free: "Free plan",
+  pro: "Pro plan active",
+  team: "Team plan active",
+  enterprise: "Enterprise plan",
+};
 
 const FEATURES: { label: string; free: string; pro: string }[] = [
   { label: "Preflight analyses", free: "25 / month", pro: "Unlimited" },
@@ -22,7 +31,20 @@ export default function UpgradePage() {
   const [emailSent, setEmailSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [plan, setPlan] = useState<"monthly" | "annual">("monthly");
+  const [activePlan, setActivePlan] = useState<string>("free");
+  const [plan, setPlan] = useState<"monthly" | "annual">(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("plan") === "annual") return "annual";
+    }
+    return "monthly";
+  });
+  const [tier, setTier] = useState<"pro" | "team">("pro");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tier") === "team") setTier("team");
+  }, []);
   const [cooldownSecs, setCooldownSecs] = useState(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -53,9 +75,14 @@ export default function UpgradePage() {
     fetch("/api/me")
       .then((r) => r.json())
       .then((d) => {
-        if (d.pro === true) setView("pro");
-        else if (d.is_authed === true) setView("upgrade");
-        else setView("login");
+        if (d.plan && d.plan !== "free") {
+          setActivePlan(d.plan as string);
+          setView("pro");
+        } else if (d.is_authed === true) {
+          setView("upgrade");
+        } else {
+          setView("login");
+        }
       })
       .catch(() => setView("login"));
   }, []);
@@ -96,7 +123,7 @@ export default function UpgradePage() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, tier }),
       });
       if (res.status === 401) {
         setView("login");
@@ -142,7 +169,7 @@ export default function UpgradePage() {
         {/* Header */}
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            CostGuardAI Pro
+            CostGuardAI {tier === PLANS.TEAM ? "Team" : "Pro"}
           </p>
           <h1 className="text-2xl font-semibold tracking-tight">
             Ship AI features without cost surprises or production failures.
@@ -191,7 +218,9 @@ export default function UpgradePage() {
 
         {view === "pro" && (
           <div className="space-y-4">
-            <p className="text-sm font-medium text-emerald-400">You&apos;re on Pro.</p>
+            <p className="text-sm font-medium text-emerald-400">
+              {PLAN_LABEL[activePlan] ?? "Plan active"}
+            </p>
             <Button onClick={handleBilling} disabled={busy} className="w-full">
               {busy ? "Redirecting..." : "Manage Billing"}
             </Button>
@@ -237,70 +266,67 @@ export default function UpgradePage() {
 
         {view === "upgrade" && (
           <div className="space-y-4">
-            {/* Plan toggle */}
-            <div className="flex items-center gap-1 bg-muted/20 border border-white/10 rounded-lg p-1 w-fit">
-              <button
-                type="button"
-                onClick={() => setPlan("monthly")}
-                className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
-                  plan === "monthly"
-                    ? "bg-white/10 text-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                type="button"
-                onClick={() => setPlan("annual")}
-                className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
-                  plan === "annual"
-                    ? "bg-white/10 text-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Annual
-                <span className="ml-2 text-xs text-emerald-400 font-medium">
-                  Save $58
-                </span>
-              </button>
-            </div>
+            {/* Plan toggle — only shown for Pro (Team has no annual billing) */}
+            {tier === PLANS.PRO && (
+              <div className="flex items-center gap-1 bg-muted/20 border border-white/10 rounded-lg p-1 w-fit">
+                <button
+                  type="button"
+                  onClick={() => setPlan("monthly")}
+                  className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
+                    plan === "monthly"
+                      ? "bg-white/10 text-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPlan("annual")}
+                  className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
+                    plan === "annual"
+                      ? "bg-white/10 text-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Annual
+                  <span className="ml-2 text-xs text-emerald-400 font-medium">
+                    Save 17%
+                  </span>
+                </button>
+              </div>
+            )}
 
-            {/* Price display */}
-            <div className="space-y-0.5">
-              {plan === "monthly" ? (
-                <>
+            {/* Price display — derived from PRICING config */}
+            {(() => {
+              const tierConfig = PRICING.find((p) => p.id === tier)!;
+              const monthlyPrice = tierConfig.priceMonthly ?? 0;
+              const yearlyPrice = tierConfig.priceYearly;
+              const showAnnual = tier === PLANS.PRO && plan === "annual" && yearlyPrice !== undefined;
+              const monthlyEquiv = yearlyPrice ? (yearlyPrice / 12).toFixed(2) : null;
+              return (
+                <div className="space-y-0.5">
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-4xl font-black font-mono tracking-tight">
-                      $29
+                      ${showAnnual ? yearlyPrice : monthlyPrice}
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      / month
+                      {showAnnual ? "/ year" : "/ month"}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Cancel anytime.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-4xl font-black font-mono tracking-tight">
-                      $290
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      / year
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    $24.17/month billed annually.{" "}
-                    <span className="text-emerald-400 font-medium">
-                      Save $58 vs monthly.
-                    </span>
-                  </p>
-                </>
-              )}
-            </div>
+                  {showAnnual ? (
+                    <p className="text-xs text-muted-foreground">
+                      ${monthlyEquiv}/month billed annually.{" "}
+                      <span className="text-emerald-400 font-medium">
+                        Save 17% vs monthly.
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Cancel anytime.</p>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Risk reversal */}
             <p className="text-xs text-muted-foreground">
@@ -314,6 +340,8 @@ export default function UpgradePage() {
             >
               {busy
                 ? "Redirecting..."
+                : tier === PLANS.TEAM
+                ? "Upgrade to Team — $79/month"
                 : plan === "monthly"
                 ? "Upgrade to Pro — $29/month"
                 : "Upgrade to Pro — $290/year"}

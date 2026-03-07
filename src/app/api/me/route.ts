@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-ssr";
+import { PLANS } from "@/config/plans";
+import { hasProAccess } from "@/lib/entitlement";
 
 export async function GET() {
   try {
@@ -40,7 +42,10 @@ export async function GET() {
       });
     }
 
-    const isPro = row.pro === true;
+    // Derive paid access from the plan column (source of truth).
+    // The legacy `pro` boolean is kept in the response for backwards compat
+    // but must not gate entitlements — plan is authoritative.
+    const isPro = hasProAccess(row.plan ?? PLANS.FREE);
 
     const now = new Date();
     const monthStart = new Date(
@@ -58,7 +63,7 @@ export async function GET() {
     return NextResponse.json({
       pro: row.pro,
       pro_status: row.pro_status,
-      plan: row.plan ?? (isPro ? "pro" : "free"),
+      plan: row.plan ?? PLANS.FREE,
       is_authed: true,
       usage_this_month: usedThisMonth,
       usage_limit: isPro ? null : 25,
