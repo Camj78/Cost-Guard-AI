@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { resolvePlanFromPriceId } from "@/lib/stripe/price-lookup";
 
 export const runtime = "nodejs";
 
@@ -101,6 +102,8 @@ export async function POST(req: Request) {
         break;
       }
 
+      // Resolve plan from session metadata (set by /api/checkout)
+      const sessionPlan = session.metadata?.plan ?? "pro";
       const { error: e1 } = await supabaseAdmin
         .from("users")
         .update({
@@ -108,6 +111,7 @@ export async function POST(req: Request) {
           stripe_subscription_id: subscriptionId,
           pro: true,
           pro_status: "pending",
+          plan: sessionPlan,
           updated_at: new Date().toISOString(),
         })
         .eq("id", userId);
@@ -140,12 +144,19 @@ export async function POST(req: Request) {
         break;
       }
 
+      // Resolve plan: prefer metadata set by /api/checkout, then price ID lookup
+      const metaPlan = sub.metadata?.plan;
+      const priceId = sub.items?.data[0]?.price?.id;
+      const resolvedPlan =
+        metaPlan ?? (priceId ? resolvePlanFromPriceId(priceId) : null) ?? "pro";
+
       const isPro = sub.status === "active" || sub.status === "trialing";
       const { error: e2 } = await supabaseAdmin
         .from("users")
         .update({
           pro: isPro,
           pro_status: sub.status,
+          plan: isPro ? resolvedPlan : "free",
           stripe_subscription_id: sub.id,
           updated_at: new Date().toISOString(),
         })
@@ -186,6 +197,7 @@ export async function POST(req: Request) {
         .update({
           pro: false,
           pro_status: "canceled",
+          plan: "free",
           stripe_subscription_id: null,
           updated_at: new Date().toISOString(),
         })

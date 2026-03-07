@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseServerClient } from "@/lib/supabase-ssr";
-import { getPriceId, type BillingInterval } from "@/lib/stripe/price-lookup";
+import {
+  getPriceId,
+  type BillingInterval,
+  type StripePlan,
+} from "@/lib/stripe/price-lookup";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -15,13 +19,16 @@ export async function POST(req: Request) {
   try {
     const stripe = getStripe();
 
-    let plan: "monthly" | "annual" = "monthly";
+    let interval: BillingInterval = "monthly";
+    let tier: StripePlan = "pro";
     try {
       const body = await req.json();
-      if (body?.plan === "annual") plan = "annual";
+      if (body?.plan === "annual") interval = "yearly";
+      if (body?.tier === "team") tier = "team";
     } catch {
-      // No body or invalid JSON — default to monthly
+      // No body or invalid JSON — use defaults
     }
+
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
@@ -37,7 +44,7 @@ export async function POST(req: Request) {
       .eq("id", user.id)
       .single();
 
-    // Already Pro — redirect to billing portal instead
+    // Already subscribed — redirect to billing portal to manage plan
     if (userRow?.pro) {
       const customerId = userRow.stripe_customer_id;
       if (customerId) {
@@ -64,17 +71,16 @@ export async function POST(req: Request) {
         .eq("id", user.id);
     }
 
-    // Create Checkout session — Pro plan only; team tier not yet exposed in UI
-    const interval: BillingInterval = plan === "annual" ? "yearly" : "monthly";
-    const priceId = getPriceId("pro", interval);
+    const priceId = getPriceId(tier, interval);
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
       client_reference_id: user.id,
       line_items: [{ price: priceId, quantity: 1 }],
+      metadata: { plan: tier },
       subscription_data: {
-        metadata: { user_id: user.id },
+        metadata: { user_id: user.id, plan: tier },
       },
       success_url: `${APP_URL}/?checkout=success`,
       cancel_url: `${APP_URL}/upgrade`,

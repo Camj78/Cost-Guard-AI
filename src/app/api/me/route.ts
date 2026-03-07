@@ -20,7 +20,7 @@ export async function GET() {
 
     const { data: row } = await supabase
       .from("users")
-      .select("pro, pro_status")
+      .select("pro, pro_status, plan")
       .eq("id", user.id)
       .single();
 
@@ -33,6 +33,7 @@ export async function GET() {
       return NextResponse.json({
         pro: false,
         pro_status: null,
+        plan: "free",
         is_authed: true,
         usage_this_month: 0,
         usage_limit: 25,
@@ -57,6 +58,7 @@ export async function GET() {
     return NextResponse.json({
       pro: row.pro,
       pro_status: row.pro_status,
+      plan: row.plan ?? (isPro ? "pro" : "free"),
       is_authed: true,
       usage_this_month: usedThisMonth,
       usage_limit: isPro ? null : 25,
