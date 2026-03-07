@@ -91,7 +91,6 @@ const DEMO_ANALYSIS: RiskAssessment = {
 };
 
 const DEMO_MODEL_NAME = "gpt-4o";
-const DEMO_PRICING_DATE = "2025-05";
 
 const DEMO_COSTS = {
   costPer1k:       3.20,
@@ -127,20 +126,73 @@ export default function DemoReportPage() {
       <main className="flex-1 px-4 sm:px-6 py-10">
         <div className="mx-auto max-w-lg space-y-4">
 
-          {/* Badge row */}
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground border border-white/10 rounded-full px-3 py-1 bg-white/5">
-                Demo · Risk report
-              </span>
-              <span className="text-xs text-muted-foreground">{DEMO_MODEL_NAME}</span>
-            </div>
-            <span className="text-xs text-muted-foreground/60">
-              Pricing as of {DEMO_PRICING_DATE}
+          {/* 1 — Report Header */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs text-muted-foreground border border-white/10 rounded-full px-3 py-1 bg-white/5">
+              Demo · Risk report
             </span>
+            <span className="text-xs text-muted-foreground">{DEMO_MODEL_NAME}</span>
           </div>
 
-          {/* Risk Score */}
+          {/* 2 — KPI Metric Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+            <Card className="glass-card shadow-none">
+              <CardContent className="pt-4 pb-3 px-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-1">
+                  RiskScore
+                </p>
+                <p className={`font-mono tabular-nums text-2xl font-semibold leading-none ${bandColor}`}>
+                  72
+                </p>
+                <p className={`text-xs mt-1 ${bandColor}`}>High</p>
+              </CardContent>
+            </Card>
+            <Card className="glass-card shadow-none">
+              <CardContent className="pt-4 pb-3 px-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-1">
+                  Cost / 1k
+                </p>
+                <p className="font-mono tabular-nums text-2xl font-semibold leading-none">
+                  $3.20
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="glass-card shadow-none">
+              <CardContent className="pt-4 pb-3 px-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-1">
+                  Monthly (100k)
+                </p>
+                <p className="font-mono tabular-nums text-2xl font-semibold leading-none">
+                  $320
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="glass-card shadow-none">
+              <CardContent className="pt-4 pb-3 px-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-1">
+                  Monthly (3M)
+                </p>
+                <p className="font-mono tabular-nums text-2xl font-semibold leading-none">
+                  $9,600
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 3 — Integrity Status Rail */}
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-muted-foreground/50 leading-none">
+            <span>Scan complete</span>
+            <span aria-hidden="true">·</span>
+            <span>Analyzer v0.2</span>
+            <span aria-hidden="true">·</span>
+            <span>Pricing loaded</span>
+            <span aria-hidden="true">·</span>
+            <span>Generated for demo review</span>
+            <span aria-hidden="true">·</span>
+            <span>Share-safe</span>
+          </div>
+
+          {/* 4 — Risk Score */}
           <Card className="glass-card shadow-none relative">
             <div className="absolute top-0 left-6 right-6 h-px bg-primary/30" />
             <CardContent className="pt-5 pb-4">
@@ -153,7 +205,7 @@ export default function DemoReportPage() {
             </CardContent>
           </Card>
 
-          {/* Cost Impact */}
+          {/* 5 — Cost Impact */}
           <Card className="glass-card shadow-none">
             <CardHeader className="pb-2 pt-4">
               <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
@@ -161,6 +213,7 @@ export default function DemoReportPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pb-4 space-y-2">
+              <p className="text-[11px] text-muted-foreground/50">Estimated workload cost</p>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">Per call</span>
                 <span className="font-mono tabular-nums text-xs text-right">{fmtCost(DEMO_COSTS.costPerCall)}</span>
@@ -185,16 +238,15 @@ export default function DemoReportPage() {
               </div>
               <p className="text-[11px] text-muted-foreground/50 leading-relaxed">
                 Estimated using mixed model workload (classification + generation).
-                Actual costs vary by model selection.
               </p>
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-muted-foreground">Pricing as of</span>
-                <span className="font-mono tabular-nums text-xs text-right text-muted-foreground/60">{DEMO_PRICING_DATE}</span>
-              </div>
+              <p className="text-[11px] text-muted-foreground/50 leading-relaxed">
+                Estimates based on current model pricing.
+                Actual costs vary by provider and model version.
+              </p>
             </CardContent>
           </Card>
 
-          {/* Conversion CTA */}
+          {/* 6 — Real Repo CTA Block */}
           <Card className="glass-card shadow-none border border-primary/20">
             <CardContent className="pt-5 pb-5">
               <p className="text-sm font-semibold tracking-tight mb-1">Protect a real repo next</p>
@@ -221,7 +273,7 @@ export default function DemoReportPage() {
             </CardContent>
           </Card>
 
-          {/* Top Risk Drivers */}
+          {/* 7 — Top Risk Drivers */}
           {analysis.explanation.top_risk_drivers.length > 0 && (
             <Card className="glass-card shadow-none">
               <CardHeader className="pb-2 pt-4">
@@ -253,7 +305,7 @@ export default function DemoReportPage() {
             </Card>
           )}
 
-          {/* Mitigations */}
+          {/* 8 — Mitigation Suggestions */}
           {analysis.explanation.mitigation_suggestions.length > 0 && (
             <Card className="glass-card shadow-none">
               <CardHeader className="pb-2 pt-4">
@@ -273,7 +325,7 @@ export default function DemoReportPage() {
             </Card>
           )}
 
-          {/* Report Integrity */}
+          {/* 9 — Report Integrity */}
           <Card className="glass-card shadow-none">
             <CardHeader className="pb-2 pt-4">
               <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
@@ -303,7 +355,6 @@ export default function DemoReportPage() {
         </div>
       </main>
 
-      {/* CTA */}
       <div className="mx-auto max-w-lg w-full px-4 pt-6 pb-4 flex items-center justify-between gap-3">
         <Link
           href="/?ref=demo-report"
