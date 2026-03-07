@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { GITHUB_APP_INSTALL_URL } from "@/config/github";
 import { RiskScore } from "@/components/risk-score";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ANALYSIS_VERSION } from "@/lib/trust";
@@ -261,8 +262,10 @@ export default function DemoReportPage() {
                   Start free
                 </Link>
                 <Link
-                  href="https://github.com/apps/costguardai"
+                  href={GITHUB_APP_INSTALL_URL}
                   className="inline-flex items-center justify-center rounded-md border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-white/20 transition-colors"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   Install GitHub App
                 </Link>

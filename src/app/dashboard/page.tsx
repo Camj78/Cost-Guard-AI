@@ -25,6 +25,7 @@ import { ShareButton } from "@/components/share-button";
 import { PdfExportButton } from "@/components/pro/pdf-export-button";
 import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
 import { Zap } from "lucide-react";
+import { GITHUB_APP_INSTALL_URL } from "@/config/github";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,146 @@ function riskLabel(score: number): string {
   if (score <= 69) return "Warning";
   if (score <= 84) return "High";
   return "Critical";
+}
+
+// ─── Mock data for Dashboard V1 (replace with live API in V2) ─────────────────
+
+const MOCK_KPI = {
+  riskScore: 72,
+  aiCostToday: 18.42,
+  projectedMonthly: 542,
+  activeAlerts: 2,
+};
+
+type AlertSeverity = "high" | "medium";
+type RepoStatus = "alert" | "warning" | "ok";
+
+interface MockAlert {
+  id: string;
+  severity: AlertSeverity;
+  title: string;
+  repo: string;
+  detail: string;
+}
+
+interface MockRepo {
+  name: string;
+  status: RepoStatus;
+  riskScore: number;
+  costPerDay: string;
+}
+
+interface MockScan {
+  repo: string;
+  ago: string;
+  riskScore: number;
+  status: RepoStatus;
+}
+
+const MOCK_ALERTS: MockAlert[] = [
+  {
+    id: "a1",
+    severity: "high",
+    title: "Prompt injection risk detected",
+    repo: "checkout-service",
+    detail: "Untrusted user input detected in system prompt template.",
+  },
+  {
+    id: "a2",
+    severity: "medium",
+    title: "Token usage spike detected",
+    repo: "summarizer-worker",
+    detail: "Token usage 340% above 7-day baseline.",
+  },
+];
+
+const MOCK_COST_TREND: Record<string, string | number>[] = [
+  { day: "02-22", cost: 12.4 }, { day: "02-23", cost: 14.8 }, { day: "02-24", cost: 11.2 },
+  { day: "02-25", cost: 15.6 }, { day: "02-26", cost: 13.9 }, { day: "02-27", cost: 16.2 },
+  { day: "02-28", cost: 17.4 }, { day: "03-01", cost: 14.1 }, { day: "03-02", cost: 18.9 },
+  { day: "03-03", cost: 16.5 }, { day: "03-04", cost: 15.8 }, { day: "03-05", cost: 19.2 },
+  { day: "03-06", cost: 17.6 }, { day: "03-07", cost: 18.4 },
+];
+
+const MOCK_RISK_TREND: Record<string, string | number>[] = [
+  { day: "02-22", score: 58 }, { day: "02-23", score: 62 }, { day: "02-24", score: 55 },
+  { day: "02-25", score: 68 }, { day: "02-26", score: 64 }, { day: "02-27", score: 70 },
+  { day: "02-28", score: 66 }, { day: "03-01", score: 72 }, { day: "03-02", score: 75 },
+  { day: "03-03", score: 69 }, { day: "03-04", score: 71 }, { day: "03-05", score: 78 },
+  { day: "03-06", score: 74 }, { day: "03-07", score: 72 },
+];
+
+const MOCK_REPOS: MockRepo[] = [
+  { name: "checkout-service",  status: "alert",   riskScore: 72, costPerDay: "$8.40/day" },
+  { name: "summarizer-worker", status: "warning",  riskScore: 58, costPerDay: "$6.20/day" },
+  { name: "support-bot",       status: "ok",       riskScore: 31, costPerDay: "$3.82/day" },
+];
+
+const MOCK_RECENT_SCANS: MockScan[] = [
+  { repo: "checkout-service",  ago: "12 min ago", riskScore: 72, status: "alert"   },
+  { repo: "summarizer-worker", ago: "26 min ago", riskScore: 58, status: "warning" },
+  { repo: "support-bot",       ago: "1 hr ago",   riskScore: 31, status: "ok"      },
+];
+
+// ─── Mini bar chart (inline SVG, no dependencies) ─────────────────────────────
+
+function MiniBarChart({
+  data,
+  valueKey,
+  labelKey,
+  height = 80,
+  colorClass = "fill-primary",
+}: {
+  data: Record<string, string | number>[];
+  valueKey: string;
+  labelKey: string;
+  height?: number;
+  colorClass?: string;
+}) {
+  if (data.length === 0) return null;
+  const values = data.map((d) => Number(d[valueKey]));
+  const max = Math.max(...values, 1);
+  const barW = 30;
+  const gap = 3;
+  const totalW = data.length * (barW + gap) - gap;
+  return (
+    <div className="overflow-x-auto">
+      <svg width={totalW} height={height} aria-label="Trend chart" className="block">
+        {data.map((d, i) => {
+          const val = Number(d[valueKey]);
+          const barH = Math.max(2, Math.round((val / max) * (height - 14)));
+          const x = i * (barW + gap);
+          const y = height - 14 - barH;
+          return (
+            <g key={i}>
+              <title>{`${d[labelKey]}: ${val}`}</title>
+              <rect x={x} y={y} width={barW} height={barH} rx={2} className={`${colorClass} opacity-60`} />
+            </g>
+          );
+        })}
+        {data.length > 1 && (
+          <>
+            <text x={0} y={height - 1} fontSize={9} className="fill-muted-foreground" fontFamily="monospace">
+              {String(data[0][labelKey])}
+            </text>
+            <text x={totalW} y={height - 1} fontSize={9} textAnchor="end" className="fill-muted-foreground" fontFamily="monospace">
+              {String(data[data.length - 1][labelKey])}
+            </text>
+          </>
+        )}
+      </svg>
+    </div>
+  );
+}
+
+// ─── Status dot ───────────────────────────────────────────────────────────────
+
+function StatusDot({ status }: { status: RepoStatus }) {
+  const cls =
+    status === "alert"   ? "bg-red-400" :
+    status === "warning" ? "bg-amber-400" :
+                           "bg-emerald-400";
+  return <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${cls}`} />;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -280,15 +421,224 @@ export default function DashboardPage() {
 
           {/* Page heading */}
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Command Center</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">AI Cost Command Center</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Run preflight, review results, and track drift over time.
+              Monitor AI cost, risk, and active alerts across your repos.
             </p>
           </div>
 
           {error && (
             <p className="text-sm text-destructive">{error}</p>
           )}
+
+          {/* ── KPI Strip ───────────────────────────────────────────────────── */}
+          <section>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+              {/* RiskScore */}
+              <div className="glass-card p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-2">
+                  RiskScore
+                </p>
+                <p className="font-mono tabular-nums text-2xl font-semibold leading-none text-orange-400">
+                  {MOCK_KPI.riskScore}
+                </p>
+                <p className="text-xs mt-1 text-orange-400">High</p>
+              </div>
+
+              {/* AI Cost Today */}
+              <div className="glass-card p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-2">
+                  AI Cost Today
+                </p>
+                <p className="font-mono tabular-nums text-2xl font-semibold leading-none">
+                  ${MOCK_KPI.aiCostToday.toFixed(2)}
+                </p>
+              </div>
+
+              {/* Projected Monthly */}
+              <div className="glass-card p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-2">
+                  Projected Monthly
+                </p>
+                <p className="font-mono tabular-nums text-2xl font-semibold leading-none">
+                  ${MOCK_KPI.projectedMonthly}
+                </p>
+              </div>
+
+              {/* Active Alerts */}
+              <div className="glass-card p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-2">
+                  Active Alerts
+                </p>
+                <p className="font-mono tabular-nums text-2xl font-semibold leading-none text-red-400">
+                  {MOCK_KPI.activeAlerts}
+                </p>
+                <p className="text-xs mt-1 text-red-400">Needs attention</p>
+              </div>
+
+            </div>
+          </section>
+
+          {/* ── Active Alerts ────────────────────────────────────────────────── */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Active Alerts
+              </p>
+              <span className="inline-flex items-center rounded-full bg-red-500/10 border border-red-500/20 px-2 py-0.5 text-[10px] font-semibold text-red-400 font-mono tabular-nums">
+                {MOCK_KPI.activeAlerts}
+              </span>
+            </div>
+
+            <div className="glass-card divide-y divide-border">
+              {MOCK_ALERTS.map((alert) => (
+                <div key={alert.id} className="flex items-start gap-4 px-6 py-4">
+                  <span className={`mt-0.5 shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] border ${
+                    alert.severity === "high"
+                      ? "bg-red-500/10 text-red-400 border-red-500/20"
+                      : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                  }`}>
+                    {alert.severity}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium leading-snug">{alert.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      <span className="font-mono">{alert.repo}</span>
+                      {" · "}
+                      {alert.detail}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── Trends ──────────────────────────────────────────────────────── */}
+          <section className="space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              Trends — Last 14 Days
+            </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              {/* AI Cost Over Time */}
+              <div className="glass-card p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    AI Cost Over Time
+                  </p>
+                  <p className="font-mono tabular-nums text-xs text-muted-foreground">
+                    ${MOCK_KPI.aiCostToday.toFixed(2)} today
+                  </p>
+                </div>
+                <MiniBarChart
+                  data={MOCK_COST_TREND}
+                  valueKey="cost"
+                  labelKey="day"
+                  height={80}
+                />
+              </div>
+
+              {/* RiskScore Trend */}
+              <div className="glass-card p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    RiskScore Trend
+                  </p>
+                  <p className="font-mono tabular-nums text-xs text-orange-400">
+                    {MOCK_KPI.riskScore} today
+                  </p>
+                </div>
+                <MiniBarChart
+                  data={MOCK_RISK_TREND}
+                  valueKey="score"
+                  labelKey="day"
+                  height={80}
+                  colorClass="fill-orange-500"
+                />
+              </div>
+
+            </div>
+          </section>
+
+          {/* ── Context Panels ───────────────────────────────────────────────── */}
+          <section>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              {/* Monitored Repositories */}
+              <div className="glass-card overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    Monitored Repositories
+                  </p>
+                  <Link
+                    href={GITHUB_APP_INSTALL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    + Add repo
+                  </Link>
+                </div>
+                <div className="divide-y divide-border">
+                  {MOCK_REPOS.map((repo) => (
+                    <div key={repo.name} className="flex items-center justify-between gap-4 px-6 py-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <StatusDot status={repo.status} />
+                        <p className="text-sm font-mono truncate">{repo.name}</p>
+                      </div>
+                      <div className="flex items-center gap-4 shrink-0">
+                        <span className={`font-mono tabular-nums text-xs rounded-full px-2 py-0.5 font-medium ${riskBadgeClass(repo.riskScore)}`}>
+                          {repo.riskScore}
+                        </span>
+                        <span className="text-xs text-muted-foreground font-mono tabular-nums">
+                          {repo.costPerDay}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Scans */}
+              <div className="glass-card overflow-hidden">
+                <div className="px-6 py-4 border-b border-border">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    Recent Scans
+                  </p>
+                </div>
+                <div className="divide-y divide-border">
+                  {MOCK_RECENT_SCANS.map((scan, i) => (
+                    <div key={i} className="flex items-center justify-between gap-4 px-6 py-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <StatusDot status={scan.status} />
+                        <p className="text-sm font-mono truncate">{scan.repo}</p>
+                      </div>
+                      <div className="flex items-center gap-4 shrink-0">
+                        <span className={`font-mono tabular-nums text-xs rounded-full px-2 py-0.5 font-medium ${riskBadgeClass(scan.riskScore)}`}>
+                          {scan.riskScore}
+                        </span>
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {scan.ago}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          {/* ── Preflight Analysis ───────────────────────────────────────────── */}
+          <div className="border-t border-white/5 pt-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              Preflight Analysis
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Run preflight, review results, and track drift over time.
+            </p>
+          </div>
 
           {/* ── Step 1 — Input ──────────────────────────────────────────────── */}
           <section className="space-y-4">
