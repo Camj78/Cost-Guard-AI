@@ -82,7 +82,7 @@ export async function GET() {
       is_authed: true,
       usage_this_month: usedThisMonth,
       usage_limit: isPro ? null : 25,
-      first_name: profileRow?.first_name ?? null,
+      firstName: profileRow?.first_name ?? null,
     });
   } catch {
     return NextResponse.json({

@@ -44,7 +44,7 @@ export function useUsage(): UsageState {
       setIsAuthed(data.is_authed === true);
       setUsedThisMonth(typeof data.usage_this_month === "number" ? data.usage_this_month : 0);
       setLimit(data.usage_limit === null ? null : typeof data.usage_limit === "number" ? data.usage_limit : 25);
-      setFirstName(typeof data.first_name === "string" && data.first_name ? data.first_name : null);
+      setFirstName(typeof data.firstName === "string" && data.firstName ? data.firstName : null);
       return newIsPro;
     } catch {
       return false;
