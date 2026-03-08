@@ -459,7 +459,7 @@ export default function DashboardPage() {
             {/* Personalized greeting */}
             <div className="space-y-1">
               <h2 className="text-2xl font-semibold tracking-tight">
-                {userName ? `Hi, ${userName},` : "Hi there,"}
+                {userName ? `Hi ${userName},` : "Hi there,"}
               </h2>
               {sessionGreeting && (
                 <p className="text-sm text-muted-foreground">{sessionGreeting}</p>
@@ -543,7 +543,7 @@ export default function DashboardPage() {
           {/* Personalized greeting */}
           <div className="space-y-1">
             <h2 className="text-2xl font-semibold tracking-tight">
-              {userName ? `Hi, ${userName},` : "Hi there,"}
+              {userName ? `Hi ${userName},` : "Hi there,"}
             </h2>
             {sessionGreeting && (
               <p className="text-sm text-muted-foreground">{sessionGreeting}</p>
