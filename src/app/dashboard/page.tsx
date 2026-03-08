@@ -227,7 +227,7 @@ function StatusDot({ status }: { status: RepoStatus }) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { isPro, isAuthed } = useUsage();
+  const { isPro, plan, isAuthed } = useUsage();
 
   // ── Onboarding state ───────────────────────────────────────────────────────
   const [onboardingCompleted, setOnboardingCompleted] = useState(() => {
@@ -360,7 +360,7 @@ export default function DashboardPage() {
     triggerManualAnalyze,
   } = usePreflight({
     onRecorded: fetchAnalyses,
-    plan: isPro === null ? undefined : isPro ? "pro" : "free",
+    plan: plan ?? undefined,
     onOnboardingComplete: useCallback(() => setOnboardingCompleted(true), []),
   });
 
@@ -445,8 +445,8 @@ export default function DashboardPage() {
 
       <Header />
 
-      {/* Free plan gate */}
-      {isAuthed && isPro === false ? (
+      {/* Free plan gate — render nothing until plan is resolved from /api/me */}
+      {plan === null ? null : isAuthed && plan === "free" ? (
         <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-20">
           <div className="max-w-md w-full border border-white/[0.07] rounded-lg p-8 space-y-6">
             {/* Personalized greeting */}
