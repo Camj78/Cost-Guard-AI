@@ -227,7 +227,7 @@ function StatusDot({ status }: { status: RepoStatus }) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { isPro, plan, isAuthed } = useUsage();
+  const { isPro, plan, isAuthed, firstName } = useUsage();
 
   // ── Onboarding state ───────────────────────────────────────────────────────
   const [onboardingCompleted, setOnboardingCompleted] = useState(() => {
@@ -328,12 +328,19 @@ export default function DashboardPage() {
     sb.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
       const meta = (user.user_metadata ?? {}) as Record<string, string>;
+      // first_name set at signup via signInWithOtp options.data
+      const metaFirst = (meta.first_name ?? "").trim();
       const fullName = (meta.full_name ?? meta.name ?? "").trim();
-      const firstName = fullName.split(" ")[0] ?? "";
+      const nameFromMeta = metaFirst || fullName.split(" ")[0] || "";
       const emailPrefix = (user.email ?? "").split("@")[0];
-      setUserName(firstName || emailPrefix || "");
+      setUserName(nameFromMeta || emailPrefix || "");
     });
   }, []);
+
+  // Override with DB first_name when /api/me resolves (takes priority over auth metadata)
+  useEffect(() => {
+    if (firstName) setUserName(firstName);
+  }, [firstName]);
 
   // ── Preflight tool ─────────────────────────────────────────────────────────
   const {
@@ -533,12 +540,14 @@ export default function DashboardPage() {
           <main className="flex-1 px-4 sm:px-6 py-10">
         <div className="mx-auto max-w-5xl space-y-12">
 
-          {/* Page heading */}
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight">AI Cost Command Center</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Monitor AI cost, risk, and active alerts across your repos.
-            </p>
+          {/* Personalized greeting */}
+          <div className="space-y-1">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              {userName ? `Hi, ${userName},` : "Hi there,"}
+            </h2>
+            {sessionGreeting && (
+              <p className="text-sm text-muted-foreground">{sessionGreeting}</p>
+            )}
           </div>
 
           {error && (

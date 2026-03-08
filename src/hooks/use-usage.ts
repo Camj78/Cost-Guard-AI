@@ -10,6 +10,7 @@ export interface UsageState {
   limit: number | null;       // null = unlimited (Pro)
   isLimitReached: boolean;
   proJustActivated: boolean;  // true when checkout=success redirect flipped pro to true
+  firstName: string | null;   // from users table via /api/me
   refetch: () => void;
 }
 
@@ -23,6 +24,7 @@ export function useUsage(): UsageState {
   const [usedThisMonth, setUsedThisMonth] = useState(0);
   const [limit, setLimit] = useState<number | null>(25);
   const [proJustActivated, setProJustActivated] = useState(false);
+  const [firstName, setFirstName] = useState<string | null>(null);
 
   const pollCountRef = useRef(0);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -42,6 +44,7 @@ export function useUsage(): UsageState {
       setIsAuthed(data.is_authed === true);
       setUsedThisMonth(typeof data.usage_this_month === "number" ? data.usage_this_month : 0);
       setLimit(data.usage_limit === null ? null : typeof data.usage_limit === "number" ? data.usage_limit : 25);
+      setFirstName(typeof data.first_name === "string" && data.first_name ? data.first_name : null);
       return newIsPro;
     } catch {
       return false;
@@ -114,6 +117,7 @@ export function useUsage(): UsageState {
     limit,
     isLimitReached,
     proJustActivated,
+    firstName,
     refetch,
   };
 }

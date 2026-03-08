@@ -23,7 +23,7 @@ export async function GET() {
     // Guarantee users profile row exists (legacy path / auth trigger safety net).
     const { data: profileRow } = await supabase
       .from("users")
-      .select("pro, pro_status, plan")
+      .select("pro, pro_status, plan, first_name")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -82,6 +82,7 @@ export async function GET() {
       is_authed: true,
       usage_this_month: usedThisMonth,
       usage_limit: isPro ? null : 25,
+      first_name: profileRow?.first_name ?? null,
     });
   } catch {
     return NextResponse.json({

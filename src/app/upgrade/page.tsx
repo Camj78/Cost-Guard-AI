@@ -28,6 +28,8 @@ const FEATURES: { label: string; free: string; pro: string }[] = [
 export default function UpgradePage() {
   const [view, setView] = useState<View>("loading");
   const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +104,11 @@ export default function UpgradePage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailAddr }),
+        body: JSON.stringify({
+          email: emailAddr,
+          ...(intent === "free" && firstName.trim() ? { first_name: firstName.trim() } : {}),
+          ...(intent === "free" && lastName.trim() ? { last_name: lastName.trim() } : {}),
+        }),
       });
       const d = await res.json();
       if (!res.ok) {
@@ -252,6 +258,24 @@ export default function UpgradePage() {
                 : "Enter your email to log in, then upgrade."}
             </p>
             <form onSubmit={handleLogin} className="space-y-3">
+              {intent === "free" && (
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="First name"
+                    className="rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Last name"
+                    className="rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              )}
               <input
                 type="email"
                 required
