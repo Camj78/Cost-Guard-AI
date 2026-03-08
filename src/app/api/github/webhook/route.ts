@@ -59,7 +59,8 @@ interface InstallationWebhookPayload {
   action: string;
   installation: {
     id: number;
-    account: { login: string };
+    account: { login: string; id: number; type?: string };
+    repository_selection?: string;
   };
   repositories?: Array<{
     name: string;
@@ -699,6 +700,31 @@ export async function POST(req: Request) {
     try {
       const payload = JSON.parse(rawBody) as InstallationWebhookPayload;
       if (payload.action === "created") {
+        // Persist full installation metadata via service role.
+        // user_id is unknown at webhook time; the install callback sets it
+        // separately via onConflict upsert keyed on installation_id.
+        const admin = getSupabaseAdmin();
+        if (admin) {
+          try {
+            await admin
+              .from("github_installations")
+              .upsert(
+                {
+                  installation_id: payload.installation.id,
+                  account_login: payload.installation.account?.login ?? null,
+                  account_id: payload.installation.account?.id ?? null,
+                  account_type: payload.installation.account?.type ?? null,
+                  repository_selection: payload.installation.repository_selection ?? null,
+                },
+                { onConflict: "installation_id", ignoreDuplicates: false }
+              );
+          } catch (err: unknown) {
+            Sentry.captureException(err, {
+              extra: { context: "installation_metadata_upsert" },
+            });
+          }
+        }
+
         // Fire-and-forget: respond immediately, process in background
         handleInstallationCreated(
           payload.installation.id,
