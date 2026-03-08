@@ -56,6 +56,14 @@ interface AnalysisEntry {
   created_at: string;
 }
 
+interface GitHubRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  private: boolean;
+  html_url: string;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getModelName(modelId: string): string {
@@ -239,6 +247,7 @@ export default function DashboardPage() {
   // ── Server data state ──────────────────────────────────────────────────────
   const [prompts, setPrompts] = useState<SavedPrompt[]>([]);
   const [analyses, setAnalyses] = useState<AnalysisEntry[]>([]);
+  const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [loadingPrompts, setLoadingPrompts] = useState(true);
   const [loadingAnalyses, setLoadingAnalyses] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -292,6 +301,18 @@ export default function DashboardPage() {
       // Non-critical
     } finally {
       setLoadingAnalyses(false);
+    }
+  }, []);
+
+  const fetchRepos = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const res = await fetch("/api/github/repos", { signal });
+      if (res.ok) {
+        const d = await res.json();
+        setRepos(d.repos ?? []);
+      }
+    } catch {
+      // Non-critical — repos panel degrades to empty state
     }
   }, []);
 
@@ -364,8 +385,18 @@ export default function DashboardPage() {
     const controller = new AbortController();
     fetchPrompts(controller.signal);
     fetchAnalyses(controller.signal);
+    fetchRepos(controller.signal);
     return () => controller.abort();
-  }, [fetchPrompts, fetchAnalyses]);
+  }, [fetchPrompts, fetchAnalyses, fetchRepos]);
+
+  // ── GitHub install success: re-fetch repos and clean the URL ───────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("github_install") !== "success") return;
+    fetchRepos().then(() => {
+      router.replace("/dashboard");
+    });
+  }, [fetchRepos, router]);
 
   const hasPrompt = prompt.trim().length > 0;
 
@@ -752,17 +783,47 @@ export default function DashboardPage() {
                     + Add repo
                   </Link>
                 </div>
-                <div className="px-6 py-8 text-center space-y-2">
-                  <p className="text-sm text-muted-foreground">No repositories connected.</p>
-                  <Link
-                    href={GITHUB_APP_INSTALL_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-primary hover:underline"
-                  >
-                    Install the GitHub app to monitor repos →
-                  </Link>
-                </div>
+                {repos.length > 0 ? (
+                  <div className="divide-y divide-border">
+                    {repos.slice(0, 8).map((repo) => (
+                      <div key={repo.id} className="flex items-center justify-between gap-4 px-6 py-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <StatusDot status="ok" />
+                          <a
+                            href={repo.html_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-mono truncate hover:text-primary transition-colors"
+                          >
+                            {repo.full_name}
+                          </a>
+                        </div>
+                        {repo.private && (
+                          <span className="shrink-0 text-[10px] font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">
+                            private
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                    {repos.length > 8 && (
+                      <p className="px-6 py-3 text-xs text-muted-foreground">
+                        +{repos.length - 8} more
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="px-6 py-8 text-center space-y-2">
+                    <p className="text-sm text-muted-foreground">No repositories connected.</p>
+                    <Link
+                      href={GITHUB_APP_INSTALL_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Install the GitHub app to monitor repos →
+                    </Link>
+                  </div>
+                )}
               </div>
 
               {/* Recent Scans */}
