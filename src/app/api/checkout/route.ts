@@ -47,19 +47,42 @@ export async function POST(req: Request) {
       .from("users")
       .upsert({ id: user.id, email: user.email }, { onConflict: "id" });
 
+    // Seed canonical billing_accounts row if it doesn't exist yet.
+    await supabase
+      .from("billing_accounts")
+      .upsert(
+        { user_id: user.id, email: user.email ?? null },
+        { onConflict: "user_id" }
+      );
+
+    // Read entitlement from billing_accounts (canonical), then fall back to users.
+    const { data: billingRow } = await supabase
+      .from("billing_accounts")
+      .select("plan, stripe_customer_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     const { data: userRow } = await supabase
       .from("users")
       .select("pro, plan, stripe_customer_id")
       .eq("id", user.id)
       .single();
 
+    // Canonical plan: billing_accounts first, then legacy users fallback.
+    const canonicalPlan =
+      billingRow?.plan && billingRow.plan !== PLANS.FREE
+        ? billingRow.plan
+        : userRow?.plan && userRow.plan !== PLANS.FREE
+        ? userRow.plan
+        : userRow?.pro === true
+        ? PLANS.PRO
+        : PLANS.FREE;
+
     // Already subscribed — redirect to billing portal to manage plan.
-    // Use plan column (source of truth); fall back to legacy pro boolean
-    // only if plan is absent (e.g., pre-migration row).
-    const isAlreadyPaid =
-      hasProAccess(userRow?.plan ?? PLANS.FREE) || userRow?.pro === true;
+    const isAlreadyPaid = hasProAccess(canonicalPlan);
     if (isAlreadyPaid) {
-      const customerId = userRow?.stripe_customer_id;
+      const customerId =
+        billingRow?.stripe_customer_id ?? userRow?.stripe_customer_id;
       if (customerId) {
         const portalSession = await stripe.billingPortal.sessions.create({
           customer: customerId,
@@ -70,13 +93,20 @@ export async function POST(req: Request) {
     }
 
     // Get or create Stripe customer
-    let customerId = userRow?.stripe_customer_id ?? null;
+    let customerId =
+      billingRow?.stripe_customer_id ?? userRow?.stripe_customer_id ?? null;
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: { user_id: user.id },
       });
       customerId = customer.id;
+
+      // Write to both tables: billing_accounts is canonical, users is legacy backup.
+      await supabase
+        .from("billing_accounts")
+        .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
 
       await supabase
         .from("users")
