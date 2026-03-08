@@ -151,7 +151,19 @@ function buildComment(opts: {
   }
 
   if (reportUrl) {
-    lines.push("", `Report: ${reportUrl}`);
+    lines.push("", `[View Full Analysis →](${reportUrl})`);
+
+    // Badge suggestion — extract shareId from /s/{shareId}
+    const shareId = reportUrl.match(/\/s\/([^/?#]+)/)?.[1];
+    if (shareId) {
+      lines.push(
+        "",
+        "**Prompt Safety badge for your README:**",
+        "```md",
+        `![Prompt Safety](${siteUrl}/api/badge/${shareId})`,
+        "```"
+      );
+    }
   }
 
   lines.push("", "---", `*Powered by [CostGuardAI](${siteUrl})*`);

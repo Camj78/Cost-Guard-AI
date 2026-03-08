@@ -13,7 +13,12 @@ import {
   deleteIssueComment,
   fetchPullRequestDiff,
   MAX_DIFF_BYTES,
+  listOpenPullRequests,
+  getPullRequestFiles,
+  getRepoTree,
+  createIssue,
 } from "@/lib/github/client";
+import { getInstallationToken } from "@/lib/github/app-auth";
 import { filterAndSortDiff } from "@/lib/github/filter-diff";
 import { countTokens } from "@/lib/tokenizer";
 import { assessRisk } from "@/lib/risk";
@@ -24,16 +29,44 @@ import { probeDbHealth, isFailSoftEnabled } from "@/lib/github/resilience";
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const BOT_MARKER = "<!-- costguardai:pr-bot -->";
+const INSTALL_ISSUE_MARKER = "<!-- costguardai:install-scan -->";
 const ANALYSIS_MODEL_ID = "gpt-4o-mini";
 const EXPECTED_OUTPUT_TOKENS = 1024;
 const SCORE_VERSION = "1.0.0";
 const HANDLED_ACTIONS = new Set(["opened", "reopened", "synchronize"]);
+
+/** Path patterns that indicate AI/LLM prompt usage. */
+const AI_FILE_PATTERNS = [
+  /prompt/i,
+  /openai/i,
+  /anthropic/i,
+  /langchain/i,
+  /claude/i,
+  /chatgpt/i,
+  /llm/i,
+  /\.prompt\b/i,
+  /system_prompt/i,
+  /ai_config/i,
+];
 
 /** Processing lock TTL: if a run holds the lock longer than this, it is
  *  considered crashed and the lock is stolen by the next delivery. */
 const LOCK_TTL_MS = 120_000;
 
 // ─── Payload types ──────────────────────────────────────────────────────────
+
+interface InstallationWebhookPayload {
+  action: string;
+  installation: {
+    id: number;
+    account: { login: string };
+  };
+  repositories?: Array<{
+    name: string;
+    full_name: string;
+    private: boolean;
+  }>;
+}
 
 interface PRWebhookPayload {
   action: string;
@@ -128,12 +161,261 @@ function buildComment(opts: {
   }
 
   if (reportUrl) {
-    lines.push("", `Report: ${reportUrl}`);
+    lines.push("", `[View Full Analysis →](${reportUrl})`);
+
+    // Badge suggestion — extract shareId from /s/{shareId}
+    const shareId = reportUrl.match(/\/s\/([^/?#]+)/)?.[1];
+    if (shareId) {
+      lines.push(
+        "",
+        "**Prompt Safety badge for your README:**",
+        "```md",
+        `![Prompt Safety](${siteUrl}/api/badge/${shareId})`,
+        "```"
+      );
+    }
   }
 
   lines.push("", "---", `*Powered by [CostGuardAI](${siteUrl})*`);
 
   return lines.join("\n");
+}
+
+// ─── Installation event helpers ───────────────────────────────────────────────
+
+function looksLikeAIFile(path: string): boolean {
+  return AI_FILE_PATTERNS.some((p) => p.test(path));
+}
+
+function buildInstallIssueBody(opts: {
+  repoFullName: string;
+  promptFiles: string[];
+  riskScore: number;
+  riskLevel: string;
+  costTotal: number;
+  riskDrivers: Array<{ name: string; impact: number; fixes: string[] }>;
+  reportUrl: string | null;
+  shareId: string | null;
+}): string {
+  const { repoFullName, promptFiles, riskScore, riskLevel, costTotal, riskDrivers, reportUrl, shareId } = opts;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://costguardai.io";
+  const topDrivers = riskDrivers.slice(0, 3);
+
+  const lines = [
+    INSTALL_ISSUE_MARKER,
+    "## CostGuardAI detected AI prompts in this repository",
+    "",
+    `CostGuardAI scanned **${repoFullName}** and found likely AI/LLM usage.`,
+  ];
+
+  if (promptFiles.length > 0) {
+    lines.push(
+      "",
+      "**Detected AI/prompt files:**",
+      ...promptFiles.slice(0, 5).map((f) => `- \`${f}\``),
+    );
+  }
+
+  lines.push(
+    "",
+    "**Preflight Scan:**",
+    "",
+    "| Metric | Value |",
+    "|--------|-------|",
+    `| **Risk** | ${riskLevel.toUpperCase()} (${riskScore}/100) |`,
+    `| **Cost (per request)** | ${formatCost(costTotal)} |`,
+  );
+
+  if (topDrivers.length > 0) {
+    lines.push(
+      "",
+      "**Top Risk Drivers:**",
+      ...topDrivers.map((d) => `- **${d.name}** (impact: ${d.impact}/100)`),
+    );
+  }
+
+  if (reportUrl) {
+    lines.push("", `**[View Full Analysis →](${reportUrl})**`);
+    if (shareId) {
+      lines.push(
+        "",
+        "**Prompt Safety badge for your README:**",
+        "```md",
+        `![Prompt Safety](${siteUrl}/api/badge/${shareId})`,
+        "```",
+      );
+    }
+  }
+
+  lines.push(
+    "",
+    "---",
+    `*[CostGuardAI](${siteUrl}) — Preflight analysis for LLM prompts. Close this issue to dismiss.*`,
+  );
+
+  return lines.join("\n");
+}
+
+/**
+ * Scan a single repo for AI/prompt files, find an open PR to comment on,
+ * or fall back to creating an issue.
+ */
+async function scanAndPostForRepo(
+  repoFullName: string,
+  token: string
+): Promise<void> {
+  const [owner, repoName] = repoFullName.split("/");
+
+  // Step 2: Detect AI/prompt files in repo tree
+  let promptFiles: string[] = [];
+  try {
+    const tree = await getRepoTree(owner, repoName, token);
+    promptFiles = tree
+      .filter((item) => item.type === "blob" && looksLikeAIFile(item.path))
+      .map((item) => item.path)
+      .slice(0, 20);
+  } catch {
+    // Continue — we'll analyze based on repo name if tree fetch fails
+  }
+
+  // Build analysis text from detected files (or repo name only)
+  const analysisText = [
+    "Analyze this repository for AI cost + truncation risk factors.",
+    "Focus on prompt design, model choice, token usage, and large text payload risks.",
+    "",
+    "REPOSITORY:",
+    repoFullName,
+    "",
+    "DETECTED AI/PROMPT FILES:",
+    promptFiles.length > 0
+      ? promptFiles.join("\n")
+      : "(no specific files matched — general AI usage patterns present)",
+  ].join("\n");
+
+  const model = resolveModel(ANALYSIS_MODEL_ID);
+  if (!model) return;
+
+  const inputTokens = countTokens(analysisText, model);
+  const assessment = assessRisk({
+    promptText: analysisText,
+    inputTokens,
+    contextWindow: model.contextWindow,
+    expectedOutputTokens: EXPECTED_OUTPUT_TOKENS,
+    maxOutputTokens: model.maxOutputTokens,
+    compressionDelta: 0,
+    tokenStrategy: model.tokenStrategy,
+    inputPricePer1M: model.inputPricePer1M,
+    outputPricePer1M: model.outputPricePer1M,
+  });
+
+  const report = await createShareReport({
+    assessment,
+    modelId: ANALYSIS_MODEL_ID,
+    modelName: model.name,
+  });
+
+  const reportUrl = report?.absoluteUrl ?? null;
+  const shareId = report?.shareId ?? null;
+
+  // Step 3: Find an open PR touching AI/prompt files, prefer that one
+  let postedToGitHub = false;
+
+  try {
+    const openPRs = await listOpenPullRequests(owner, repoName, token);
+
+    let targetPR: (typeof openPRs)[0] | null = null;
+
+    // Prefer a PR that actually touches AI files
+    for (const pr of openPRs.slice(0, 5)) {
+      try {
+        const files = await getPullRequestFiles(owner, repoName, pr.number, token);
+        if (files.some((f) => looksLikeAIFile(f.filename))) {
+          targetPR = pr;
+          break;
+        }
+      } catch {
+        // Skip this PR if files fetch fails
+      }
+    }
+
+    // Fall back to any open PR when AI files were detected in the repo
+    if (!targetPR && promptFiles.length > 0 && openPRs.length > 0) {
+      targetPR = openPRs[0];
+    }
+
+    if (targetPR) {
+      const commentBody = buildComment({
+        riskScore: assessment.riskScore,
+        riskLevel: assessment.riskLevel,
+        costTotal: assessment.estimatedCostTotal,
+        truncationLevel: assessment.truncation.level,
+        riskDrivers: assessment.riskDrivers,
+        modelName: model.name,
+        diffTooLarge: false,
+        reportUrl,
+      });
+
+      await upsertBotComment(owner, repoName, targetPR.number, commentBody);
+      postedToGitHub = true;
+    }
+  } catch {
+    // PR listing failed — fall through to issue creation
+  }
+
+  // Step 5: Issue fallback — only if no PR surface was created
+  if (!postedToGitHub) {
+    try {
+      const issueBody = buildInstallIssueBody({
+        repoFullName,
+        promptFiles,
+        riskScore: assessment.riskScore,
+        riskLevel: assessment.riskLevel,
+        costTotal: assessment.estimatedCostTotal,
+        riskDrivers: assessment.riskDrivers,
+        reportUrl,
+        shareId,
+      });
+
+      await createIssue(
+        owner,
+        repoName,
+        "CostGuardAI detected AI prompts in this repository",
+        issueBody,
+        token
+      );
+    } catch {
+      // Issue creation failed — skip silently (best-effort surface)
+    }
+  }
+}
+
+/**
+ * Handle a GitHub App installation event.
+ * Scans up to 3 repos in parallel and posts a PR comment or issue.
+ * Designed to be called fire-and-forget so the webhook responds immediately.
+ */
+async function handleInstallationCreated(
+  installationId: number,
+  repos: Array<{ full_name: string; private: boolean; name: string }>
+): Promise<void> {
+  const appId = process.env.GITHUB_APP_ID;
+  const rawKey = process.env.GITHUB_APP_PRIVATE_KEY;
+  if (!appId || !rawKey) return;
+
+  const privateKeyPem = rawKey.replace(/\\n/g, "\n");
+
+  let token: string;
+  try {
+    token = await getInstallationToken(String(installationId), appId, privateKeyPem);
+  } catch {
+    return; // Can't auth — skip silently
+  }
+
+  // Scan up to 3 repos in parallel to stay well within Vercel timeout
+  const reposToScan = repos.slice(0, 3);
+  await Promise.allSettled(
+    reposToScan.map((repo) => scanAndPostForRepo(repo.full_name, token))
+  );
 }
 
 // ─── Supabase helpers ────────────────────────────────────────────────────────
@@ -409,6 +691,25 @@ export async function POST(req: Request) {
   // Handle GitHub's ping event (sent on webhook creation)
   const event = req.headers.get("x-github-event");
   if (event === "ping") {
+    return NextResponse.json({ ok: true });
+  }
+
+  // Handle GitHub App installation event — scan repos and post virality surface
+  if (event === "installation") {
+    try {
+      const payload = JSON.parse(rawBody) as InstallationWebhookPayload;
+      if (payload.action === "created") {
+        // Fire-and-forget: respond immediately, process in background
+        handleInstallationCreated(
+          payload.installation.id,
+          payload.repositories ?? []
+        ).catch((err: unknown) => {
+          Sentry.captureException(err, { extra: { context: "installation_created" } });
+        });
+      }
+    } catch {
+      // Malformed payload — ACK safely
+    }
     return NextResponse.json({ ok: true });
   }
 
