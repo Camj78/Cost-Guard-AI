@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-ssr";
-import { PLANS } from "@/config/plans";
+import { PLANS, type Plan } from "@/config/plans";
 import { hasProAccess } from "@/lib/entitlement";
 
 export async function GET() {
@@ -42,10 +42,18 @@ export async function GET() {
       });
     }
 
-    // Derive paid access from the plan column (source of truth).
-    // The legacy `pro` boolean is kept in the response for backwards compat
-    // but must not gate entitlements — plan is authoritative.
-    const isPro = hasProAccess(row.plan ?? PLANS.FREE);
+    // Canonical effective plan resolution.
+    // plan column is the primary source of truth; if it is null/free but the
+    // pro boolean is true (e.g. post-checkout before subscription.created fires,
+    // or after invoice.paid which does not write plan), fall back to PLANS.PRO
+    // so the user retains their valid entitlement.
+    const effectivePlan: Plan =
+      row.plan && row.plan !== PLANS.FREE
+        ? (row.plan as Plan)
+        : row.pro === true
+        ? PLANS.PRO
+        : PLANS.FREE;
+    const isPro = hasProAccess(effectivePlan);
 
     const now = new Date();
     const monthStart = new Date(
@@ -63,7 +71,7 @@ export async function GET() {
     return NextResponse.json({
       pro: row.pro,
       pro_status: row.pro_status,
-      plan: row.plan ?? PLANS.FREE,
+      plan: effectivePlan,
       is_authed: true,
       usage_this_month: usedThisMonth,
       usage_limit: isPro ? null : 25,

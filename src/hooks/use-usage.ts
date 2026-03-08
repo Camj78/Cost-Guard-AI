@@ -31,7 +31,9 @@ export function useUsage(): UsageState {
       const res = await fetch("/api/me");
       if (!res.ok) return false;
       const data = await res.json();
-      const newIsPro = data.pro === true;
+      // Use plan (server's canonical source of truth) — same field the header uses.
+      // data.pro is the legacy boolean kept for backwards compat; plan is authoritative.
+      const newIsPro = typeof data.plan === "string" && data.plan !== "free";
       setIsPro(newIsPro);
       setIsAuthed(data.is_authed === true);
       setUsedThisMonth(typeof data.usage_this_month === "number" ? data.usage_this_month : 0);
