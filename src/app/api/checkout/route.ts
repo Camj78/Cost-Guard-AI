@@ -40,6 +40,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Guarantee the users row exists before Stripe creates the subscription.
+    // Supabase UPDATE silently no-ops when the target row is absent, so any
+    // webhook that fires before this row exists would silently lose billing state.
+    await supabase
+      .from("users")
+      .upsert({ id: user.id, email: user.email }, { onConflict: "id" });
+
     const { data: userRow } = await supabase
       .from("users")
       .select("pro, plan, stripe_customer_id")

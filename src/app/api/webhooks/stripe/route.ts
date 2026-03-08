@@ -107,20 +107,32 @@ export async function POST(req: Request) {
       // Default to FREE — customer.subscription.created fires next and will
       // set the correct plan via price ID lookup, so this is self-correcting.
       const sessionPlan = session.metadata?.plan ?? PLANS.FREE;
+
+      // Look up email so we can UPSERT the row if it doesn't exist yet.
+      // Supabase UPDATE silently no-ops on a missing row; UPSERT guarantees
+      // billing state is persisted even if the auth trigger never fired.
+      const { data: checkoutAuthData } =
+        await supabaseAdmin.auth.admin.getUserById(userId);
+      const checkoutEmail = checkoutAuthData?.user?.email;
+
       const { error: e1 } = await supabaseAdmin
         .from("users")
-        .update({
-          stripe_customer_id: customerId,
-          stripe_subscription_id: subscriptionId,
-          pro: sessionPlan !== PLANS.FREE,
-          pro_status: "pending",
-          plan: sessionPlan,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
+        .upsert(
+          {
+            id: userId,
+            ...(checkoutEmail ? { email: checkoutEmail } : {}),
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            pro: sessionPlan !== PLANS.FREE,
+            pro_status: "pending",
+            plan: sessionPlan,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        );
 
       if (e1) {
-        console.error("[stripe/webhook] checkout update error:", e1.message);
+        console.error("[stripe/webhook] checkout upsert error:", e1.message);
       }
       break;
     }
@@ -165,22 +177,32 @@ export async function POST(req: Request) {
       }
 
       const isPro = sub.status === "active" || sub.status === "trialing";
+
+      // Look up email for UPSERT — same rationale as checkout.session.completed.
+      const { data: subAuthData } =
+        await supabaseAdmin.auth.admin.getUserById(userId);
+      const subEmail = subAuthData?.user?.email;
+
       const { error: e2 } = await supabaseAdmin
         .from("users")
-        .update({
-          pro: isPro,
-          pro_status: sub.status,
-          plan: isPro ? resolvedPlan : "free",
-          stripe_subscription_id: sub.id,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
+        .upsert(
+          {
+            id: userId,
+            ...(subEmail ? { email: subEmail } : {}),
+            pro: isPro,
+            pro_status: sub.status,
+            plan: isPro ? resolvedPlan : "free",
+            stripe_subscription_id: sub.id,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        );
 
       if (e2) {
         console.error(
           "[stripe/webhook]",
           event.type,
-          "update error:",
+          "upsert error:",
           e2.message
         );
       }
