@@ -244,8 +244,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [needsUpgradeRedirect, setNeedsUpgradeRedirect] = useState(false);
 
-  // ── Personalized greeting (free-gate locked state) ─────────────────────────
-  const [userName, setUserName] = useState("");
+  // ── Personalized greeting ───────────────────────────────────────────────────
+  const [emailFallback, setEmailFallback] = useState("");
   const [sessionGreeting, setSessionGreeting] = useState("");
   const greetingInitRef = useRef(false);
 
@@ -327,20 +327,9 @@ export default function DashboardPage() {
     const sb = getSupabaseBrowser();
     sb.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
-      const meta = (user.user_metadata ?? {}) as Record<string, string>;
-      // first_name set at signup via signInWithOtp options.data
-      const metaFirst = (meta.first_name ?? "").trim();
-      const fullName = (meta.full_name ?? meta.name ?? "").trim();
-      const nameFromMeta = metaFirst || fullName.split(" ")[0] || "";
-      const emailPrefix = (user.email ?? "").split("@")[0];
-      setUserName(nameFromMeta || emailPrefix || "");
+      setEmailFallback((user.email ?? "").split("@")[0]);
     });
   }, []);
-
-  // Override with DB first_name when /api/me resolves (takes priority over auth metadata)
-  useEffect(() => {
-    if (firstName) setUserName(firstName);
-  }, [firstName]);
 
   // ── Preflight tool ─────────────────────────────────────────────────────────
   const {
@@ -389,6 +378,9 @@ export default function DashboardPage() {
   const costTrend = buildCostTrend(analyses);
   const riskTrend = buildRiskTrend(analyses);
   const recentScans = analyses.slice(0, 5);
+
+  // ── Greeting display name (firstName always wins; email prefix as fallback) ─
+  const displayName = firstName?.trim() || emailFallback || "there";
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
@@ -459,7 +451,7 @@ export default function DashboardPage() {
             {/* Personalized greeting */}
             <div className="space-y-1">
               <h2 className="text-2xl font-semibold tracking-tight">
-                {userName ? `Hi ${userName},` : "Hi there,"}
+                Hi {displayName},
               </h2>
               {sessionGreeting && (
                 <p className="text-sm text-muted-foreground">{sessionGreeting}</p>
@@ -543,7 +535,7 @@ export default function DashboardPage() {
           {/* Personalized greeting */}
           <div className="space-y-1">
             <h2 className="text-2xl font-semibold tracking-tight">
-              {userName ? `Hi ${userName},` : "Hi there,"}
+              Hi {displayName},
             </h2>
             {sessionGreeting && (
               <p className="text-sm text-muted-foreground">{sessionGreeting}</p>
