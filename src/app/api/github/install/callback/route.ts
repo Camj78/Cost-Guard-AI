@@ -61,74 +61,61 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Upsert: if this installation_id is already linked (e.g. user reinstalls),
-  // update the user_id so it's always current.
-  // Use admin client to bypass RLS on github_installations.
-  const { error } = await supabaseAdmin.from("github_installations").upsert(
-    {
-      user_id: user.id,
-      installation_id: installationId,
-    },
-    {
-      onConflict: "installation_id",
-      ignoreDuplicates: false,
-    }
-  );
-
-  if (error) {
-    console.error("[github/install/callback] DB upsert failed:", error.message);
-    return NextResponse.redirect(
-      new URL(`${DASHBOARD_URL}?github_install=error`, req.url)
-    );
-  }
-
-  // Backfill account metadata from GitHub API — deterministic, keyed by installation_id.
-  // Failure is non-fatal: log and continue so the install flow always completes.
+  // Fetch GitHub installation metadata before the single upsert so we can
+  // include all fields in one write. Failure is non-fatal — we still persist
+  // the installation_id + user_id link so the user isn't blocked.
+  let meta: { account_login: string; account_id: number; account_type: string; repository_selection: string } | null = null;
   const appId = process.env.GITHUB_APP_ID;
   const rawKey = process.env.GITHUB_APP_PRIVATE_KEY;
-  const hasAppId = Boolean(appId);
-  const hasKey = Boolean(rawKey);
 
-  if (!hasAppId || !hasKey) {
+  if (!appId || !rawKey) {
     console.warn(
-      `[github_install_backfill] skip installation_id=${installationId} hasAppId=${hasAppId} hasKey=${hasKey} reason=missing_env_vars`
+      `[github_install_backfill] skip installation_id=${installationId} reason=missing_env_vars`
     );
   } else {
     try {
-      const privateKeyPem = rawKey!.replace(/\\n/g, "\n");
-      const result = await getInstallationDetails(installationId, appId!, privateKeyPem);
-
+      const privateKeyPem = rawKey.replace(/\\n/g, "\n");
+      const result = await getInstallationDetails(installationId, appId, privateKeyPem);
       if (!result.ok) {
         console.error(
-          `[github_install_backfill] fail installation_id=${installationId} status=${result.status} reason=${result.message}`
+          `[github_install_backfill] fail installation_id=${installationId} user_id=${user.id} status=${result.status} reason=${result.message}`
         );
       } else {
-        const meta = result.data;
-        const { error: metaError } = await supabaseAdmin.from("github_installations").upsert(
-          {
-            installation_id: installationId,
-            account_login: meta.account_login,
-            account_id: meta.account_id,
-            account_type: meta.account_type,
-            repository_selection: meta.repository_selection,
-          },
-          { onConflict: "installation_id", ignoreDuplicates: false }
-        );
-
-        if (metaError) {
-          console.error(
-            `[github_install_backfill] upsert_fail installation_id=${installationId} error=${metaError.message}`
-          );
-        } else {
-          console.log(
-            `[github_install_backfill] ok installation_id=${installationId} login=${meta.account_login} account_id=${meta.account_id} account_type=${meta.account_type}`
-          );
-        }
+        meta = result.data;
       }
     } catch (err) {
       console.error("[github_install_backfill] unexpected:", err);
     }
   }
+
+  // ONE final admin upsert — always includes installation_id + user_id;
+  // includes account fields only when non-null to prevent clobbering.
+  const row: Record<string, unknown> = {
+    installation_id: installationId,
+    user_id: user.id,
+    ...(meta?.account_login != null && { account_login: meta.account_login }),
+    ...(meta?.account_id != null && { account_id: meta.account_id }),
+    ...(meta?.account_type != null && { account_type: meta.account_type }),
+    ...(meta?.repository_selection != null && { repository_selection: meta.repository_selection }),
+  };
+
+  const { error } = await supabaseAdmin
+    .from("github_installations")
+    .upsert(row, { onConflict: "installation_id" });
+
+  if (error) {
+    console.error(
+      `[github_install_backfill] upsert_fail installation_id=${installationId} user_id=${user.id} error=${error.message}`
+    );
+    return NextResponse.redirect(
+      new URL(`${DASHBOARD_URL}?github_install=error`, req.url)
+    );
+  }
+
+  console.log(
+    `[github_install_backfill] ok installation_id=${installationId} user_id=${user.id}` +
+    ` login=${meta?.account_login ?? "none"} account_id=${meta?.account_id ?? "none"} account_type=${meta?.account_type ?? "none"}`
+  );
 
   return NextResponse.redirect(
     new URL(`${DASHBOARD_URL}?github_install=success`, req.url)
