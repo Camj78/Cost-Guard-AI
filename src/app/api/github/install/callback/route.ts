@@ -21,6 +21,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-ssr";
+import { getInstallationDetails } from "@/lib/github/app-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +78,31 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(
       new URL(`${DASHBOARD_URL}?github_install=error`, req.url)
     );
+  }
+
+  // Backfill account metadata from GitHub API — deterministic, keyed by installation_id.
+  // Failure is non-fatal: log and continue so the install flow always completes.
+  const appId = process.env.GITHUB_APP_ID;
+  const rawKey = process.env.GITHUB_APP_PRIVATE_KEY;
+  if (appId && rawKey) {
+    try {
+      const privateKeyPem = rawKey.replace(/\\n/g, "\n");
+      const meta = await getInstallationDetails(installationId, appId, privateKeyPem);
+      if (meta) {
+        await supabase.from("github_installations").upsert(
+          {
+            installation_id: installationId,
+            account_login: meta.account_login,
+            account_id: meta.account_id,
+            account_type: meta.account_type,
+            repository_selection: meta.repository_selection,
+          },
+          { onConflict: "installation_id", ignoreDuplicates: false }
+        );
+      }
+    } catch (err) {
+      console.error("[github/install/callback] metadata backfill failed:", err);
+    }
   }
 
   return NextResponse.redirect(

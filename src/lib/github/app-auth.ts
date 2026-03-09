@@ -113,6 +113,71 @@ export async function getInstallationToken(
   }
 }
 
+interface InstallationAccount {
+  account_login: string;
+  account_id: number;
+  account_type: string;
+  repository_selection: string;
+}
+
+/**
+ * Fetch installation details from GitHub using App-level JWT auth.
+ *
+ * Calls GET /app/installations/{installation_id} — requires App JWT, not
+ * an installation token. Returns deterministic account metadata.
+ *
+ * Returns null on any error so callers can degrade gracefully.
+ */
+export async function getInstallationDetails(
+  installationId: number,
+  appId: string,
+  privateKeyPem: string
+): Promise<InstallationAccount | null> {
+  const jwt = signJWT(appId, privateKeyPem);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try {
+    const res = await fetch(
+      `${GITHUB_API}/app/installations/${installationId}`,
+      {
+        method: "GET",
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      }
+    );
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(
+        `[github/app-auth] getInstallationDetails ${installationId} failed (${res.status}): ${body}`
+      );
+      return null;
+    }
+
+    const json = (await res.json()) as {
+      account: { login: string; id: number; type: string };
+      repository_selection: string;
+    };
+
+    return {
+      account_login: json.account.login,
+      account_id: json.account.id,
+      account_type: json.account.type,
+      repository_selection: json.repository_selection,
+    };
+  } catch (err) {
+    console.error("[github/app-auth] getInstallationDetails threw:", err);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Resolve a GitHub API bearer token.
  *
