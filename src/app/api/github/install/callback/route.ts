@@ -21,6 +21,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-ssr";
+import { supabaseAdmin } from "@/lib/supabase-server";
 import { getInstallationDetails } from "@/lib/github/app-auth";
 
 export const dynamic = "force-dynamic";
@@ -62,7 +63,8 @@ export async function GET(req: NextRequest) {
 
   // Upsert: if this installation_id is already linked (e.g. user reinstalls),
   // update the user_id so it's always current.
-  const { error } = await supabase.from("github_installations").upsert(
+  // Use admin client to bypass RLS on github_installations.
+  const { error } = await supabaseAdmin.from("github_installations").upsert(
     {
       user_id: user.id,
       installation_id: installationId,
@@ -102,7 +104,7 @@ export async function GET(req: NextRequest) {
         );
       } else {
         const meta = result.data;
-        const { error: metaError } = await supabase.from("github_installations").upsert(
+        const { error: metaError } = await supabaseAdmin.from("github_installations").upsert(
           {
             installation_id: installationId,
             account_login: meta.account_login,
