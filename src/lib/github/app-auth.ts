@@ -120,20 +120,31 @@ interface InstallationAccount {
   repository_selection: string;
 }
 
+export type InstallationDetailsResult =
+  | { ok: true; data: InstallationAccount }
+  | { ok: false; status: number | null; message: string };
+
 /**
  * Fetch installation details from GitHub using App-level JWT auth.
  *
  * Calls GET /app/installations/{installation_id} — requires App JWT, not
  * an installation token. Returns deterministic account metadata.
  *
- * Returns null on any error so callers can degrade gracefully.
+ * Returns a structured result so callers can observe the exact failure reason.
  */
 export async function getInstallationDetails(
   installationId: number,
   appId: string,
   privateKeyPem: string
-): Promise<InstallationAccount | null> {
-  const jwt = signJWT(appId, privateKeyPem);
+): Promise<InstallationDetailsResult> {
+  let jwt: string;
+  try {
+    jwt = signJWT(appId, privateKeyPem);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, status: null, message: `jwt_sign_failed: ${msg}` };
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -153,10 +164,11 @@ export async function getInstallationDetails(
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      console.error(
-        `[github/app-auth] getInstallationDetails ${installationId} failed (${res.status}): ${body}`
-      );
-      return null;
+      return {
+        ok: false,
+        status: res.status,
+        message: body.slice(0, 200),
+      };
     }
 
     const json = (await res.json()) as {
@@ -165,14 +177,17 @@ export async function getInstallationDetails(
     };
 
     return {
-      account_login: json.account.login,
-      account_id: json.account.id,
-      account_type: json.account.type,
-      repository_selection: json.repository_selection,
+      ok: true,
+      data: {
+        account_login: json.account.login,
+        account_id: json.account.id,
+        account_type: json.account.type,
+        repository_selection: json.repository_selection,
+      },
     };
   } catch (err) {
-    console.error("[github/app-auth] getInstallationDetails threw:", err);
-    return null;
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, status: null, message: `fetch_threw: ${msg}` };
   } finally {
     clearTimeout(timer);
   }

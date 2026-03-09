@@ -84,12 +84,25 @@ export async function GET(req: NextRequest) {
   // Failure is non-fatal: log and continue so the install flow always completes.
   const appId = process.env.GITHUB_APP_ID;
   const rawKey = process.env.GITHUB_APP_PRIVATE_KEY;
-  if (appId && rawKey) {
+  const hasAppId = Boolean(appId);
+  const hasKey = Boolean(rawKey);
+
+  if (!hasAppId || !hasKey) {
+    console.warn(
+      `[github_install_backfill] skip installation_id=${installationId} hasAppId=${hasAppId} hasKey=${hasKey} reason=missing_env_vars`
+    );
+  } else {
     try {
-      const privateKeyPem = rawKey.replace(/\\n/g, "\n");
-      const meta = await getInstallationDetails(installationId, appId, privateKeyPem);
-      if (meta) {
-        await supabase.from("github_installations").upsert(
+      const privateKeyPem = rawKey!.replace(/\\n/g, "\n");
+      const result = await getInstallationDetails(installationId, appId!, privateKeyPem);
+
+      if (!result.ok) {
+        console.error(
+          `[github_install_backfill] fail installation_id=${installationId} status=${result.status} reason=${result.message}`
+        );
+      } else {
+        const meta = result.data;
+        const { error: metaError } = await supabase.from("github_installations").upsert(
           {
             installation_id: installationId,
             account_login: meta.account_login,
@@ -99,9 +112,19 @@ export async function GET(req: NextRequest) {
           },
           { onConflict: "installation_id", ignoreDuplicates: false }
         );
+
+        if (metaError) {
+          console.error(
+            `[github_install_backfill] upsert_fail installation_id=${installationId} error=${metaError.message}`
+          );
+        } else {
+          console.log(
+            `[github_install_backfill] ok installation_id=${installationId} login=${meta.account_login} account_id=${meta.account_id} account_type=${meta.account_type}`
+          );
+        }
       }
     } catch (err) {
-      console.error("[github/install/callback] metadata backfill failed:", err);
+      console.error("[github_install_backfill] unexpected:", err);
     }
   }
 
