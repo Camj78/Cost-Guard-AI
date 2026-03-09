@@ -725,18 +725,16 @@ export async function POST(req: Request) {
               payload.sender?.type ??
               null;
 
-            const row = {
+            // Only include account fields when non-null — prevents explicit null
+            // from clobbering previously-populated values on re-installs or
+            // new_permissions_accepted events where account may be absent.
+            const row: Record<string, unknown> = {
               installation_id: installation.id,
-              account_login: accountLogin,
-              account_id: accountId,
-              account_type: accountType,
               repository_selection: installation.repository_selection ?? null,
+              ...(accountLogin !== null && { account_login: accountLogin }),
+              ...(accountId !== null && { account_id: accountId }),
+              ...(accountType !== null && { account_type: accountType }),
             };
-
-            console.log("installation.account", payload.installation?.account);
-            console.log("payload.account", payload.account);
-            console.log("payload.sender", payload.sender);
-            console.log("row_insert", row);
 
             await admin
               .from("github_installations")
