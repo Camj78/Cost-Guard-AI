@@ -699,7 +699,7 @@ export async function POST(req: Request) {
   if (event === "installation") {
     try {
       const payload = JSON.parse(rawBody) as InstallationWebhookPayload;
-      if (payload.action === "created") {
+      if (payload.action === "created" || payload.action === "new_permissions_accepted") {
         // Persist full installation metadata via service role.
         // user_id is unknown at webhook time; the install callback sets it
         // separately via onConflict upsert keyed on installation_id.
