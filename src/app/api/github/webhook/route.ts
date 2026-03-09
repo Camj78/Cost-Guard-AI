@@ -59,9 +59,11 @@ interface InstallationWebhookPayload {
   action: string;
   installation: {
     id: number;
-    account: { login: string; id: number; type?: string };
+    account?: { login: string; id: number; type?: string };
     repository_selection?: string;
   };
+  account?: { login: string; id: number; type?: string };
+  sender?: { login: string; id: number; type?: string };
   repositories?: Array<{
     name: string;
     full_name: string;
@@ -706,18 +708,39 @@ export async function POST(req: Request) {
         const admin = getSupabaseAdmin();
         if (admin) {
           try {
+            const installation = payload.installation ?? {};
+            const accountLogin =
+              installation.account?.login ??
+              payload.account?.login ??
+              payload.sender?.login ??
+              null;
+            const accountId =
+              installation.account?.id ??
+              payload.account?.id ??
+              payload.sender?.id ??
+              null;
+            const accountType =
+              installation.account?.type ??
+              payload.account?.type ??
+              payload.sender?.type ??
+              null;
+
+            const row = {
+              installation_id: installation.id,
+              account_login: accountLogin,
+              account_id: accountId,
+              account_type: accountType,
+              repository_selection: installation.repository_selection ?? null,
+            };
+
+            console.log("installation.account", payload.installation?.account);
+            console.log("payload.account", payload.account);
+            console.log("payload.sender", payload.sender);
+            console.log("row_insert", row);
+
             await admin
               .from("github_installations")
-              .upsert(
-                {
-                  installation_id: payload.installation.id,
-                  account_login: payload.installation.account?.login ?? null,
-                  account_id: payload.installation.account?.id ?? null,
-                  account_type: payload.installation.account?.type ?? null,
-                  repository_selection: payload.installation.repository_selection ?? null,
-                },
-                { onConflict: "installation_id", ignoreDuplicates: false }
-              );
+              .upsert(row, { onConflict: "installation_id" });
           } catch (err: unknown) {
             Sentry.captureException(err, {
               extra: { context: "installation_metadata_upsert" },

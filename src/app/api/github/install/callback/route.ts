@@ -25,7 +25,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-ssr";
 export const dynamic = "force-dynamic";
 
 const DASHBOARD_URL = "/dashboard";
-const LOGIN_URL = "/login";
+const LOGIN_URL = "/upgrade";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;

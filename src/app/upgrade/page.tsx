@@ -101,11 +101,13 @@ export default function UpgradePage() {
     setBusy(true);
     setError(null);
     try {
+      const nextParam = new URLSearchParams(window.location.search).get("next") ?? undefined;
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: emailAddr,
+          ...(nextParam ? { next: nextParam } : {}),
           ...(intent === "free" && firstName.trim() ? { first_name: firstName.trim() } : {}),
           ...(intent === "free" && lastName.trim() ? { last_name: lastName.trim() } : {}),
         }),

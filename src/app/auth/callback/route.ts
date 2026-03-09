@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-ssr";
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
+  const next = url.searchParams.get("next");
 
   if (!code) {
     return NextResponse.redirect(new URL("/upgrade?error=auth", req.url));
@@ -30,6 +31,22 @@ export async function GET(req: Request) {
     }
   } catch {
     return NextResponse.redirect(new URL("/upgrade?error=auth", req.url));
+  }
+
+  // If a post-auth redirect was requested, validate origin and follow it.
+  // This resumes flows like the GitHub App install callback.
+  if (next) {
+    try {
+      const siteOrigin = new URL(
+        process.env.NEXT_PUBLIC_SITE_URL ?? "https://costguardai.io"
+      ).origin;
+      const nextUrl = new URL(next);
+      if (nextUrl.origin === siteOrigin) {
+        return NextResponse.redirect(nextUrl);
+      }
+    } catch {
+      // next is not a valid absolute URL — ignore and fall through to dashboard
+    }
   }
 
   return NextResponse.redirect(new URL("/dashboard", req.url));

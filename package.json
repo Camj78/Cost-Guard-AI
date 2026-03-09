@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:reset": "pkill -f 'next dev' || true; rm -rf .next; pnpm dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
