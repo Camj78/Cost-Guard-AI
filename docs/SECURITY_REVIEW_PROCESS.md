@@ -23,7 +23,28 @@ The `ruleset_hash` is included in every API response and shareable report.
 
 ---
 
-## 2. Benchmark Validation
+## 2. Example Score Verification
+
+Public examples at `/examples` include a `verification_prompt` field in their fixture definitions
+(`content/examples/*.json`). This field contains a minimal synthetic prompt used solely for
+reproducible score validation. It is not user prompt data and does not contain customer data.
+
+**How it works:**
+
+Each `verification_prompt` is passed through `assessRisk()` in the benchmark runner
+(`scripts/run-benchmarks.ts`). The resulting safety score must fall within ±10 of the
+documented `expected_score`. This ensures that the scores shown on the public examples page
+are consistent with actual engine output, not aspirational or manually assigned values.
+
+**Privacy guarantee:**
+
+`verification_prompt` values are synthetic, minimal, and entirely internal to fixture files.
+They are not derived from user prompts, do not contain sensitive content, and are never
+exposed to end users through any API or UI surface.
+
+---
+
+## 3. Benchmark Validation
 
 CostGuard Safety Score is validated against a canonical benchmark suite before every release.
 
@@ -50,7 +71,7 @@ Historical artifacts provide a longitudinal calibration record.
 
 ---
 
-## 3. Responsible Disclosure
+## 4. Responsible Disclosure
 
 CostGuardAI is committed to responsible disclosure for security issues affecting the
 scoring engine, threat intelligence pipeline, or public API.
@@ -70,7 +91,7 @@ scoring engine, threat intelligence pipeline, or public API.
 
 ---
 
-## 4. Vulnerability Reporting Process
+## 5. Vulnerability Reporting Process
 
 To report a security issue:
 
@@ -98,7 +119,7 @@ consideration as new Prompt CVE entries. Include:
 
 ---
 
-## 5. Data Privacy Guarantees
+## 6. Data Privacy Guarantees
 
 CostGuard never stores raw prompts. Only anonymized structural fingerprints are retained.
 
@@ -140,7 +161,7 @@ storage path exists:
 
 ---
 
-## 6. Academic Collaboration
+## 7. Academic Collaboration
 
 CostGuardAI welcomes academic collaboration on prompt security research.
 

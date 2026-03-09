@@ -29,6 +29,7 @@ const DEMO_ANALYSIS: RiskAssessment = {
   estimatedCostInput: 0.01620,
   estimatedCostOutput: 0.01800,
   estimatedCostTotal: 0.03420,
+  base_risk_score: 72,
   riskScore: 72,
   score_version: "v1.0",
   riskLevel: "high",

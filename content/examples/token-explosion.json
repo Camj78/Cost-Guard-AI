@@ -2,14 +2,15 @@
   "title": "Token Cost Explosion Risk",
   "description": "A prompt containing multiple open-ended output directives that trigger unbounded token generation. At scale, this prompt pattern can multiply API costs by 3–8x versus a constrained equivalent.",
   "structure_summary": "open-ended output directive (write a detailed, comprehensive, in depth, thoroughly explain) + high expected output multiplier (output tokens > 2x input) + no output length constraint",
-  "expected_score": "31",
-  "risk_band": "Unsafe",
+  "verification_prompt": "Write a detailed guide. As much as possible, cover every subtopic thoroughly. In depth coverage of all related areas. Comprehensively explain each concept. Thoroughly explain all aspects of the subject matter from every angle.",
+  "expected_score": "62",
+  "risk_band": "Needs Hardening",
   "risk_drivers": [
     { "name": "Token Output Volatility", "level": "High" },
-    { "name": "Context Saturation", "level": "High" },
-    { "name": "Prompt Length", "level": "Medium" }
+    { "name": "Structural Failure", "level": "High" },
+    { "name": "Prompt Length", "level": "Low" }
   ],
-  "explanation": "Multiple volatility phrase matches (write a detailed, comprehensive, in depth) drive the volatility bucket above 75 before weighting. The expected output token ratio exceeds 2x input tokens, adding a further 30-point volatility penalty. Combined length and context saturation components push the final risk_score into the Unsafe band. Deploying this prompt at 100k calls/month could add $500–$2000 in unnecessary token spend versus a constrained version.",
+  "explanation": "Multiple volatility phrase matches (write a detailed, as much as possible, in depth, thoroughly explain, comprehensive) drive the volatility bucket to its maximum tier before any length adjustment. The expected output token ratio exceeds 2x input tokens, adding a further volatility penalty. All five structural safety elements are absent, contributing a maximum structural bucket score. Together these risks place the prompt in the Needs Hardening band. Deploying this prompt at 100k calls/month could add $500–$2000 in unnecessary token spend versus a constrained version.",
   "mitigations": [
     "Replace write a detailed / comprehensive with a constrained equivalent: respond in 3 bullet points",
     "Set a hard max_tokens parameter at the API call level",

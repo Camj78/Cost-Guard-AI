@@ -1,6 +1,6 @@
 # CostGuard Safety Score — Formal Specification
 
-**Version:** 1.1.0
+**Version:** 1.2.0
 **Status:** Published
 **Maintainer:** CostGuardAI
 
@@ -226,6 +226,40 @@ risk_score = round(
 
 CSS = 100 − min(100, risk_score)
 ```
+
+### 3.7 Scoring Architecture — Base Score and Threat Intelligence Adjustment
+
+The CostGuard scoring model separates two distinct risk signals. This separation
+improves auditability and is consistent with how security-oriented scoring systems
+(e.g., CVSS) distinguish base severity from environmental adjustments.
+
+**Component → Attack Category Mapping**
+
+| Engine Component | Weight | Attack Category |
+|---|---|---|
+| Structural Failure Risk | 20% | Prompt Injection + System Override |
+| Instruction Ambiguity Risk | 20% | Jailbreak Behavior + Tool Abuse |
+| Output Volatility Risk | 15% | Token Cost Explosion (unbounded output) |
+| Prompt Length Risk | 25% | Token Cost Explosion (input size) |
+| Context Saturation Risk | 20% | Token Cost Explosion (combined saturation) |
+
+**Score layering**
+
+```
+weighted_risk_total  = Σ (component_bucket × component_weight)
+base_risk_score      = clamp(round(weighted_risk_total), 0, 100)
+threat_intel_adj     = CVE severity adjustment if pattern match found (Section 6.4)
+risk_score           = clamp(base_risk_score + threat_intel_adj, 0, 100)
+safety_score (CSS)   = 100 − risk_score
+```
+
+`base_risk_score` reflects only structural analysis — what can be determined from the
+prompt's text and token properties alone. `threat_intel_adj` reflects empirical incident
+data from the Prompt CVE registry. The final `risk_score` is always clamped to [0, 100].
+
+`assessRisk()` computes and returns `base_risk_score`. Threat intelligence adjustments
+are applied externally by API routes and stored separately in analysis records, making
+each layer independently auditable.
 
 ---
 
@@ -545,3 +579,4 @@ costguard ci --fail-on-risk 60
 |---|---|---|
 | 1.0.0 | 2026-03-09 | Initial published specification |
 | 1.1.0 | 2026-03-09 | Added five component definitions; versioned weight declaration; threat intelligence influence model; CVE bounded adjustment values; score interpretation section; score governance section |
+| 1.2.0 | 2026-03-09 | Added Section 3.7: scoring architecture separating base_risk_score from threat_intel_adjustment; CVSS-style component-to-attack-category mapping; explicit clamp formula; example verification_prompt documentation |

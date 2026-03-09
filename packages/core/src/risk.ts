@@ -47,6 +47,13 @@ export interface RiskAssessment {
   estimatedCostInput: number;
   estimatedCostOutput: number;
   estimatedCostTotal: number;
+  /**
+   * Base risk score: weighted sum of structural components before any
+   * threat intelligence adjustment. Range: 0–100 (clamped).
+   * Threat intelligence adjustments (CVE boosts) are applied externally
+   * and reflected in the final `riskScore`.
+   */
+  base_risk_score: number;
   riskScore: number;
   score_version: string;
   riskLevel: RiskLevel;
@@ -255,9 +262,30 @@ export function assessRisk(inputs: RiskInputs): RiskAssessment {
   const volatilityBucket = Math.min(100, volatilitySum);
   const volatilityRisk = volatilityBucket * SCORING_WEIGHTS.volatility;
 
-  // ─── Final score ────────────────────────────────────────────────────────
+  // ─── Final Score (CVSS-style weighted risk model) ───────────────────────
+  //
+  // Component → Attack category mapping:
+  //   structural  (20%) → Prompt Injection + System Override
+  //   ambiguity   (20%) → Jailbreak Behavior + Tool Abuse (underspecification risk)
+  //   volatility  (15%) → Token Cost Explosion (unbounded output risk)
+  //   length      (25%) → Token Cost Explosion (input size risk)
+  //   context     (20%) → Token Cost Explosion (combined saturation risk)
+  //
+  // Formula:
+  //   weighted_risk_total = length_risk + context_risk + ambiguity_risk
+  //                         + structural_risk + volatility_risk
+  //   base_risk_score     = clamp(round(weighted_risk_total), 0, 100)
+  //   risk_score          = clamp(base_risk_score + threat_intel_adjustment, 0, 100)
+  //   safety_score        = 100 − risk_score
+  //
+  // Note: assessRisk() computes base_risk_score only. Threat intelligence
+  // adjustments (CVE severity boosts) are applied externally by API routes
+  // and stored separately. This mirrors CVSS's base score + temporal/
+  // environmental adjustment architecture.
+  //
   const totalRisk = lengthRisk + contextRisk + ambiguityRisk + structuralRisk + volatilityRisk;
-  const riskScore = Math.min(100, Math.round(totalRisk));
+  const base_risk_score = Math.min(100, Math.round(totalRisk));
+  const riskScore = base_risk_score; // No threat intel applied at engine level
 
   // ─── Risk drivers: top 3 by unweighted bucket score ────────────────────
   const allDrivers: RiskDriver[] = [
@@ -351,6 +379,7 @@ export function assessRisk(inputs: RiskInputs): RiskAssessment {
     estimatedCostInput,
     estimatedCostOutput,
     estimatedCostTotal,
+    base_risk_score,
     riskScore,
     score_version: SCORE_VERSION,
     riskLevel,

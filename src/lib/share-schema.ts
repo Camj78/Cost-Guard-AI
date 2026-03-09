@@ -159,6 +159,7 @@ export function validateClientSnapshot(
     estimatedCostInput: analysis.estimatedCostInput as number,
     estimatedCostOutput: analysis.estimatedCostOutput as number,
     estimatedCostTotal: analysis.estimatedCostTotal as number,
+    base_risk_score: riskScore,
     riskScore,
     score_version,
     riskLevel: riskLevel as RiskAssessment["riskLevel"],

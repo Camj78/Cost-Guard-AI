@@ -32,8 +32,10 @@ import { ANALYSIS_VERSION } from "../src/lib/trust";
 interface ExampleFixture {
   title: string;
   structure_summary: string;
+  verification_prompt: string;
   expected_score: string;
-  risk_band: string;
+  explanation?: string;
+  mitigations?: string[];
 }
 
 interface ExampleResult {
@@ -122,12 +124,27 @@ function persistSummary(results: BenchmarkResult[]): void {
 const EXAMPLE_TOLERANCE = 10;
 const EXAMPLE_DEFAULT_MODEL = "gpt-4o";
 
+const REQUIRED_EXAMPLE_FIELDS = [
+  "title",
+  "structure_summary",
+  "verification_prompt",
+  "expected_score",
+  "explanation",
+  "mitigations",
+] as const;
+
 function loadExamples(): ExampleFixture[] {
   const examplesDir = path.join(PROJECT_ROOT, "content", "examples");
   const files = fs.readdirSync(examplesDir).filter((f) => f.endsWith(".json"));
   return files.map((f) => {
     const raw = fs.readFileSync(path.join(examplesDir, f), "utf-8");
-    return JSON.parse(raw) as ExampleFixture;
+    const fixture = JSON.parse(raw) as Record<string, unknown>;
+    // Validate required fields
+    const missing = REQUIRED_EXAMPLE_FIELDS.filter((field) => !(field in fixture) || fixture[field] === undefined);
+    if (missing.length > 0) {
+      throw new Error(`Example fixture '${f}' is missing required fields: ${missing.join(", ")}`);
+    }
+    return fixture as unknown as ExampleFixture;
   });
 }
 
@@ -155,9 +172,10 @@ function runExampleVerification(): boolean {
 
   for (const example of examples) {
     try {
-      const inputTokens = countTokens(example.structure_summary, model);
+      const verifyText = example.verification_prompt;
+      const inputTokens = countTokens(verifyText, model);
       const assessment = assessRisk({
-        promptText: example.structure_summary,
+        promptText: verifyText,
         inputTokens,
         contextWindow: model.contextWindow,
         expectedOutputTokens: 256,
@@ -179,7 +197,7 @@ function runExampleVerification(): boolean {
 
       const icon = passed ? "PASS" : "FAIL";
       console.log(`  [${icon}] ${example.title}`);
-      console.log(`         safety_score=${safetyScore}  expected=${expectedScore}  band=${example.risk_band}`);
+      console.log(`         safety_score=${safetyScore}  expected=${expectedScore}  diff=${Math.abs(safetyScore - expectedScore)}`);
       if (drift) console.log(`         DRIFT: ${drift}`);
       console.log();
     } catch (err) {
