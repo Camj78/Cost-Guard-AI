@@ -9,7 +9,7 @@
  *   2. Look up installation_id(s) for this user in github_installations.
  *   3. For each installation, exchange a GitHub App JWT for an installation
  *      access token, then call:
- *        GET /user/installations/{installation_id}/repositories
+ *        GET /installation/repositories
  *   4. Return deduplicated repo list.
  *
  * Requires:
@@ -58,8 +58,11 @@ async function fetchReposForInstallation(
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
+    // /installation/repositories is the correct endpoint for installation
+    // access tokens (server-to-server). The /user/installations/* endpoint
+    // requires a user OAuth token and returns 403 with an installation token.
     const res = await fetch(
-      `${GITHUB_API}/user/installations/${installationId}/repositories?per_page=100`,
+      `${GITHUB_API}/installation/repositories?per_page=100`,
       {
         signal: controller.signal,
         headers: {
@@ -95,12 +98,13 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. Look up installations for this user
+  // 2. Look up installations for this user — newest first so the most
+  //    recently installed (and most likely valid) row is processed first.
   const { data: rows, error: dbError } = await supabase
     .from("github_installations")
     .select("installation_id")
     .eq("user_id", user.id)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false });
 
   if (dbError) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
