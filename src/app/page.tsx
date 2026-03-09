@@ -195,6 +195,63 @@ export default function Page() {
         </div>
       </section>
 
+      {/* WHY DEVELOPERS TRUST COSTGUARD */}
+      <section className="px-4 sm:px-6 py-10 border-t border-white/[0.06]">
+        <div className="mx-auto max-w-5xl space-y-6">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            Why developers trust CostGuard
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+            <div className="glass-card p-5 space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Versioned Safety Score
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Benchmark-calibrated scoring with published methodology.
+              </p>
+            </div>
+
+            <div className="glass-card p-5 space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Prompt CVE Intelligence
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Detects known prompt vulnerability patterns with PCVE tracking.
+              </p>
+            </div>
+
+            <div className="glass-card p-5 space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Privacy-Safe Analysis
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                No raw prompts stored. Only anonymized structural fingerprints retained.
+              </p>
+            </div>
+
+          </div>
+          <div className="flex items-center gap-4 flex-wrap">
+            {[
+              { label: "Methodology", href: "/methodology" },
+              { label: "Vulnerabilities", href: "/vulnerabilities" },
+              { label: "Examples", href: "/examples" },
+              { label: "Calibration", href: "/methodology/calibration" },
+            ].map(({ label, href }, i) => (
+              <span key={label} className="flex items-center gap-4">
+                {i > 0 && <span className="text-muted-foreground/20" aria-hidden="true">·</span>}
+                <a
+                  href={href}
+                  className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                >
+                  {label} →
+                </a>
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* MAIN CONTENT */}
       <main className="flex-1 px-4 sm:px-6 py-6">
         <div className="mx-auto max-w-5xl">

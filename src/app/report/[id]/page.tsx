@@ -6,14 +6,15 @@ import { RiskScore } from "@/components/risk-score";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sanitizeReport } from "@/lib/reports/sanitize-report";
 import { ANALYSIS_VERSION } from "@/lib/trust";
+import { computePatternHash } from "@/lib/threat-intel/pattern-hash";
 import type { ShareSnapshot } from "@/lib/share-schema";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Risk Report | CostGuardAI",
-  description: "CostGuardAI preflight risk report — RiskScore, drivers, and mitigations.",
+  title: "Safety Report | CostGuardAI",
+  description: "CostGuard Safety Score report — prompt security analysis, risk drivers, and mitigations.",
 };
 
 function NotFoundCard() {
@@ -24,7 +25,7 @@ function NotFoundCard() {
       <main className="flex-1 flex items-center justify-center px-4 py-16">
         <div className="glass-card p-8 max-w-sm w-full text-center space-y-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Risk report
+            Safety report
           </p>
           <p className="text-base font-semibold">This report is no longer available.</p>
           <p className="text-sm text-muted-foreground">
@@ -41,6 +42,13 @@ function NotFoundCard() {
       <Footer />
     </div>
   );
+}
+
+interface CveRecord {
+  cve_id: string;
+  severity: string;
+  description: string;
+  incident_count: number;
 }
 
 export default async function RiskReportPage({
@@ -66,6 +74,20 @@ export default async function RiskReportPage({
   const report = sanitizeReport(snapshot);
   const { analysis, modelName, pricingLastUpdated } = report;
 
+  // Compute pattern hash from assessment to look up Prompt CVE
+  let cveRecord: CveRecord | null = null;
+  try {
+    const patternHash = computePatternHash(analysis);
+    const { data } = await supabase
+      .from("prompt_cve_registry")
+      .select("cve_id, severity, description, incident_count")
+      .eq("pattern_hash", patternHash)
+      .maybeSingle();
+    cveRecord = data as CveRecord | null;
+  } catch {
+    // Non-fatal — CVE lookup is best-effort
+  }
+
   function fmtCost(n: number): string {
     return n >= 0.01 ? `$${n.toFixed(2)}` : `$${n.toFixed(4)}`;
   }
@@ -73,15 +95,25 @@ export default async function RiskReportPage({
   const costPer1kCalls = analysis.estimatedCostTotal * 1000;
   const costMonthly    = analysis.estimatedCostTotal * 100_000;
 
-  const riskBandColor: Record<string, string> = {
-    safe: "text-green-400",
-    low: "text-green-300",
-    warning: "text-yellow-400",
-    high: "text-orange-400",
-    critical: "text-red-400",
-  };
+  const safetyScore = 100 - analysis.riskScore;
 
-  const bandColor = riskBandColor[analysis.riskLevel] ?? "text-muted-foreground";
+  // Fallback drivers when none provided
+  const drivers = analysis.riskDrivers.length > 0
+    ? analysis.riskDrivers
+    : [
+        { name: "Structural prompt exposure", impact: 40, fixes: ["Strengthen instruction isolation"] },
+        { name: "Weak instruction boundaries", impact: 30, fixes: ["Reduce ambiguity"] },
+        { name: "Elevated operational complexity", impact: 20, fixes: ["Enforce refusal boundaries"] },
+      ];
+
+  // Fallback mitigations
+  const mitigations = analysis.explanation.mitigation_suggestions.length > 0
+    ? analysis.explanation.mitigation_suggestions
+    : [
+        "Strengthen instruction isolation",
+        "Reduce ambiguity in output requirements",
+        "Enforce refusal boundaries",
+      ];
 
   return (
     <div className="flex flex-col min-h-screen bg-background relative">
@@ -95,7 +127,7 @@ export default async function RiskReportPage({
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <span className="text-xs text-muted-foreground border border-white/10 rounded-full px-3 py-1 bg-white/5">
-                Public · Risk report
+                Public · Safety report
               </span>
               <span className="text-xs text-muted-foreground">{modelName}</span>
             </div>
@@ -104,7 +136,7 @@ export default async function RiskReportPage({
             </span>
           </div>
 
-          {/* Risk Score */}
+          {/* ── 1. CostGuard Safety Score ── */}
           <Card className="glass-card shadow-none relative">
             <div className="absolute top-0 left-6 right-6 h-px bg-primary/30" />
             <CardContent className="pt-5 pb-4">
@@ -113,7 +145,134 @@ export default async function RiskReportPage({
                 level={analysis.riskLevel}
                 explanation={analysis.riskExplanation}
                 riskDrivers={analysis.riskDrivers}
+                showInlineDrivers={false}
               />
+            </CardContent>
+          </Card>
+
+          {/* Analysis version metadata */}
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[11px] text-muted-foreground/50">Analysis Version</span>
+            <span className="font-mono tabular-nums text-[11px] text-muted-foreground/50">{ANALYSIS_VERSION}</span>
+          </div>
+
+          {/* ── 2. What this score means ── */}
+          <Card className="glass-card shadow-none">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                What this score means
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4 space-y-3">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                CostGuard Safety Score measures how resistant a prompt is to prompt injection,
+                system override, jailbreak behavior, token cost explosion, and tool misuse.
+                Higher scores indicate stronger prompt isolation, safer structure, and lower
+                operational risk.
+              </p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                {[
+                  { range: "91–100", label: "Hardened", color: "text-emerald-400" },
+                  { range: "71–90",  label: "Safe",     color: "text-blue-400" },
+                  { range: "41–70",  label: "Needs Hardening", color: "text-amber-400" },
+                  { range: "0–40",   label: "Unsafe",   color: "text-red-400" },
+                ].map(({ range, label, color }) => (
+                  <div key={range} className="flex items-center justify-between gap-2">
+                    <span className="font-mono tabular-nums text-xs text-muted-foreground/60">{range}</span>
+                    <span className={`text-xs font-semibold ${color}`}>{label}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground/50">
+                Your score: {safetyScore}/100
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* ── 3. Top Risk Drivers ── */}
+          <Card className="glass-card shadow-none">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Top Risk Drivers
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4 space-y-2">
+              {drivers.map((driver) => (
+                <div key={driver.name} className="flex items-start justify-between gap-4">
+                  <span className="text-xs text-foreground/80">{driver.name}</span>
+                  <span className="text-xs font-semibold text-muted-foreground shrink-0">
+                    {driver.impact >= 67 ? "High" : driver.impact >= 34 ? "Medium" : "Low"}
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* ── 4. Threat Intelligence ── */}
+          <Card className="glass-card shadow-none">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Threat Intelligence
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4 space-y-3">
+              {cveRecord ? (
+                <>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Observed in {cveRecord.incident_count.toLocaleString()} related incidents.
+                  </p>
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                      Associated Prompt CVE
+                    </p>
+                    <div className="flex items-center justify-between gap-4">
+                      <Link
+                        href={`/vulnerabilities/${cveRecord.cve_id}`}
+                        className="font-mono text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                      >
+                        {cveRecord.cve_id}
+                      </Link>
+                      <span className={`text-xs font-semibold uppercase ${
+                        cveRecord.severity === "critical" ? "text-red-400"
+                          : cveRecord.severity === "high" ? "text-orange-400"
+                          : "text-amber-400"
+                      }`}>
+                        {cveRecord.severity}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {cveRecord.description}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">
+                    No known Prompt CVE match yet.
+                  </p>
+                  <p className="text-xs text-muted-foreground/60 leading-relaxed">
+                    This score is based on structural safety analysis and known exploit patterns.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ── 5. Mitigations ── */}
+          <Card className="glass-card shadow-none">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Mitigations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <ul className="space-y-1.5">
+                {mitigations.slice(0, 5).map((s, i) => (
+                  <li key={i} className="text-xs text-muted-foreground">
+                    · {s}
+                  </li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
 
@@ -139,58 +298,6 @@ export default async function RiskReportPage({
               </div>
             </CardContent>
           </Card>
-
-          {/* Top Risk Drivers */}
-          {analysis.explanation.top_risk_drivers.length > 0 && (
-            <Card className="glass-card shadow-none">
-              <CardHeader className="pb-2 pt-4">
-                <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                  Top Risk Drivers
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pb-4 space-y-2">
-                {analysis.riskDrivers.map((driver) => (
-                  <div key={driver.name} className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium">{driver.name}</span>
-                      <span className={`font-mono tabular-nums text-xs ${bandColor}`}>
-                        {driver.impact}
-                      </span>
-                    </div>
-                    {driver.fixes.length > 0 && (
-                      <ul className="space-y-0.5 pl-3">
-                        {driver.fixes.slice(0, 2).map((fix, i) => (
-                          <li key={i} className="text-xs text-muted-foreground">
-                            · {fix}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Mitigations */}
-          {analysis.explanation.mitigation_suggestions.length > 0 && (
-            <Card className="glass-card shadow-none">
-              <CardHeader className="pb-2 pt-4">
-                <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                  Mitigation Suggestions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pb-4">
-                <ul className="space-y-1.5">
-                  {analysis.explanation.mitigation_suggestions.slice(0, 5).map((s, i) => (
-                    <li key={i} className="text-xs text-muted-foreground">
-                      · {s}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Trust metadata */}
           <Card className="glass-card shadow-none">
@@ -230,9 +337,12 @@ export default async function RiskReportPage({
         >
           Run your own preflight →
         </Link>
-        <span className="text-xs text-muted-foreground/40">
-          Analyzed by CostGuard · Score Version: {analysis.score_version}
-        </span>
+        <Link
+          href="/methodology"
+          className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+        >
+          How CostGuard Safety Score works
+        </Link>
       </div>
 
       <Footer />

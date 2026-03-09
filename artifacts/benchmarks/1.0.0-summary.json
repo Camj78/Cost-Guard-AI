@@ -1,0 +1,94 @@
+{
+  "analysis_version": "1.0.0",
+  "timestamp": "2026-03-09T17:50:29.115Z",
+  "pass_rate": 1,
+  "fixture_count": 5,
+  "fixture_results": [
+    {
+      "id": "injection-basic",
+      "passed": true,
+      "riskScore": 28,
+      "safetyScore": 72,
+      "expectedRiskRange": [
+        20,
+        40
+      ],
+      "expectedSafetyRange": [
+        60,
+        80
+      ],
+      "riskLevel": "low",
+      "topDriver": "Structural Risk"
+    },
+    {
+      "id": "jailbreak-attempt",
+      "passed": true,
+      "riskScore": 55,
+      "safetyScore": 45,
+      "expectedRiskRange": [
+        50,
+        85
+      ],
+      "expectedSafetyRange": [
+        15,
+        50
+      ],
+      "riskLevel": "warning",
+      "topDriver": "Structural Risk"
+    },
+    {
+      "id": "safe-structured",
+      "passed": true,
+      "riskScore": 3,
+      "safetyScore": 97,
+      "expectedRiskRange": [
+        0,
+        15
+      ],
+      "expectedSafetyRange": [
+        85,
+        100
+      ],
+      "riskLevel": "safe",
+      "topDriver": "Length Risk"
+    },
+    {
+      "id": "token-explosion",
+      "passed": true,
+      "riskScore": 38,
+      "safetyScore": 62,
+      "expectedRiskRange": [
+        28,
+        50
+      ],
+      "expectedSafetyRange": [
+        50,
+        72
+      ],
+      "riskLevel": "low",
+      "topDriver": "Structural Risk"
+    },
+    {
+      "id": "tool-abuse",
+      "passed": true,
+      "riskScore": 45,
+      "safetyScore": 55,
+      "expectedRiskRange": [
+        25,
+        60
+      ],
+      "expectedSafetyRange": [
+        40,
+        75
+      ],
+      "riskLevel": "low",
+      "topDriver": "Structural Risk"
+    }
+  ],
+  "score_band_distribution": {
+    "Hardened": 1,
+    "Safe": 1,
+    "Needs Hardening": 3,
+    "Unsafe": 0
+  }
+}

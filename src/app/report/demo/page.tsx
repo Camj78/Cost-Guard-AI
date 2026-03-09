@@ -10,12 +10,13 @@ import type { RiskAssessment } from "@/lib/risk";
 
 export const metadata: Metadata = {
   title: "Demo Report | CostGuardAI",
-  description: "CostGuardAI demo preflight risk report — RiskScore, drivers, and mitigations.",
+  description: "CostGuardAI demo safety report — CostGuard Safety Score, risk drivers, and mitigations.",
 };
 
 // ---------------------------------------------------------------------------
 // Static demo payload — no database query.
 // Shaped to match RiskAssessment exactly.
+// riskScore = 72 → CostGuard Safety Score = 28 (Unsafe)
 // ---------------------------------------------------------------------------
 const DEMO_ANALYSIS: RiskAssessment = {
   inputTokens: 3240,
@@ -73,7 +74,7 @@ const DEMO_ANALYSIS: RiskAssessment = {
   },
   explanation: {
     summary:
-      "RiskScore 72 (High) driven primarily by Injection Risk and Cost Explosion.",
+      "CostGuard Safety Score 28 (Unsafe) — high injection risk and cost explosion detected.",
     top_risk_drivers: ["Injection Risk", "Cost Explosion", "Ambiguity Risk"],
     contributing_factors: [
       "Untrusted user input embedded in system prompt",
@@ -104,20 +105,11 @@ const DEMO_COSTS = {
 
 export default function DemoReportPage() {
   const analysis = DEMO_ANALYSIS;
+  const safetyScore = 100 - analysis.riskScore; // 28
 
   function fmtCost(n: number): string {
     return n >= 0.01 ? `$${n.toFixed(2)}` : `$${n.toFixed(4)}`;
   }
-
-  const riskBandColor: Record<string, string> = {
-    safe:     "text-green-400",
-    low:      "text-green-300",
-    warning:  "text-yellow-400",
-    high:     "text-orange-400",
-    critical: "text-red-400",
-  };
-
-  const bandColor = riskBandColor[analysis.riskLevel] ?? "text-muted-foreground";
 
   return (
     <div className="flex flex-col min-h-screen bg-background relative">
@@ -130,7 +122,7 @@ export default function DemoReportPage() {
           {/* 1 — Report Header */}
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-xs text-muted-foreground border border-white/10 rounded-full px-3 py-1 bg-white/5">
-              Demo · Risk report
+              Demo · Safety report
             </span>
             <span className="text-xs text-muted-foreground">{DEMO_MODEL_NAME}</span>
           </div>
@@ -140,12 +132,12 @@ export default function DemoReportPage() {
             <Card className="glass-card shadow-none">
               <CardContent className="pt-4 pb-3 px-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-1">
-                  RiskScore
+                  Safety Score
                 </p>
-                <p className={`font-mono tabular-nums text-2xl font-semibold leading-none ${bandColor}`}>
-                  72
+                <p className="font-mono tabular-nums text-2xl font-semibold leading-none text-orange-400">
+                  {safetyScore}
                 </p>
-                <p className={`text-xs mt-1 ${bandColor}`}>High</p>
+                <p className="text-xs mt-1 text-orange-400">Unsafe</p>
               </CardContent>
             </Card>
             <Card className="glass-card shadow-none">
@@ -193,7 +185,7 @@ export default function DemoReportPage() {
             <span>Share-safe</span>
           </div>
 
-          {/* 4 — Risk Score */}
+          {/* ── 1. CostGuard Safety Score ── */}
           <Card className="glass-card shadow-none relative">
             <div className="absolute top-0 left-6 right-6 h-px bg-primary/30" />
             <CardContent className="pt-5 pb-4">
@@ -202,11 +194,99 @@ export default function DemoReportPage() {
                 level={analysis.riskLevel}
                 explanation={analysis.riskExplanation}
                 riskDrivers={analysis.riskDrivers}
+                showInlineDrivers={false}
               />
             </CardContent>
           </Card>
 
-          {/* 5 — Cost Impact */}
+          {/* ── 2. What this score means ── */}
+          <Card className="glass-card shadow-none">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                What this score means
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4 space-y-3">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                CostGuard Safety Score measures how resistant a prompt is to prompt injection,
+                system override, jailbreak behavior, token cost explosion, and tool misuse.
+                Higher scores indicate stronger prompt isolation, safer structure, and lower
+                operational risk.
+              </p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                {[
+                  { range: "91–100", label: "Hardened", color: "text-emerald-400" },
+                  { range: "71–90",  label: "Safe",     color: "text-blue-400" },
+                  { range: "41–70",  label: "Needs Hardening", color: "text-amber-400" },
+                  { range: "0–40",   label: "Unsafe",   color: "text-red-400" },
+                ].map(({ range, label, color }) => (
+                  <div key={range} className="flex items-center justify-between gap-2">
+                    <span className="font-mono tabular-nums text-xs text-muted-foreground/60">{range}</span>
+                    <span className={`text-xs font-semibold ${color}`}>{label}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground/50">
+                Your score: {safetyScore}/100
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* ── 3. Top Risk Drivers ── */}
+          <Card className="glass-card shadow-none">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Top Risk Drivers
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4 space-y-2">
+              {analysis.riskDrivers.map((driver) => (
+                <div key={driver.name} className="flex items-start justify-between gap-4">
+                  <span className="text-xs text-foreground/80">{driver.name}</span>
+                  <span className="text-xs font-semibold text-muted-foreground shrink-0">
+                    {driver.impact >= 67 ? "High" : driver.impact >= 34 ? "Medium" : "Low"}
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* ── 4. Threat Intelligence ── */}
+          <Card className="glass-card shadow-none">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Threat Intelligence
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4 space-y-1.5">
+              <p className="text-xs text-muted-foreground">
+                No known Prompt CVE match yet.
+              </p>
+              <p className="text-xs text-muted-foreground/60 leading-relaxed">
+                This score is based on structural safety analysis and known exploit patterns.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* ── 5. Mitigations ── */}
+          <Card className="glass-card shadow-none">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Mitigations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <ul className="space-y-1.5">
+                {analysis.explanation.mitigation_suggestions.slice(0, 5).map((s, i) => (
+                  <li key={i} className="text-xs text-muted-foreground">
+                    · {s}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* 6 — Cost Impact */}
           <Card className="glass-card shadow-none">
             <CardHeader className="pb-2 pt-4">
               <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
@@ -238,16 +318,13 @@ export default function DemoReportPage() {
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground/50 leading-relaxed">
-                Estimated using mixed model workload (classification + generation).
-              </p>
-              <p className="text-[11px] text-muted-foreground/50 leading-relaxed">
                 Estimates based on current model pricing.
                 Actual costs vary by provider and model version.
               </p>
             </CardContent>
           </Card>
 
-          {/* 6 — Real Repo CTA Block */}
+          {/* 7 — Real Repo CTA Block */}
           <Card className="glass-card shadow-none border border-primary/20">
             <CardContent className="pt-5 pb-5">
               <p className="text-sm font-semibold tracking-tight mb-1">Protect a real repo next</p>
@@ -276,59 +353,7 @@ export default function DemoReportPage() {
             </CardContent>
           </Card>
 
-          {/* 7 — Top Risk Drivers */}
-          {analysis.explanation.top_risk_drivers.length > 0 && (
-            <Card className="glass-card shadow-none">
-              <CardHeader className="pb-2 pt-4">
-                <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                  Top Risk Drivers
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pb-4 space-y-2">
-                {analysis.riskDrivers.map((driver) => (
-                  <div key={driver.name} className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium">{driver.name}</span>
-                      <span className={`font-mono tabular-nums text-xs ${bandColor}`}>
-                        {driver.impact}
-                      </span>
-                    </div>
-                    {driver.fixes.length > 0 && (
-                      <ul className="space-y-0.5 pl-3">
-                        {driver.fixes.slice(0, 2).map((fix, i) => (
-                          <li key={i} className="text-xs text-muted-foreground">
-                            · {fix}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* 8 — Mitigation Suggestions */}
-          {analysis.explanation.mitigation_suggestions.length > 0 && (
-            <Card className="glass-card shadow-none">
-              <CardHeader className="pb-2 pt-4">
-                <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                  Mitigation Suggestions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pb-4">
-                <ul className="space-y-1.5">
-                  {analysis.explanation.mitigation_suggestions.slice(0, 5).map((s, i) => (
-                    <li key={i} className="text-xs text-muted-foreground">
-                      · {s}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* 9 — Report Integrity */}
+          {/* 8 — Report Integrity */}
           <Card className="glass-card shadow-none">
             <CardHeader className="pb-2 pt-4">
               <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
@@ -365,9 +390,12 @@ export default function DemoReportPage() {
         >
           Run your own preflight →
         </Link>
-        <span className="text-xs text-muted-foreground/40">
-          Analyzed by CostGuard · Score Version: {analysis.score_version}
-        </span>
+        <Link
+          href="/methodology"
+          className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+        >
+          How CostGuard Safety Score works
+        </Link>
       </div>
 
       <Footer />

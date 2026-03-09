@@ -367,6 +367,39 @@ CostGuardAI becomes industry leader when:
 - It becomes the standard pre-deployment step for LLM prompts
 
 ---------------------------------------------------------
+## Core System Invariants
+---------------------------------------------------------
+
+The following systems are foundational to CostGuard and must not be
+modified without explicit instruction:
+
+• CostGuard Safety Score (CSS)
+• Prompt CVE registry (PCVE)
+• Threat intelligence dataset
+• Benchmark calibration fixtures
+• Analysis versioning (analysis_version)
+
+Rules:
+
+- Never store raw prompts.
+- Never expose prompt structures that could reconstruct user prompts.
+- Never remove benchmark validation.
+- Never change Safety Score bands without updating SAFETYSCORE_SPEC.md.
+- CVE adjustments must remain bounded and versioned.
+- Threat intelligence must only use anonymized structural patterns.
+- Never change CVE adjustment values (Critical +10, High +7, Medium +3)
+  without a major version increment and full benchmark review.
+- Never expose pattern_hash values in any public-facing UI or API response.
+- Scoring logic in src/lib/risk.ts must not be modified without updating
+  docs/score-changelog/ and incrementing analysis_version.
+- Benchmark fixtures in fixtures/benchmarks/ are canonical — do not delete
+  or modify without explicit approval and a new benchmark run.
+
+Purpose:
+Protect CostGuard's core security and scoring infrastructure from
+accidental modification during future development.
+
+---------------------------------------------------------
 # Project Skills
 
 Skill docs are stored in docs/skills/. When a skill mode is activated, the
