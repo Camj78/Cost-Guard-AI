@@ -168,6 +168,12 @@ export function RiskScore({ score, level, explanation, riskDrivers, showInlineDr
                       style={{ width: `${driver.impact}%` }}
                     />
                   </div>
+                  {/* Concise per-driver explanation (first fix hint) */}
+                  {driver.fixes.length > 0 && (
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
+                      {driver.fixes[0]}
+                    </p>
+                  )}
                 </div>
               );
             })}

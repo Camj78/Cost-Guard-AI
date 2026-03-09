@@ -334,6 +334,17 @@ export default async function FounderPage({
     "NEXT_PUBLIC_POSTHOG_KEY",
     "SENTRY_DSN",
   ];
+  const ENV_PURPOSE: Record<string, string> = {
+    NEXT_PUBLIC_SUPABASE_URL:    "required — core database connection",
+    SUPABASE_SERVICE_ROLE_KEY:   "required — founder analytics (service-role)",
+    STRIPE_SECRET_KEY:           "required — payments and billing",
+    STRIPE_WEBHOOK_SECRET:       "required — Stripe webhook verification",
+    GITHUB_APP_ID:               "optional — GitHub PR integration",
+    GITHUB_APP_PRIVATE_KEY:      "optional — GitHub PR integration",
+    CRON_SECRET:                 "optional — weekly intelligence job",
+    NEXT_PUBLIC_POSTHOG_KEY:     "optional — client analytics collection",
+    SENTRY_DSN:                  "optional — error monitoring",
+  };
   const missingEnv = envVarsToCheck.filter((k) => !process.env[k]);
   const githubConfigured = !!(
     process.env.GITHUB_APP_ID && process.env.GITHUB_APP_PRIVATE_KEY
@@ -394,11 +405,14 @@ export default async function FounderPage({
   }
 
   if (missingEnv.length > 0) {
+    const missingDescriptions = missingEnv
+      .map((k) => `${k} (${ENV_PURPOSE[k] ?? "see docs"})`)
+      .join("; ");
     issues.push({
       severity: missingEnv.length > 3 ? "high" : "medium",
       title: `${missingEnv.length} env variable${missingEnv.length === 1 ? "" : "s"} not configured`,
-      what: `Missing: ${missingEnv.join(", ")}.`,
-      action: "Add missing variables in your deployment environment settings.",
+      what: missingDescriptions,
+      action: "Add the missing variables in your deployment environment settings (Vercel → Settings → Environment Variables).",
     });
   }
 
@@ -422,9 +436,9 @@ export default async function FounderPage({
     issues.push({
       severity: "medium",
       title: "CVE registry is empty",
-      what: "The Prompt CVE Registry has no published entries yet.",
+      what: "The Prompt CVE Registry has no published entries yet. CVE records are auto-generated when a structural prompt pattern reaches 25+ incidents.",
       action:
-        "Run `POST /api/admin/intelligence/weekly` with CRON_SECRET to seed CVE records.",
+        "Trigger the weekly intelligence job: POST /api/admin/intelligence/weekly (set Authorization header to your CRON_SECRET value). Run after accumulating real user analyses.",
     });
   }
 
@@ -648,9 +662,12 @@ export default async function FounderPage({
                       : null;
                   const barWidth =
                     funnelSteps[0].value > 0
-                      ? Math.max(
-                          4,
-                          Math.round((step.value / funnelSteps[0].value) * 100)
+                      ? Math.min(
+                          100,
+                          Math.max(
+                            4,
+                            Math.round((step.value / funnelSteps[0].value) * 100)
+                          )
                         )
                       : 0;
 
@@ -1058,17 +1075,19 @@ export default async function FounderPage({
             {/* Missing env details */}
             {missingEnv.length > 0 && (
               <div className="glass-card p-5 border border-amber-500/20">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-400 mb-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-400 mb-3">
                   Missing Variables
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="space-y-2">
                   {missingEnv.map((v) => (
-                    <code
-                      key={v}
-                      className="text-xs font-mono bg-white/5 px-2 py-0.5 rounded border border-white/10 text-amber-300"
-                    >
-                      {v}
-                    </code>
+                    <div key={v} className="flex items-baseline gap-3">
+                      <code className="text-xs font-mono bg-white/5 px-2 py-0.5 rounded border border-white/10 text-amber-300 shrink-0">
+                        {v}
+                      </code>
+                      <span className="text-xs text-muted-foreground">
+                        {ENV_PURPOSE[v] ?? "see docs"}
+                      </span>
+                    </div>
                   ))}
                 </div>
               </div>

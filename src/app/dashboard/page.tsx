@@ -28,6 +28,7 @@ import { CostAtScalePanel } from "@/components/cost-at-scale-panel";
 import { ModelComparisonPanel } from "@/components/pro/model-comparison-panel";
 import { BatchAnalysisPanel } from "@/components/pro/batch-analysis-panel";
 import { RiskHistoryPanel } from "@/components/pro/risk-history-panel";
+import { addHistoryEntry } from "@/lib/analysis-history";
 import { ShareButton } from "@/components/share-button";
 import { PdfExportButton } from "@/components/pro/pdf-export-button";
 import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
@@ -159,7 +160,7 @@ function buildRiskTrend(
       day: "2-digit",
     });
     const arr = byDay.get(day) ?? [];
-    arr.push(a.risk_score);
+    arr.push(100 - a.risk_score);
     byDay.set(day, arr);
   });
   return Array.from(byDay.entries())
@@ -235,7 +236,7 @@ function StatusDot({ status }: { status: RepoStatus }) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { isPro, plan, isAuthed, firstName } = useUsage();
+  const { isPro, plan, isAuthed, firstName, isFounder } = useUsage();
 
   // ── Onboarding state ───────────────────────────────────────────────────────
   const [onboardingCompleted, setOnboardingCompleted] = useState(() => {
@@ -268,6 +269,10 @@ export default function DashboardPage() {
 
   // ── Selected prompt (for RiskHistoryPanel) ────────────────────────────────
   const [selectedSavedPromptId, setSelectedSavedPromptId] = useState<string | null>(null);
+
+  // ── Risk History version (increment to trigger RiskHistoryPanel refresh) ───
+  const [historyVersion, setHistoryVersion] = useState(0);
+  const prevAnalysisRef = useRef<object | null>(null);
 
   // ── Fetch callbacks (defined before usePreflight so we can pass fetchAnalyses) ──
   const fetchPrompts = useCallback(async (signal?: AbortSignal) => {
@@ -398,7 +403,17 @@ export default function DashboardPage() {
     });
   }, [fetchRepos, router]);
 
+  // ── Record analysis to Risk History when a new result arrives ──────────────
+  useEffect(() => {
+    if (analysis && analysis !== prevAnalysisRef.current && selectedSavedPromptId) {
+      addHistoryEntry(selectedSavedPromptId, analysis);
+      setHistoryVersion((v) => v + 1);
+    }
+    prevAnalysisRef.current = analysis;
+  }, [analysis, selectedSavedPromptId]);
+
   const hasPrompt = prompt.trim().length > 0;
+  const currentStage = analysis ? "review" : isAnalyzing ? "analyze" : "input";
 
   // ── Derived dashboard metrics ───────────────────────────────────────────────
   const derivedAlerts: DerivedAlert[] = deriveAlerts({ analysisHistory: analyses });
@@ -557,6 +572,17 @@ export default function DashboardPage() {
                   </span>
                 </>
               )}
+              {isFounder && (
+                <>
+                  <span className="text-border">·</span>
+                  <Link
+                    href="/founder"
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Founder Dashboard
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -581,15 +607,15 @@ export default function DashboardPage() {
           <section>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
 
-              {/* RiskScore */}
+              {/* Safety Score (inverted from raw risk_score) */}
               <div className="glass-card p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-2">
-                  RiskScore
+                  Safety Score
                 </p>
                 {latestRiskScore !== null ? (
                   <>
                     <p className={`font-mono tabular-nums text-2xl font-semibold leading-none ${riskBadgeClass(latestRiskScore).split(" ")[0]}`}>
-                      {latestRiskScore}
+                      {100 - latestRiskScore}
                     </p>
                     <p className={`text-xs mt-1 ${riskBadgeClass(latestRiskScore).split(" ")[0]}`}>
                       {riskLabel(latestRiskScore)}
@@ -736,15 +762,15 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              {/* RiskScore Trend */}
+              {/* Safety Score Trend */}
               <div className="glass-card p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                    RiskScore Trend
+                    Safety Score Trend
                   </p>
                   {latestRiskScore !== null && (
                     <p className={`font-mono tabular-nums text-xs ${riskBadgeClass(latestRiskScore).split(" ")[0]}`}>
-                      {latestRiskScore} today
+                      {100 - latestRiskScore} today
                     </p>
                   )}
                 </div>
@@ -874,9 +900,22 @@ export default function DashboardPage() {
 
           {/* ── Step 1 — Input ──────────────────────────────────────────────── */}
           <section className="space-y-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              Step 1 — Input
-            </p>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Step 1 — Input
+              </p>
+              {/* Stage indicator — mirrors home page workflow framing */}
+              <div className="flex items-center text-xs font-mono">
+                {(["input", "analyze", "review", "ship"] as const).map((s, i) => (
+                  <span key={s}>
+                    {i > 0 && <span className="mx-2 text-muted-foreground/20">·</span>}
+                    <span className={currentStage === s ? "text-foreground" : "text-muted-foreground/30"}>
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-start">
 
@@ -1110,7 +1149,7 @@ export default function DashboardPage() {
               <div className="glass-card p-6">
                 <RiskHistoryPanel
                   savedPromptId={selectedSavedPromptId}
-                  historyVersion={0}
+                  historyVersion={historyVersion}
                 />
               </div>
 

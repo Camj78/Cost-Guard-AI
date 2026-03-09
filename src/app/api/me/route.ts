@@ -75,6 +75,14 @@ export async function GET() {
 
     const usedThisMonth = countErr || count === null ? 0 : count;
 
+    const founderEmails = (process.env.FOUNDER_EMAIL ?? "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    const isFounder =
+      founderEmails.length > 0 &&
+      founderEmails.includes(user.email?.toLowerCase() ?? "");
+
     return NextResponse.json({
       pro: isPro,
       pro_status: billingRow?.status ?? profileRow?.pro_status ?? null,
@@ -83,6 +91,7 @@ export async function GET() {
       usage_this_month: usedThisMonth,
       usage_limit: isPro ? null : 25,
       firstName: profileRow?.first_name ?? null,
+      isFounder,
     });
   } catch {
     return NextResponse.json({
