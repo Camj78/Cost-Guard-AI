@@ -1,10 +1,10 @@
 {
-  "name": "@costguard/cli",
+  "name": "costguardai",
   "version": "0.2.0",
-  "description": "CostGuard CLI — preflight analysis for LLM prompts",
+  "description": "CostGuardAI CLI — preflight analysis for LLM prompts",
   "license": "MIT",
   "engines": { "node": ">=18" },
-  "bin": { "costguard": "./dist/bin.js" },
+  "bin": { "costguardai": "./dist/bin.js" },
   "main": "./dist/bin.js",
   "files": ["dist"],
   "scripts": {
@@ -12,7 +12,6 @@
     "build:watch": "tsup --watch"
   },
   "dependencies": {
-    "@costguard/core": "workspace:*",
     "js-tiktoken": "^1.0.21"
   },
   "devDependencies": {

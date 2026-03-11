@@ -314,7 +314,7 @@ export async function runAnalyze(args: string[]): Promise<number> {
 
   if (!parsed.targetPath) {
     process.stderr.write("Error: specify a file or directory to analyze.\n");
-    process.stderr.write("  costguard analyze <path> [options]\n");
+    process.stderr.write("  costguardai analyze <path> [options]\n");
     return 1;
   }
 
