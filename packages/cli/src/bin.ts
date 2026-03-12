@@ -1,6 +1,7 @@
 import { runAnalyze } from "./commands/analyze";
 import { runInit } from "./commands/init";
 import { runCi } from "./commands/ci";
+import { runInstall } from "./commands/install";
 import { runTrends } from "./trends";
 
 const PKG_VERSION = "0.2.0";
@@ -31,7 +32,8 @@ function printHelp(): void {
       "  analyze <path>    Analyze prompt files in a directory or a single file",
       "  ci                CI-native scan with exit codes (use --fail-on-risk)",
       "  trends            Show risk trend intelligence from git history",
-      "  init              Create costguard.config.json with defaults",
+      "  install           Bootstrap CostGuardAI in a repo (policy, workflow, dir)",
+  "  init              Create costguard.config.json with defaults",
       "  version           Print version",
       "",
       "ANALYZE OPTIONS",
@@ -74,6 +76,11 @@ async function main(): Promise<void> {
 
   if (command === "version" || command === "--version" || command === "-v") {
     process.stdout.write(PKG_VERSION + "\n");
+    process.exit(0);
+  }
+
+  if (command === "install") {
+    runInstall(args.slice(1));
     process.exit(0);
   }
 
