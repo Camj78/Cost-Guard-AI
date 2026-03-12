@@ -158,33 +158,46 @@ function ensureFile(filePath: string, content: string, result: InstallResult): v
 
 export function runInstall(_args: string[]): void {
   const cwd = process.cwd();
+
+  // Snapshot pre-install state before any files are written.
+  const workflowsDir       = path.join(cwd, ".github", "workflows");
+  const prWorkflowPath     = path.join(cwd, ".github", "workflows", "costguard-pr.yml");
+  const workflowsDirExisted = fs.existsSync(workflowsDir);
+  const prWorkflowExisted   = fs.existsSync(prWorkflowPath);
+
   const result: InstallResult = { created: [], skipped: [] };
 
   ensureFile(path.join(cwd, "costguard.policy.json"), POLICY_CONTENT, result);
-  ensureFile(path.join(cwd, ".github", "workflows", "costguard-pr.yml"), WORKFLOW_CONTENT, result);
+  ensureFile(prWorkflowPath, WORKFLOW_CONTENT, result);
   ensureFile(path.join(cwd, ".costguard", ".gitkeep"), "", result);
 
-  const lines: string[] = ["CostGuardAI installed", ""];
-
-  if (result.created.length > 0) {
-    lines.push("Created:");
-    for (const f of result.created) lines.push(`  - ${path.relative(cwd, f)}`);
-    lines.push("");
+  let summary: string;
+  if (prWorkflowExisted) {
+    summary = "CostGuardAI workflow already existed; verified required files are present.";
+  } else if (workflowsDirExisted) {
+    summary = "Added CostGuardAI to this repo's existing GitHub Actions setup.";
+  } else {
+    summary = "Initialized GitHub Actions for this repo and installed CostGuardAI.";
   }
 
-  if (result.skipped.length > 0) {
-    lines.push("Skipped (already exists):");
-    for (const f of result.skipped) lines.push(`  - ${path.relative(cwd, f)}`);
-    lines.push("");
-  }
+  const ensuredFiles = [
+    "costguard.policy.json",
+    ".github/workflows/costguard-pr.yml",
+    ".costguard/.gitkeep",
+  ];
 
-  lines.push(
+  const lines: string[] = [
+    summary,
+    "",
+    "Ensured:",
+    ...ensuredFiles.map((f) => `  - ${f}`),
+    "",
     "Next:",
     "  git add .",
     '  git commit -m "chore: install CostGuardAI"',
     "  git push origin main",
     "",
-  );
+  ];
 
   process.stdout.write(lines.join("\n"));
 }
