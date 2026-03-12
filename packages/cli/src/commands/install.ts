@@ -98,14 +98,18 @@ jobs:
               if (score >= 60) return "🟡 " + score;
               return "🟢 " + score;
             }
+            function fmtCost(n) {
+              if (n == null) return "n/a";
+              return n >= 0.01 ? "$" + n.toFixed(2) : "$" + n.toFixed(4);
+            }
 
-            const lines = [marker, "## CostGuardAI Risk Report", ""];
+            const lines = [marker, "## CostGuard Report", ""];
             if (files.length === 0) {
               lines.push("_No prompt files analyzed._");
             } else {
-              lines.push("| File | Risk | Tokens |", "|------|------|-------:|");
+              lines.push("| File | Risk | Cost/req | Tokens |", "|------|------|-------:|-------:|");
               for (const f of files) {
-                lines.push(\`| \\\`\${f.file}\\\` | \${riskBadge(f.risk_score)} | \${f.input_tokens.toLocaleString()} |\`);
+                lines.push(\`| \\\`\${f.file}\\\` | \${riskBadge(f.risk_score)} | \${fmtCost(f.estimated_cost_per_request)} | \${f.input_tokens.toLocaleString()} |\`);
               }
             }
             lines.push("", \`_Powered by [CostGuardAI](https://costguardai.io)_\`);

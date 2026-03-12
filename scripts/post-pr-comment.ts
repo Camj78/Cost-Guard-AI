@@ -27,6 +27,7 @@ interface CiJson {
   score_version?: string;
   top_drivers?: string[];
   share_url?: string | null;
+  estimated_cost_per_request?: number | null;
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -114,6 +115,13 @@ function buildComment(data: CiJson | null): string {
   const band    = data.risk_band ?? "UNKNOWN";
   const version = data.score_version ?? "v1.0";
   const drivers = (data.top_drivers ?? []).slice(0, 3);
+  const costRaw = data.estimated_cost_per_request;
+  const costStr =
+    costRaw != null
+      ? costRaw >= 0.01
+        ? `$${costRaw.toFixed(2)}`
+        : `$${costRaw.toFixed(4)}`
+      : null;
 
   const driversBlock =
     drivers.length > 0
@@ -127,13 +135,16 @@ function buildComment(data: CiJson | null): string {
 
   const versionedFooter = `_Analyzed by [CostGuard](https://costguardai.io)_  \n_Score Version: ${version}_${shareBlock}`;
 
+  const costLine = costStr ? `**Projected cost:** ${costStr} per request` : null;
+
   return [
     COMMENT_MARKER,
-    "## CostGuard Analysis",
+    "## CostGuard Report",
     "",
-    `**RiskScore: ${score} (${band})**`,
+    `**Risk Score:** ${score} (${band})`,
+    ...(costLine ? [costLine] : []),
     "",
-    "### Top Drivers",
+    "**Top risks:**",
     driversBlock,
     "",
     "---",
