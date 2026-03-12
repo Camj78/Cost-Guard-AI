@@ -279,9 +279,13 @@ function formatMd(output: AnalysisOutput): string {
   return lines.join("\n");
 }
 
-// ── Main export ───────────────────────────────────────────────────────────────
+// ── Core computation (exported for programmatic use) ──────────────────────────
 
-export async function runAnalyze(args: string[]): Promise<number> {
+export async function analyzeToOutput(args: string[]): Promise<{
+  output: AnalysisOutput;
+  format: "text" | "md" | "json";
+  exitCode: number;
+} | null> {
   const parsed = parseArgs(args);
   const configFile = loadConfig(parsed.configPath);
 
@@ -289,7 +293,7 @@ export async function runAnalyze(args: string[]): Promise<number> {
   const model = resolveModel(modelId);
   if (!model) {
     process.stderr.write(`Error: Unknown model "${modelId}".\n`);
-    return 1;
+    return null;
   }
 
   const extensions = parsed.extensions ?? configFile.extensions ?? DEFAULT_EXTENSIONS;
@@ -301,19 +305,19 @@ export async function runAnalyze(args: string[]): Promise<number> {
 
   if (threshold !== null && (isNaN(threshold) || threshold < 0 || threshold > 100)) {
     process.stderr.write("Error: --threshold must be an integer 0–100.\n");
-    return 1;
+    return null;
   }
 
   if (!parsed.targetPath) {
     process.stderr.write("Error: specify a file or directory to analyze.\n");
     process.stderr.write("  costguardai analyze <path> [options]\n");
-    return 1;
+    return null;
   }
 
   const targetPath = path.resolve(parsed.targetPath);
   if (!fs.existsSync(targetPath)) {
     process.stderr.write(`Error: path does not exist: ${parsed.targetPath}\n`);
-    return 1;
+    return null;
   }
 
   const stat = fs.statSync(targetPath);
@@ -335,12 +339,7 @@ export async function runAnalyze(args: string[]): Promise<number> {
       files: [],
       summary: { total_files: 0, max_risk_score: 0, max_risk_level: "SAFE", above_threshold: false, threshold },
     };
-    if (format === "json") {
-      process.stdout.write(JSON.stringify(empty, null, 2) + "\n");
-    } else {
-      process.stderr.write("No files found matching the configured extensions.\n");
-    }
-    return 0;
+    return { output: empty, format, exitCode: 0 };
   }
 
   const cwd = process.cwd();
@@ -353,7 +352,7 @@ export async function runAnalyze(args: string[]): Promise<number> {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       process.stderr.write(`Error analyzing ${file}: ${msg}\n`);
-      return 1;
+      return null;
     }
   }
 
@@ -374,6 +373,26 @@ export async function runAnalyze(args: string[]): Promise<number> {
     },
   };
 
+  return { output, format, exitCode: aboveThreshold ? 2 : 0 };
+}
+
+// ── Main export ───────────────────────────────────────────────────────────────
+
+export async function runAnalyze(args: string[]): Promise<number> {
+  const result = await analyzeToOutput(args);
+  if (result === null) return 1;
+
+  const { output, format, exitCode } = result;
+
+  if (output.files.length === 0) {
+    if (format === "json") {
+      process.stdout.write(JSON.stringify(output, null, 2) + "\n");
+    } else {
+      process.stderr.write("No files found matching the configured extensions.\n");
+    }
+    return 0;
+  }
+
   if (format === "json") {
     process.stdout.write(JSON.stringify(output, null, 2) + "\n");
   } else if (format === "md") {
@@ -382,5 +401,5 @@ export async function runAnalyze(args: string[]): Promise<number> {
     process.stdout.write(formatText(output) + "\n");
   }
 
-  return aboveThreshold ? 2 : 0;
+  return exitCode;
 }

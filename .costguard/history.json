@@ -1,0 +1,58 @@
+[
+  {
+    "timestamp": "2026-03-11T18:12:57-05:00",
+    "commit": "eed301beba0a7fdf0aef20e10d163ca4ce24d083",
+    "files": [
+      {
+        "file": "packages/cli/README.md",
+        "risk_score": 20
+      }
+    ],
+    "avg_risk": 20,
+    "max_risk": 20
+  },
+  {
+    "timestamp": "2026-03-09T16:05:59-05:00",
+    "commit": "d53f83445d2b0209d4f190f8d223e2258189f283",
+    "files": [
+      {
+        "file": "docs/SAFETYSCORE_SPEC.md",
+        "risk_score": 60
+      },
+      {
+        "file": "docs/SECURITY_REVIEW_PROCESS.md",
+        "risk_score": 15
+      }
+    ],
+    "avg_risk": 37.5,
+    "max_risk": 60
+  },
+  {
+    "timestamp": "2026-03-09T13:19:45-05:00",
+    "commit": "8cfdb6f781eb27c3c312a0a57d8b68bdd206b516",
+    "files": [
+      {
+        "file": "CLAUDE.md",
+        "risk_score": 45
+      },
+      {
+        "file": "docs/LAUNCH_CHECKLIST.md",
+        "risk_score": 20
+      },
+      {
+        "file": "docs/SAFETYSCORE_SPEC.md",
+        "risk_score": 60
+      },
+      {
+        "file": "docs/SECURITY_REVIEW_PROCESS.md",
+        "risk_score": 15
+      },
+      {
+        "file": "docs/score-changelog/v1.0.0.md",
+        "risk_score": 70
+      }
+    ],
+    "avg_risk": 42,
+    "max_risk": 70
+  }
+]

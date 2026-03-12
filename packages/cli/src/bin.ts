@@ -1,6 +1,7 @@
 import { runAnalyze } from "./commands/analyze";
 import { runInit } from "./commands/init";
 import { runCi } from "./commands/ci";
+import { runTrends } from "./trends";
 
 const PKG_VERSION = "0.2.0";
 
@@ -29,6 +30,7 @@ function printHelp(): void {
       "COMMANDS",
       "  analyze <path>    Analyze prompt files in a directory or a single file",
       "  ci                CI-native scan with exit codes (use --fail-on-risk)",
+      "  trends            Show risk trend intelligence from git history",
       "  init              Create costguard.config.json with defaults",
       "  version           Print version",
       "",
@@ -43,8 +45,12 @@ function printHelp(): void {
       "",
       "CI OPTIONS",
       "  --fail-on-risk <n>       Exit 2 if any file risk_score >= n (0–100)",
+      "  --policy [path]          Enforce costguard.policy.json rules (exit 2 on violation)",
       "  --json                   Output JSON",
       "  [path]                   Directory to scan (default: current directory)",
+      "",
+      "TRENDS OPTIONS",
+      "  --json                   Output JSON",
       "",
       "MODELS",
       "  gpt-4o-mini (default)   claude-sonnet-4-6   gemini-2.5-flash-lite",
@@ -77,13 +83,25 @@ async function main(): Promise<void> {
   }
 
   if (command === "analyze") {
-    const code = await runAnalyze(args.slice(1));
-    if (code === 0) printTip();
+    const restArgs = args.slice(1);
+    const code = await runAnalyze(restArgs);
+    const isJsonMode = restArgs.some(
+      (a, i, arr) =>
+        a === "--json" ||
+        a === "--format=json" ||
+        (a === "--format" && arr[i + 1] === "json"),
+    );
+    if (code === 0 && !isJsonMode) printTip();
     process.exit(code);
   }
 
   if (command === "ci") {
     const code = await runCi(args.slice(1));
+    process.exit(code);
+  }
+
+  if (command === "trends") {
+    const code = await runTrends(args.slice(1));
     process.exit(code);
   }
 

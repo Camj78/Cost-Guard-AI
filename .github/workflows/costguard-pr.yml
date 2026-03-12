@@ -1,0 +1,393 @@
+# CostGuardAI PR Risk Report
+#
+# Scans changed prompt files on every PR and:
+#   1. Posts a summary comment with risk scores + cost breakdown
+#   2. Adds inline annotations on changed lines (warning ≥60, failure ≥80)
+#
+# Permissions:
+#   Same-repo PRs: full comment + annotation support
+#   Fork PRs:      analysis runs; posting steps gracefully skip (GitHub security model)
+
+name: CostGuardAI PR Risk Report
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  risk-report:
+    name: Prompt Risk Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── 2. Setup pnpm ────────────────────────────────────────────────────────
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      # ── 3. Install deps ──────────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── 4. Build CLI ─────────────────────────────────────────────────────────
+      - name: Build CLI
+        run: pnpm --filter ./packages/cli build
+
+      # ── 5. Detect changed prompt files ───────────────────────────────────────
+      - name: Detect changed prompt files
+        id: changed
+        run: |
+          git diff --name-only \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}" \
+            | grep -E '\.(prompt|txt|md)$' \
+            > changed_prompts.txt || true
+
+          if [ ! -s changed_prompts.txt ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No prompt files changed. Skipping analysis."
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "Changed prompt files:"
+            cat changed_prompts.txt
+          fi
+
+      # ── 6. Run CostGuard analysis ─────────────────────────────────────────────
+      - name: Run CostGuard analysis
+        if: steps.changed.outputs.found == 'true'
+        run: |
+          node - << 'EOF'
+          const fs = require("fs");
+          const { spawnSync } = require("child_process");
+
+          const files = fs
+            .readFileSync("changed_prompts.txt", "utf8")
+            .trim()
+            .split("\n")
+            .filter((f) => f && fs.existsSync(f));
+
+          const allFiles = [];
+          let scoreVersion = "1";
+          let rulesetHash = "";
+
+          for (const file of files) {
+            const result = spawnSync(
+              "node",
+              ["packages/cli/dist/bin.js", "analyze", file, "--format", "json"],
+              { encoding: "utf8", maxBuffer: 10 * 1024 * 1024 }
+            );
+
+            if (result.error) {
+              console.error("Spawn error for", file, ":", result.error.message);
+              continue;
+            }
+
+            try {
+              const parsed = JSON.parse(result.stdout || "{}");
+              if (parsed.files) {
+                scoreVersion = parsed.score_version || scoreVersion;
+                rulesetHash = parsed.ruleset_hash || rulesetHash;
+                allFiles.push(...parsed.files);
+              }
+            } catch (e) {
+              console.error("Failed to parse output for", file, ":", e.message);
+            }
+          }
+
+          const maxRisk =
+            allFiles.length > 0
+              ? Math.max(...allFiles.map((f) => f.risk_score))
+              : 0;
+          const maxFile =
+            allFiles.find((f) => f.risk_score === maxRisk) || allFiles[0];
+
+          const output = {
+            score_version: scoreVersion,
+            ruleset_hash: rulesetHash,
+            files: allFiles,
+            summary: {
+              total_files: allFiles.length,
+              max_risk_score: maxRisk,
+              max_risk_level: maxFile ? maxFile.risk_level : "SAFE",
+              above_threshold: false,
+              threshold: null,
+            },
+          };
+
+          fs.writeFileSync("costguard.json", JSON.stringify(output, null, 2));
+          console.log("Analysis complete:", allFiles.length, "file(s) analyzed.");
+          EOF
+
+      # ── 6b. Run trend analysis ────────────────────────────────────────────────
+      - name: Run trend analysis
+        if: steps.changed.outputs.found == 'true'
+        run: |
+          node packages/cli/dist/bin.js trends --json > costguard-trends.json 2>/dev/null || \
+            echo '{"risk_delta":0,"highest_risk_prompt":"","risk_trend":"stable","last_10_commits":[]}' \
+            > costguard-trends.json
+
+      # ── 7. Generate markdown report ───────────────────────────────────────────
+      - name: Generate markdown report
+        if: steps.changed.outputs.found == 'true'
+        run: |
+          node - << 'EOF'
+          const fs = require("fs");
+          const data = JSON.parse(fs.readFileSync("costguard.json", "utf8"));
+
+          function riskBadge(score) {
+            if (score >= 80) return "🔴 " + score;
+            if (score >= 60) return "🟡 " + score;
+            return "🟢 " + score;
+          }
+
+          function fmtCost(n) {
+            return "$" + (n >= 0.01 ? n.toFixed(2) : n.toFixed(4));
+          }
+
+          const lines = [
+            "<!-- costguard-pr-report -->",
+            "## ⚠️ CostGuardAI Risk Report",
+            "",
+          ];
+
+          if (data.files.length === 0) {
+            lines.push("_No prompt files could be analyzed._");
+          } else {
+            lines.push(
+              "| File | Risk | Level | Tokens | Cost/req |",
+              "|------|------|-------|-------:|----------:|"
+            );
+
+            for (const f of data.files) {
+              lines.push(
+                `| \`${f.file}\` | ${riskBadge(f.risk_score)} | ${f.risk_level} | ${f.input_tokens.toLocaleString()} | ${fmtCost(f.estimated_cost_per_request)} |`
+              );
+            }
+
+            lines.push("");
+
+            const withDrivers = data.files.filter(
+              (f) => f.risk_drivers && f.risk_drivers.length > 0
+            );
+            if (withDrivers.length > 0) {
+              lines.push(
+                "<details>",
+                "<summary><b>Risk Drivers Detail</b></summary>",
+                ""
+              );
+              for (const f of withDrivers) {
+                lines.push(`**\`${f.file}\`** — Risk score: ${f.risk_score}`);
+                for (const d of f.risk_drivers) {
+                  lines.push(`- ${d.name}: +${d.impact}`);
+                }
+                lines.push("");
+              }
+              lines.push("</details>", "");
+            }
+
+            lines.push("---");
+            lines.push(
+              `_Analyzed **${data.summary.total_files}** file(s). ` +
+                `Max risk: **${data.summary.max_risk_score}** (${data.summary.max_risk_level})._`
+            );
+          }
+
+          // ── Trend summary ────────────────────────────────────────────────
+          const trendsFile = "costguard-trends.json";
+          if (fs.existsSync(trendsFile)) {
+            try {
+              const trends = JSON.parse(fs.readFileSync(trendsFile, "utf8"));
+              const deltaStr =
+                trends.risk_delta >= 0
+                  ? "+" + trends.risk_delta
+                  : String(trends.risk_delta);
+              lines.push("");
+              lines.push("---");
+              lines.push("**Risk Trend**");
+              lines.push(
+                `Last 10 commits: ${deltaStr} risk · Trend: **${trends.risk_trend}**`
+              );
+              if (trends.highest_risk_prompt) {
+                lines.push(
+                  `Highest risk prompt: \`${trends.highest_risk_prompt}\``
+                );
+              }
+            } catch (e) {
+              // ignore unavailable trend data
+            }
+          }
+
+          lines.push(
+            `_Powered by [CostGuardAI](https://costguardai.io) · score v${data.score_version}_`
+          );
+
+          fs.writeFileSync("costguard-report.md", lines.join("\n"));
+          console.log("Report written to costguard-report.md");
+          EOF
+
+      # ── 8a. PR summary comment ────────────────────────────────────────────────
+      - name: Post PR summary comment
+        if: steps.changed.outputs.found == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const marker = "<!-- costguard-pr-report -->";
+            const body = fs.readFileSync("costguard-report.md", "utf8");
+
+            try {
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+              });
+
+              const existing = comments.find(
+                (c) => c.body && c.body.includes(marker)
+              );
+
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id,
+                  body,
+                });
+                console.log("Updated existing CostGuardAI comment.");
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.pull_request.number,
+                  body,
+                });
+                console.log("Created new CostGuardAI comment.");
+              }
+            } catch (err) {
+              // Fork PRs from external contributors have read-only GITHUB_TOKEN.
+              // This is a GitHub platform restriction, not a workflow error.
+              core.warning(`Could not post PR comment: ${err.message}`);
+            }
+
+      # ── 8b. Inline PR annotations ─────────────────────────────────────────────
+      - name: Add inline PR annotations
+        if: steps.changed.outputs.found == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const data = JSON.parse(fs.readFileSync("costguard.json", "utf8"));
+
+            // Only annotate files with risk score >= 60
+            const highRisk = data.files.filter((f) => f.risk_score >= 60);
+
+            if (highRisk.length === 0) {
+              console.log("No high-risk files (score >= 60). Skipping annotations.");
+              return;
+            }
+
+            // Fetch the PR diff to resolve changed line numbers
+            let prFiles = [];
+            try {
+              const { data: files } = await github.rest.pulls.listFiles({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                per_page: 100,
+              });
+              prFiles = files;
+            } catch (err) {
+              core.warning(`Could not list PR files: ${err.message}`);
+              return;
+            }
+
+            const annotations = [];
+
+            for (const fileResult of highRisk) {
+              const prFile = prFiles.find((f) => f.filename === fileResult.file);
+              if (!prFile) continue;
+
+              // Resolve the first changed line number from the unified diff hunk header.
+              // @@ -<old_start>,<old_count> +<new_start>,<new_count> @@
+              let line = 1;
+              if (prFile.patch) {
+                const hunkMatch = prFile.patch.match(/@@ -\d+(?:,\d+)? \+(\d+)/);
+                if (hunkMatch) line = parseInt(hunkMatch[1], 10);
+              }
+
+              // risk_score >= 80 → failure  |  60–79 → warning
+              const level = fileResult.risk_score >= 80 ? "failure" : "warning";
+
+              const topDrivers = (fileResult.risk_drivers || [])
+                .slice(0, 3)
+                .map((d) => `${d.name} (+${d.impact})`)
+                .join(", ");
+
+              const costStr =
+                fileResult.estimated_cost_per_request >= 0.01
+                  ? "$" + fileResult.estimated_cost_per_request.toFixed(2)
+                  : "$" + fileResult.estimated_cost_per_request.toFixed(4);
+
+              annotations.push({
+                path: fileResult.file,
+                start_line: line,
+                end_line: line,
+                annotation_level: level,
+                title: `CostGuardAI Risk Score: ${fileResult.risk_score}`,
+                message: [
+                  `Risk: ${fileResult.risk_score} (${fileResult.risk_level})`,
+                  topDrivers ? `Top drivers: ${topDrivers}` : null,
+                  `Tokens: ${fileResult.input_tokens.toLocaleString()} · Cost/req: ${costStr}`,
+                ]
+                  .filter(Boolean)
+                  .join("\n"),
+              });
+            }
+
+            if (annotations.length === 0) {
+              console.log("No changed-file matches for annotations.");
+              return;
+            }
+
+            try {
+              const check = await github.rest.checks.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: "CostGuardAI Risk Annotations",
+                head_sha: context.payload.pull_request.head.sha,
+                status: "completed",
+                // neutral = annotations visible without blocking the PR
+                conclusion: "neutral",
+                output: {
+                  title: `${annotations.length} high-risk prompt file(s) detected`,
+                  summary:
+                    `Files with risk score ≥ 60 have inline annotations. ` +
+                    `Scores ≥ 80 are marked failure-level. The PR is not blocked.`,
+                  annotations,
+                },
+              });
+              console.log(
+                `Check run ${check.data.id} created with ${annotations.length} annotation(s).`
+              );
+            } catch (err) {
+              // Fork PRs have read-only GITHUB_TOKEN; checks.create will 403.
+              // Log a warning so the job still passes.
+              core.warning(`Could not create check annotations: ${err.message}`);
+            }
