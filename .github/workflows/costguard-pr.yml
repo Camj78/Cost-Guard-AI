@@ -69,8 +69,8 @@ jobs:
             cat changed_prompts.txt
           fi
 
-      # ── 6. Run CostGuard analysis ─────────────────────────────────────────────
-      - name: Run CostGuard analysis
+      # ── 6. Run CostGuardAI analysis ───────────────────────────────────────────
+      - name: Run CostGuardAI analysis
         if: steps.changed.outputs.found == 'true'
         run: |
           node - << 'EOF'
@@ -151,10 +151,19 @@ jobs:
           const fs = require("fs");
           const data = JSON.parse(fs.readFileSync("costguard.json", "utf8"));
 
-          function riskBadge(score) {
-            if (score >= 80) return "🔴 " + score;
-            if (score >= 60) return "🟡 " + score;
-            return "🟢 " + score;
+          function safetyBadge(riskScore) {
+            const s = 100 - riskScore;
+            if (s >= 80) return "🟢 " + s;
+            if (s >= 60) return "🟡 " + s;
+            return "🔴 " + s;
+          }
+
+          function safetyBand(riskScore) {
+            const s = 100 - riskScore;
+            if (s >= 80) return "Safe";
+            if (s >= 60) return "Needs Review";
+            if (s >= 40) return "Risky";
+            return "Unsafe";
           }
 
           function fmtCost(n) {
@@ -163,7 +172,7 @@ jobs:
 
           const lines = [
             "<!-- costguard-pr-report -->",
-            "## ⚠️ CostGuardAI Risk Report",
+            "## ⚠️ CostGuardAI Safety Report",
             "",
           ];
 
@@ -171,13 +180,13 @@ jobs:
             lines.push("_No prompt files could be analyzed._");
           } else {
             lines.push(
-              "| File | Risk | Level | Tokens | Cost/req |",
-              "|------|------|-------|-------:|----------:|"
+              "| File | Safety | Band | Tokens | Cost/req |",
+              "|------|--------|------|-------:|----------:|"
             );
 
             for (const f of data.files) {
               lines.push(
-                `| \`${f.file}\` | ${riskBadge(f.risk_score)} | ${f.risk_level} | ${f.input_tokens.toLocaleString()} | ${fmtCost(f.estimated_cost_per_request)} |`
+                `| \`${f.file}\` | ${safetyBadge(f.risk_score)} | ${safetyBand(f.risk_score)} | ${f.input_tokens.toLocaleString()} | ${fmtCost(f.estimated_cost_per_request)} |`
               );
             }
 
@@ -193,7 +202,7 @@ jobs:
                 ""
               );
               for (const f of withDrivers) {
-                lines.push(`**\`${f.file}\`** — Risk score: ${f.risk_score}`);
+                lines.push(`**\`${f.file}\`** — Safety Score: ${100 - f.risk_score}`);
                 for (const d of f.risk_drivers) {
                   lines.push(`- ${d.name}: +${d.impact}`);
                 }
@@ -205,7 +214,7 @@ jobs:
             lines.push("---");
             lines.push(
               `_Analyzed **${data.summary.total_files}** file(s). ` +
-                `Max risk: **${data.summary.max_risk_score}** (${data.summary.max_risk_level})._`
+                `Min Safety Score: **${100 - data.summary.max_risk_score}** (${safetyBand(data.summary.max_risk_score)})._`
             );
           }
 
@@ -214,15 +223,18 @@ jobs:
           if (fs.existsSync(trendsFile)) {
             try {
               const trends = JSON.parse(fs.readFileSync(trendsFile, "utf8"));
+              const safetyDelta = -trends.risk_delta;
               const deltaStr =
-                trends.risk_delta >= 0
-                  ? "+" + trends.risk_delta
-                  : String(trends.risk_delta);
+                safetyDelta >= 0
+                  ? "+" + safetyDelta
+                  : String(safetyDelta);
+              const trendMap = { rising: "declining", falling: "improving", stable: "stable" };
+              const safetyTrend = trendMap[trends.risk_trend] || trends.risk_trend;
               lines.push("");
               lines.push("---");
-              lines.push("**Risk Trend**");
+              lines.push("**Safety Trend**");
               lines.push(
-                `Last 10 commits: ${deltaStr} risk · Trend: **${trends.risk_trend}**`
+                `Last 10 commits: ${deltaStr} safety · Trend: **${safetyTrend}**`
               );
               if (trends.highest_risk_prompt) {
                 lines.push(
@@ -319,6 +331,7 @@ jobs:
             }
 
             const annotations = [];
+            const seen = new Set();
 
             for (const fileResult of highRisk) {
               const prFile = prFiles.find((f) => f.filename === fileResult.file);
@@ -326,11 +339,12 @@ jobs:
 
               // Resolve the first changed line number from the unified diff hunk header.
               // @@ -<old_start>,<old_count> +<new_start>,<new_count> @@
-              let line = 1;
-              if (prFile.patch) {
-                const hunkMatch = prFile.patch.match(/@@ -\d+(?:,\d+)? \+(\d+)/);
-                if (hunkMatch) line = parseInt(hunkMatch[1], 10);
-              }
+              // If no patch is present (e.g. binary or large diff), skip — we must
+              // not guess a line number (Trust Rule: high-confidence only).
+              if (!prFile.patch) continue;
+              const hunkMatch = prFile.patch.match(/@@ -\d+(?:,\d+)? \+(\d+)/);
+              if (!hunkMatch) continue;
+              const line = parseInt(hunkMatch[1], 10);
 
               // risk_score >= 80 → failure  |  60–79 → warning
               const level = fileResult.risk_score >= 80 ? "failure" : "warning";
@@ -345,26 +359,48 @@ jobs:
                   ? "$" + fileResult.estimated_cost_per_request.toFixed(2)
                   : "$" + fileResult.estimated_cost_per_request.toFixed(4);
 
+              const safScore = 100 - fileResult.risk_score;
+              const band = safScore >= 80 ? "Safe" : safScore >= 60 ? "Needs Review" : safScore >= 40 ? "Risky" : "Unsafe";
+              const explanation =
+                fileResult.risk_score >= 80
+                  ? "Low safety detected. Review and remediate before deploying."
+                  : "Low safety detected. Review top risk drivers.";
+
+              const topDriver = (fileResult.risk_drivers || []).sort((a, b) => b.impact - a.impact)[0];
+              const title = topDriver
+                ? `CostGuardAI: ${topDriver.name}`
+                : `CostGuardAI: ${band} Safety`;
+
+              // Deduplicate identical file + line + title tuples.
+              const dedupeKey = `${fileResult.file}:${line}:${title}`;
+              if (seen.has(dedupeKey)) continue;
+              seen.add(dedupeKey);
+
               annotations.push({
                 path: fileResult.file,
                 start_line: line,
                 end_line: line,
                 annotation_level: level,
-                title: `CostGuardAI Risk Score: ${fileResult.risk_score}`,
+                title,
                 message: [
-                  `Risk: ${fileResult.risk_score} (${fileResult.risk_level})`,
+                  explanation,
+                  `Safety Score: ${safScore} (${band}) · Cost/req: ${costStr}`,
                   topDrivers ? `Top drivers: ${topDrivers}` : null,
-                  `Tokens: ${fileResult.input_tokens.toLocaleString()} · Cost/req: ${costStr}`,
                 ]
                   .filter(Boolean)
                   .join("\n"),
               });
             }
 
-            if (annotations.length === 0) {
+            // GitHub Checks API accepts at most 50 annotations per request.
+            const capped = annotations.slice(0, 50);
+
+            if (capped.length === 0) {
               console.log("No changed-file matches for annotations.");
               return;
             }
+
+            const dropped = annotations.length - capped.length;
 
             try {
               const check = await github.rest.checks.create({
@@ -376,15 +412,16 @@ jobs:
                 // neutral = annotations visible without blocking the PR
                 conclusion: "neutral",
                 output: {
-                  title: `${annotations.length} high-risk prompt file(s) detected`,
+                  title: `${capped.length} low-safety prompt file(s) detected`,
                   summary:
-                    `Files with risk score ≥ 60 have inline annotations. ` +
-                    `Scores ≥ 80 are marked failure-level. The PR is not blocked.`,
-                  annotations,
+                    `Files with safety score ≤ 40 have inline annotations. ` +
+                    `Safety scores ≤ 20 are marked failure-level. The PR is not blocked.` +
+                    (dropped > 0 ? ` (${dropped} additional finding(s) omitted — volume cap.)` : ``),
+                  annotations: capped,
                 },
               });
               console.log(
-                `Check run ${check.data.id} created with ${annotations.length} annotation(s).`
+                `Check run ${check.data.id} created with ${capped.length} annotation(s).`
               );
             } catch (err) {
               // Fork PRs have read-only GITHUB_TOKEN; checks.create will 403.

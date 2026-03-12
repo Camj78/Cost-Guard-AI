@@ -1,5 +1,5 @@
 /**
- * Post (or update) a CostGuard analysis comment on a GitHub pull request.
+ * Post (or update) a CostGuardAI analysis comment on a GitHub pull request.
  *
  * Usage:
  *   tsx scripts/post-pr-comment.ts [costguard-result.json]
@@ -86,24 +86,33 @@ async function main(): Promise<void> {
 
   if (existingId) {
     await updateComment(token, owner, repo, existingId, body);
-    console.log(`CostGuard: updated comment #${existingId} on PR #${prNumber}`);
+    console.log(`CostGuardAI: updated comment #${existingId} on PR #${prNumber}`);
   } else {
     await createComment(token, owner, repo, prNumber, body);
-    console.log(`CostGuard: posted comment on PR #${prNumber}`);
+    console.log(`CostGuardAI: posted comment on PR #${prNumber}`);
   }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function toSafetyBand(safetyScore: number): string {
+  if (safetyScore >= 80) return "Safe";
+  if (safetyScore >= 60) return "Needs Review";
+  if (safetyScore >= 40) return "Risky";
+  return "Unsafe";
 }
 
 // ── Comment builder ───────────────────────────────────────────────────────────
 
 function buildComment(data: CiJson | null): string {
-  const FOOTER = `_Analyzed by [CostGuard](https://costguardai.io)_  \n_Score Version: v1.0_`;
+  const FOOTER = `_Analyzed by [CostGuardAI](https://costguardai.io)_  \n_Score Version: v1.0_`;
 
   if (!data || data.score === undefined) {
     return [
       COMMENT_MARKER,
-      "## CostGuard Analysis",
+      "## CostGuardAI Analysis",
       "",
-      "> **Error:** CostGuard could not complete analysis.",
+      "> **Error:** CostGuardAI could not complete analysis.",
       "> Check the CI run log for details.",
       "",
       "---",
@@ -111,8 +120,10 @@ function buildComment(data: CiJson | null): string {
     ].join("\n");
   }
 
-  const score   = data.score !== null ? String(data.score) : "n/a";
-  const band    = data.risk_band ?? "UNKNOWN";
+  const riskScore  = data.score !== null ? data.score : null;
+  const safetyScore = riskScore !== null ? 100 - riskScore : null;
+  const score   = safetyScore !== null ? String(safetyScore) : "n/a";
+  const band    = safetyScore !== null ? toSafetyBand(safetyScore) : "UNKNOWN";
   const version = data.score_version ?? "v1.0";
   const drivers = (data.top_drivers ?? []).slice(0, 3);
   const costRaw = data.estimated_cost_per_request;
@@ -133,15 +144,15 @@ function buildComment(data: CiJson | null): string {
       ? `\n\n[View full report ↗](${data.share_url})`
       : "";
 
-  const versionedFooter = `_Analyzed by [CostGuard](https://costguardai.io)_  \n_Score Version: ${version}_${shareBlock}`;
+  const versionedFooter = `_Analyzed by [CostGuardAI](https://costguardai.io)_  \n_Score Version: ${version}_${shareBlock}`;
 
   const costLine = costStr ? `**Projected cost:** ${costStr} per request` : null;
 
   return [
     COMMENT_MARKER,
-    "## CostGuard Report",
+    "## CostGuardAI Report",
     "",
-    `**Risk Score:** ${score} (${band})`,
+    `**Safety Score:** ${score} (${band})`,
     ...(costLine ? [costLine] : []),
     "",
     "**Top risks:**",
