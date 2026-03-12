@@ -21,7 +21,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-ssr";
-import { supabaseAdmin } from "@/lib/supabase-server";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { getInstallationDetails } from "@/lib/github/app-auth";
 
 export const dynamic = "force-dynamic";
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
     ...(meta?.repository_selection != null && { repository_selection: meta.repository_selection }),
   };
 
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from("github_installations")
     .upsert(row, { onConflict: "installation_id" });
 
