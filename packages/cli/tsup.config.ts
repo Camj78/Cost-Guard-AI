@@ -11,6 +11,4 @@ export default defineConfig({
   // Keep js-tiktoken external so its WASM assets resolve from node_modules
   external: ["js-tiktoken"],
   banner: { js: "#!/usr/bin/env node" },
-  // Bundle @costguard/core inline (workspace package — esbuild would otherwise keep it external)
-  noExternal: ["@costguard/core"],
 });

@@ -1,17 +1,9 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
-import {
-  DEFAULT_MODEL,
-  DEFAULT_EXPECTED_OUTPUT,
-  resolveModel,
-  type ModelConfig,
-  assessRisk,
-  AMBIGUOUS_TERMS,
-  VOLATILITY_PHRASES,
-  SCORING_WEIGHTS,
-  countTokens,
-} from "@costguard/core";
+import { DEFAULT_MODEL, DEFAULT_EXPECTED_OUTPUT, resolveModel, type ModelConfig } from "../core/models";
+import { assessRisk, AMBIGUOUS_TERMS, VOLATILITY_PHRASES, SCORING_WEIGHTS } from "../core/risk";
+import { countTokens } from "../core/tokenizer";
 
 // ── Ruleset identity ────────────────────────────────────────────────────────
 
