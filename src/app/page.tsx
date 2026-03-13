@@ -252,6 +252,31 @@ export default function Page() {
         </div>
       </section>
 
+      {/* DISASTER GALLERY CARD */}
+      <section className="px-4 sm:px-6 pb-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="glass-card p-5 border border-red-900/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                AI Cost Disaster Gallery
+              </p>
+              <p className="text-sm font-semibold tracking-tight">
+                5 real prompt failure patterns, before and after.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Token explosion, prompt injection, runaway tool calls — see how CostGuardAI catches them before deploy.
+              </p>
+            </div>
+            <a
+              href="/examples"
+              className="shrink-0 inline-flex items-center gap-2 text-xs font-semibold text-foreground/80 hover:text-foreground border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] px-4 py-2 rounded-md transition-colors"
+            >
+              View examples →
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* MAIN CONTENT */}
       <main className="flex-1 px-4 sm:px-6 py-6">
         <div className="mx-auto max-w-5xl">

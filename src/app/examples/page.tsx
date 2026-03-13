@@ -217,6 +217,64 @@ export default function DisasterGalleryPage() {
           </div>
         </section>
 
+        {/* WHY PROMPTS FAIL IN PRODUCTION */}
+        <section className="px-4 sm:px-6 pb-8">
+          <div className="mx-auto max-w-3xl">
+            <div className="border border-white/[0.08] rounded-lg bg-white/[0.02] p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-4">
+                Why teams miss this before deploy
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-red-400">
+                    What breaks
+                  </p>
+                  <ul className="space-y-1.5">
+                    {["Token explosion", "Prompt injection", "Runaway tool calls"].map((item) => (
+                      <li key={item} className="text-xs text-muted-foreground">
+                        · {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-400">
+                    Why teams miss it
+                  </p>
+                  <ul className="space-y-1.5">
+                    {[
+                      "Works in demos",
+                      "Fails at production volume",
+                      "Hidden cost until too late",
+                    ].map((item) => (
+                      <li key={item} className="text-xs text-muted-foreground">
+                        · {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-blue-400">
+                    What CostGuardAI checks
+                  </p>
+                  <ul className="space-y-1.5">
+                    {[
+                      "CostGuardAI Safety Score",
+                      "Cost projection",
+                      "Failure drivers",
+                      "Suggested mitigation",
+                    ].map((item) => (
+                      <li key={item} className="text-xs text-muted-foreground">
+                        · {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* EXAMPLES */}
         <section className="px-4 sm:px-6 pb-16">
           <div className="mx-auto max-w-3xl space-y-16">
