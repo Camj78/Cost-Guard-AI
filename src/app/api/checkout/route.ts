@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseServerClient } from "@/lib/supabase-ssr";
+import {
+  getPriceId,
+  type BillingInterval,
+  type StripePlan,
+} from "@/lib/stripe/price-lookup";
+import { hasProAccess } from "@/lib/entitlement";
+import { PLANS } from "@/config/plans";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -8,19 +15,27 @@ function getStripe() {
   return new Stripe(key, { apiVersion: "2026-01-28.clover" });
 }
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
+function getAppUrl(): string {
+  const url = process.env.NEXT_PUBLIC_APP_URL;
+  if (!url) throw new Error("Missing NEXT_PUBLIC_APP_URL");
+  return url;
+}
 
 export async function POST(req: Request) {
   try {
     const stripe = getStripe();
+    const APP_URL = getAppUrl();
 
-    let plan: "monthly" | "annual" = "monthly";
+    let interval: BillingInterval = "monthly";
+    let tier: StripePlan = "pro";
     try {
       const body = await req.json();
-      if (body?.plan === "annual") plan = "annual";
+      if (body?.plan === "annual") interval = "yearly";
+      if (body?.tier === "team") tier = "team";
     } catch {
-      // No body or invalid JSON — default to monthly
+      // No body or invalid JSON — use defaults
     }
+
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
@@ -30,15 +45,49 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Guarantee the users row exists before Stripe creates the subscription.
+    // Supabase UPDATE silently no-ops when the target row is absent, so any
+    // webhook that fires before this row exists would silently lose billing state.
+    await supabase
+      .from("users")
+      .upsert({ id: user.id, email: user.email }, { onConflict: "id" });
+
+    // Seed canonical billing_accounts row if it doesn't exist yet.
+    await supabase
+      .from("billing_accounts")
+      .upsert(
+        { user_id: user.id, email: user.email ?? null },
+        { onConflict: "user_id" }
+      );
+
+    // Read entitlement from billing_accounts (canonical), then fall back to users.
+    const { data: billingRow } = await supabase
+      .from("billing_accounts")
+      .select("plan, stripe_customer_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     const { data: userRow } = await supabase
       .from("users")
-      .select("pro, stripe_customer_id")
+      .select("pro, plan, stripe_customer_id")
       .eq("id", user.id)
       .single();
 
-    // Already Pro — redirect to billing portal instead
-    if (userRow?.pro) {
-      const customerId = userRow.stripe_customer_id;
+    // Canonical plan: billing_accounts first, then legacy users fallback.
+    const canonicalPlan =
+      billingRow?.plan && billingRow.plan !== PLANS.FREE
+        ? billingRow.plan
+        : userRow?.plan && userRow.plan !== PLANS.FREE
+        ? userRow.plan
+        : userRow?.pro === true
+        ? PLANS.PRO
+        : PLANS.FREE;
+
+    // Already subscribed — redirect to billing portal to manage plan.
+    const isAlreadyPaid = hasProAccess(canonicalPlan);
+    if (isAlreadyPaid) {
+      const customerId =
+        billingRow?.stripe_customer_id ?? userRow?.stripe_customer_id;
       if (customerId) {
         const portalSession = await stripe.billingPortal.sessions.create({
           customer: customerId,
@@ -49,7 +98,8 @@ export async function POST(req: Request) {
     }
 
     // Get or create Stripe customer
-    let customerId = userRow?.stripe_customer_id ?? null;
+    let customerId =
+      billingRow?.stripe_customer_id ?? userRow?.stripe_customer_id ?? null;
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: user.email,
@@ -57,25 +107,28 @@ export async function POST(req: Request) {
       });
       customerId = customer.id;
 
+      // Write to both tables: billing_accounts is canonical, users is legacy backup.
+      await supabase
+        .from("billing_accounts")
+        .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
+
       await supabase
         .from("users")
         .update({ stripe_customer_id: customerId })
         .eq("id", user.id);
     }
 
-    // Create Checkout session
-    const priceId =
-      plan === "annual"
-        ? (process.env.STRIPE_ANNUAL_PRICE_ID ?? process.env.STRIPE_PRICE_ID!)
-        : process.env.STRIPE_PRICE_ID!;
+    const priceId = getPriceId(tier, interval);
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
       client_reference_id: user.id,
       line_items: [{ price: priceId, quantity: 1 }],
+      metadata: { plan: tier },
       subscription_data: {
-        metadata: { user_id: user.id },
+        metadata: { user_id: user.id, plan: tier },
       },
       success_url: `${APP_URL}/?checkout=success`,
       cancel_url: `${APP_URL}/upgrade`,
