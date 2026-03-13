@@ -18,3 +18,11 @@ temporary_screenshots/
 .next
 .next 2
 artifacts/benchmarks/*.json
+
+# Local artifacts
+screenshots/
+playwright-report/
+test-results/
+.costguard/
+*.tgz
+DEC_*_REPORT.md
