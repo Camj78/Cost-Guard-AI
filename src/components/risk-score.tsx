@@ -8,6 +8,8 @@ interface RiskScoreProps {
   level: RiskLevel;
   explanation: string;
   riskDrivers?: RiskDriver[];
+  /** Set to false on report pages where drivers are rendered as a separate card. Default: true */
+  showInlineDrivers?: boolean;
 }
 
 const LEVEL_CONFIG: Record<
@@ -54,17 +56,36 @@ const LEVEL_CONFIG: Record<
   },
 };
 
-export function RiskScore({ score, level, explanation, riskDrivers }: RiskScoreProps) {
+/** Maps a CostGuard Safety Score (0–100, higher = safer) to a band label. */
+function getSafetyBand(safetyScore: number): string {
+  if (safetyScore >= 91) return "Hardened";
+  if (safetyScore >= 71) return "Safe";
+  if (safetyScore >= 41) return "Needs Hardening";
+  return "Unsafe";
+}
+
+/** Maps a driver impact (0–100, higher = riskier) to a severity label. */
+function getImpactLabel(impact: number): string {
+  if (impact >= 67) return "High";
+  if (impact >= 34) return "Medium";
+  return "Low";
+}
+
+export function RiskScore({ score, level, explanation, riskDrivers, showInlineDrivers = true }: RiskScoreProps) {
   const config = LEVEL_CONFIG[level];
 
-  // Animated count-up: 0 → score over 800ms, ease-out cubic
+  // Safety Score = 100 − riskScore (higher = safer, more hardened)
+  const safetyScore = 100 - score;
+  const band = getSafetyBand(safetyScore);
+
+  // Animated count-up: 0 → safetyScore over 800ms, ease-out cubic
   const [displayScore, setDisplayScore] = useState(0);
   const [isSettled, setIsSettled] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsSettled(false);
-    const target = score;
+    const target = safetyScore;
     const start = performance.now();
     const duration = 800;
     let raf: number;
@@ -80,35 +101,38 @@ export function RiskScore({ score, level, explanation, riskDrivers }: RiskScoreP
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [score]);
+  }, [safetyScore]);
 
   const drivers = riskDrivers ?? [];
 
   return (
     <div className="space-y-3">
-      {/* Tier label — visual lead (Level 3 type, semantic color) */}
-      <p className={`text-[11px] font-semibold uppercase tracking-[0.08em] ${config.color}`}>
-        {config.label} Risk
+      {/* Label — Level 3 type */}
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        CostGuard Safety Score
       </p>
-      {/* Score — subordinate precision */}
+
+      {/* Score + band */}
       <div className="flex items-baseline gap-2">
-        <span className={`text-4xl font-bold font-mono tabular-nums ${config.scoreClass} ${isSettled ? "animate-count-settle" : ""}`}>
+        <span
+          className={`text-4xl font-bold font-mono tabular-nums ${config.scoreClass} ${isSettled ? "animate-count-settle" : ""}`}
+        >
           {displayScore}
         </span>
         <span className="text-sm text-muted-foreground">/100</span>
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.08em] ${config.color} ml-1`}>
+          {band}
+        </span>
       </div>
 
-      {/* Severity meter — 3-segment pill */}
+      {/* Severity meter — 3-segment pill.
+          Meter conditions use internal riskScore (score prop), not safetyScore.
+          Semantics: green = low risk = high safety; red = high risk = low safety. */}
       <div className="flex gap-1">
         <div className={`flex-1 h-2 rounded-l-full bg-emerald-500 ${score <= 33 ? "opacity-100" : "opacity-20"}`} />
         <div className={`flex-1 h-2 bg-yellow-400 ${score >= 34 && score <= 66 ? "opacity-100" : "opacity-20"}`} />
         <div className={`flex-1 h-2 rounded-r-full bg-red-500 ${score >= 67 ? "opacity-100" : "opacity-20"}`} />
       </div>
-
-      {/* Label */}
-      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-        Failure Risk Score (heuristic)
-      </p>
 
       {/* Explanation */}
       {explanation && (
@@ -117,52 +141,44 @@ export function RiskScore({ score, level, explanation, riskDrivers }: RiskScoreP
         </p>
       )}
 
-      {/* Top Risk Drivers — collapsed by default */}
-      {drivers.length > 0 && (
-        <details className="group border-t border-white/[0.07] pt-1">
-          <summary className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground cursor-pointer list-none select-none marker:hidden [&::-webkit-details-marker]:hidden hover:text-foreground/60 transition-colors duration-100">
+      {/* Top Risk Drivers — always visible (suppressed on report pages that have a dedicated card) */}
+      {showInlineDrivers && drivers.length > 0 && (
+        <div className="border-t border-white/[0.07] pt-3 space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             Top Risk Drivers
-          </summary>
-          <div className="space-y-2 pt-2">
-          {drivers.map((driver) => {
-            const driverLevel = getRiskLevel(driver.impact);
-            const driverConfig = LEVEL_CONFIG[driverLevel];
-            return (
-              <div key={driver.name} className="space-y-1">
-                {/* Driver name + impact */}
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-xs text-foreground/80">{driver.name}</span>
-                  <span className={`text-xs font-mono tabular-nums ${driverConfig.color}`}>
-                    {driver.impact}
-                  </span>
+          </p>
+          <div className="space-y-2 pt-1">
+            {drivers.map((driver) => {
+              const driverLevel = getRiskLevel(driver.impact);
+              const driverConfig = LEVEL_CONFIG[driverLevel];
+              const impactLabel = getImpactLabel(driver.impact);
+              return (
+                <div key={driver.name} className="space-y-1">
+                  {/* Driver name + severity label */}
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-xs text-foreground/80">{driver.name}</span>
+                    <span className={`text-xs font-semibold ${driverConfig.color}`}>
+                      {impactLabel}
+                    </span>
+                  </div>
+                  {/* Impact bar */}
+                  <div className="h-1 rounded-full bg-white/[0.07]">
+                    <div
+                      className={`h-1 rounded-full ${driverConfig.barClass}`}
+                      style={{ width: `${driver.impact}%` }}
+                    />
+                  </div>
+                  {/* Concise per-driver explanation (first fix hint) */}
+                  {driver.fixes.length > 0 && (
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
+                      {driver.fixes[0]}
+                    </p>
+                  )}
                 </div>
-                {/* Impact bar */}
-                <div className="h-1 rounded-full bg-white/[0.07]">
-                  <div
-                    className={`h-1 rounded-full ${driverConfig.barClass}`}
-                    style={{ width: `${driver.impact}%` }}
-                  />
-                </div>
-                {/* Fix suggestions — collapsed by default */}
-                {driver.fixes.length > 0 && (
-                  <details className="group">
-                    <summary className="text-xs text-muted-foreground cursor-pointer list-none select-none hover:text-foreground/60 transition-colors duration-100">
-                      Fix suggestions ({driver.fixes.length})
-                    </summary>
-                    <ul className="mt-1.5 space-y-1 pl-3">
-                      {driver.fixes.map((fix, i) => (
-                        <li key={i} className="text-xs text-muted-foreground leading-relaxed">
-                          — {fix}
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
-        </details>
+        </div>
       )}
     </div>
   );
