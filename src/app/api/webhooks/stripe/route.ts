@@ -1,5 +1,7 @@
 import Stripe from "stripe";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { resolvePlanFromPriceId } from "@/lib/stripe/price-lookup";
+import { PLANS } from "@/config/plans";
 
 export const runtime = "nodejs";
 
@@ -56,7 +58,7 @@ export async function POST(req: Request) {
     return new Response("Invalid signature", { status: 400 });
   }
 
-  console.log("[stripe/webhook] event.type:", event.type, "| id:", event.id);
+  console.info("[stripe/webhook] received:", event.type, event.id);
 
   // Idempotency: skip duplicates; fail-open if stripe_events table is absent
   const { error: insertErr } = await supabaseAdmin
@@ -69,7 +71,6 @@ export async function POST(req: Request) {
       insertErr.message?.includes("duplicate") ||
       insertErr.details?.includes("already exists");
     if (isDuplicate) {
-      console.log("[stripe/webhook] duplicate event, skipping:", event.id);
       return new Response("ok", { status: 200 });
     }
     // Table may not exist or transient error — log and continue processing
@@ -85,11 +86,6 @@ export async function POST(req: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       const customerId = session.customer as string;
       const subscriptionId = session.subscription as string;
-
-      console.log(
-        "[stripe/webhook] checkout.session.completed | customer:",
-        customerId
-      );
 
       // Primary: client_reference_id set in /api/checkout
       let userId = session.client_reference_id ?? "";
@@ -107,41 +103,64 @@ export async function POST(req: Request) {
         break;
       }
 
-      const { data: d1, error: e1 } = await supabaseAdmin
-        .from("users")
-        .update({
-          stripe_customer_id: customerId,
-          stripe_subscription_id: subscriptionId,
-          pro: true,
-          pro_status: "pending",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
+      // Resolve plan from session metadata (set by /api/checkout).
+      // Default to FREE — customer.subscription.created fires next and will
+      // set the correct plan via price ID lookup, so this is self-correcting.
+      const sessionPlan = session.metadata?.plan ?? PLANS.FREE;
 
-      console.log(
-        "[stripe/webhook] checkout update | userId:",
-        userId,
-        "| data:",
-        d1,
-        "| error:",
-        e1
-      );
+      // Look up email so we can UPSERT the row if it doesn't exist yet.
+      // Supabase UPDATE silently no-ops on a missing row; UPSERT guarantees
+      // billing state is persisted even if the auth trigger never fired.
+      const { data: checkoutAuthData } =
+        await supabaseAdmin.auth.admin.getUserById(userId);
+      const checkoutEmail = checkoutAuthData?.user?.email;
+
+      // Primary: upsert canonical billing_accounts row.
+      const { error: e1b } = await supabaseAdmin
+        .from("billing_accounts")
+        .upsert(
+          {
+            user_id: userId,
+            ...(checkoutEmail ? { email: checkoutEmail } : {}),
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            plan: sessionPlan,
+            status: "pending",
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+
+      if (e1b) {
+        console.error("[stripe/webhook] checkout billing_accounts upsert error:", e1b.message);
+      }
+
+      // Legacy: keep users table in sync for backward compatibility.
+      const { error: e1 } = await supabaseAdmin
+        .from("users")
+        .upsert(
+          {
+            id: userId,
+            ...(checkoutEmail ? { email: checkoutEmail } : {}),
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            pro: sessionPlan !== PLANS.FREE,
+            pro_status: "pending",
+            plan: sessionPlan,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        );
+
+      if (e1) {
+        console.error("[stripe/webhook] checkout users upsert error:", e1.message);
+      }
       break;
     }
 
     case "customer.subscription.created":
     case "customer.subscription.updated": {
       const sub = event.data.object as Stripe.Subscription;
-      console.log(
-        "[stripe/webhook]",
-        event.type,
-        "| sub.id:",
-        sub.id,
-        "| status:",
-        sub.status,
-        "| customer:",
-        sub.customer
-      );
 
       const userId =
         sub.metadata?.user_id ||
@@ -161,40 +180,91 @@ export async function POST(req: Request) {
         break;
       }
 
-      const isPro = sub.status === "active" || sub.status === "trialing";
-      const { data: d2, error: e2 } = await supabaseAdmin
-        .from("users")
-        .update({
-          pro: isPro,
-          pro_status: sub.status,
-          stripe_subscription_id: sub.id,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
+      // Resolve plan: prefer metadata set by /api/checkout, then price ID lookup.
+      // Default to FREE — never escalate access for unrecognized price IDs.
+      const metaPlan = sub.metadata?.plan;
+      const priceId = sub.items?.data[0]?.price?.id;
+      const resolvedPlan =
+        metaPlan ?? (priceId ? resolvePlanFromPriceId(priceId) : null) ?? PLANS.FREE;
 
-      console.log(
-        "[stripe/webhook]",
-        event.type,
-        "update | userId:",
-        userId,
-        "| isPro:",
-        isPro,
-        "| data:",
-        d2,
-        "| error:",
-        e2
-      );
+      if (!metaPlan && !resolvePlanFromPriceId(priceId ?? "")) {
+        console.warn(
+          "[stripe/webhook]",
+          event.type,
+          ": could not resolve plan from metadata or price ID",
+          priceId,
+          "— defaulting to free"
+        );
+      }
+
+      const isPro = sub.status === "active" || sub.status === "trialing";
+
+      // Look up email for UPSERT — same rationale as checkout.session.completed.
+      const { data: subAuthData } =
+        await supabaseAdmin.auth.admin.getUserById(userId);
+      const subEmail = subAuthData?.user?.email;
+
+      // current_period_end was removed from the TS type in Stripe API 2026-01-28+
+      // but is still present in webhook payloads; access via cast.
+      const subAny = sub as Stripe.Subscription & { current_period_end?: number };
+      const periodEnd = subAny.current_period_end
+        ? new Date(subAny.current_period_end * 1000).toISOString()
+        : null;
+
+      // Primary: upsert canonical billing_accounts row.
+      const { error: e2b } = await supabaseAdmin
+        .from("billing_accounts")
+        .upsert(
+          {
+            user_id: userId,
+            ...(subEmail ? { email: subEmail } : {}),
+            plan: isPro ? resolvedPlan : "free",
+            status: sub.status,
+            stripe_subscription_id: sub.id,
+            ...(periodEnd ? { current_period_end: periodEnd } : {}),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+
+      if (e2b) {
+        console.error(
+          "[stripe/webhook]",
+          event.type,
+          "billing_accounts upsert error:",
+          e2b.message
+        );
+      }
+
+      // Legacy: keep users table in sync for backward compatibility.
+      const { error: e2 } = await supabaseAdmin
+        .from("users")
+        .upsert(
+          {
+            id: userId,
+            ...(subEmail ? { email: subEmail } : {}),
+            pro: isPro,
+            pro_status: sub.status,
+            plan: isPro ? resolvedPlan : "free",
+            stripe_subscription_id: sub.id,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        );
+
+      if (e2) {
+        console.error(
+          "[stripe/webhook]",
+          event.type,
+          "users upsert error:",
+          e2.message
+        );
+      }
       break;
     }
 
     case "customer.subscription.deleted": {
       const sub = event.data.object as Stripe.Subscription;
-      console.log(
-        "[stripe/webhook] customer.subscription.deleted | sub.id:",
-        sub.id,
-        "| customer:",
-        sub.customer
-      );
 
       const userId =
         sub.metadata?.user_id ||
@@ -212,27 +282,53 @@ export async function POST(req: Request) {
         break;
       }
 
-      const { data: d3, error: e3 } = await supabaseAdmin
+      // Primary: upsert canonical billing_accounts row — downgrade to free.
+      const { error: e3b } = await supabaseAdmin
+        .from("billing_accounts")
+        .upsert(
+          {
+            user_id: userId,
+            plan: "free",
+            status: "canceled",
+            stripe_subscription_id: null,
+            current_period_end: null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+
+      if (e3b) {
+        console.error(
+          "[stripe/webhook] subscription.deleted billing_accounts upsert error:",
+          e3b.message
+        );
+      }
+
+      // Legacy: keep users table in sync for backward compatibility.
+      const { error: e3 } = await supabaseAdmin
         .from("users")
         .update({
           pro: false,
           pro_status: "canceled",
+          plan: "free",
           stripe_subscription_id: null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", userId);
 
-      console.log(
-        "[stripe/webhook] subscription.deleted update | userId:",
-        userId,
-        "| data:",
-        d3,
-        "| error:",
-        e3
-      );
+      if (e3) {
+        console.error(
+          "[stripe/webhook] subscription.deleted users update error:",
+          e3.message
+        );
+      }
       break;
     }
 
+    // invoice.paid is the preferred modern event; invoice.payment_succeeded is
+    // the legacy alias. Both fire for the same payment — idempotency via
+    // stripe_events prevents double-processing.
+    case "invoice.paid":
     case "invoice.payment_succeeded": {
       // Cast to include subscription field — present in webhook payloads but
       // removed from the TypeScript type in API version 2026-01-28+
@@ -243,16 +339,6 @@ export async function POST(req: Request) {
       if (!invoice.subscription) break;
 
       const customerId = invoice.customer as string;
-      const subscriptionRef =
-        typeof invoice.subscription === "string"
-          ? invoice.subscription
-          : (invoice.subscription as Stripe.Subscription).id;
-      console.log(
-        "[stripe/webhook] invoice.payment_succeeded | customer:",
-        customerId,
-        "| subscription:",
-        subscriptionRef
-      );
 
       const userId = await getUserIdFromCustomer(
         customerId,
@@ -262,13 +348,38 @@ export async function POST(req: Request) {
 
       if (!userId) {
         console.warn(
-          "[stripe/webhook] invoice.payment_succeeded: could not resolve userId",
+          "[stripe/webhook]",
+          event.type,
+          ": could not resolve userId",
           customerId
         );
         break;
       }
 
-      const { data: d4, error: e4 } = await supabaseAdmin
+      // Renewal: restore active status. The plan column is authoritative and
+      // was set by subscription.created/updated — no need to re-derive it here
+      // unless the subscription's price ID changes (handled by subscription.updated).
+
+      // Primary: update billing_accounts status only (preserve existing plan).
+      const { error: e4b } = await supabaseAdmin
+        .from("billing_accounts")
+        .update({
+          status: "active",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId);
+
+      if (e4b) {
+        console.error(
+          "[stripe/webhook]",
+          event.type,
+          "billing_accounts update error:",
+          e4b.message
+        );
+      }
+
+      // Legacy: keep users table in sync.
+      const { error: e4 } = await supabaseAdmin
         .from("users")
         .update({
           pro: true,
@@ -277,14 +388,78 @@ export async function POST(req: Request) {
         })
         .eq("id", userId);
 
-      console.log(
-        "[stripe/webhook] invoice.payment_succeeded update | userId:",
-        userId,
-        "| data:",
-        d4,
-        "| error:",
-        e4
+      if (e4) {
+        console.error(
+          "[stripe/webhook]",
+          event.type,
+          "users update error:",
+          e4.message
+        );
+      }
+      break;
+    }
+
+    case "invoice.payment_failed": {
+      // Cast to include subscription field (same as invoice.paid handling above)
+      const invoice = event.data.object as Stripe.Invoice & {
+        subscription?: string | Stripe.Subscription | null;
+      };
+      // Only process subscription invoices, not one-off charges
+      if (!invoice.subscription) break;
+
+      const customerId = invoice.customer as string;
+
+      const userId = await getUserIdFromCustomer(
+        customerId,
+        stripe,
+        supabaseAdmin
       );
+
+      if (!userId) {
+        console.warn(
+          "[stripe/webhook] invoice.payment_failed: could not resolve userId",
+          customerId
+        );
+        break;
+      }
+
+      // Policy: mark status as past_due for observability only.
+      // Do NOT revoke plan access here — Stripe will retry the charge per
+      // dunning settings. If all retries fail, Stripe fires
+      // customer.subscription.updated (status: "past_due"/"unpaid") or
+      // customer.subscription.deleted, which handle the actual downgrade.
+
+      // Primary: update billing_accounts status only (preserve existing plan).
+      const { error: e5b } = await supabaseAdmin
+        .from("billing_accounts")
+        .update({
+          status: "past_due",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId);
+
+      if (e5b) {
+        console.error(
+          "[stripe/webhook] invoice.payment_failed billing_accounts update error:",
+          e5b.message
+        );
+      }
+
+      // Legacy: keep users table in sync.
+      const { error: e5 } = await supabaseAdmin
+        .from("users")
+        .update({
+          pro_status: "past_due",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+
+      if (e5) {
+        console.error(
+          "[stripe/webhook] invoice.payment_failed users update error:",
+          e5.message
+        );
+      }
       break;
     }
   }

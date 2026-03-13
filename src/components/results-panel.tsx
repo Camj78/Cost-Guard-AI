@@ -11,6 +11,7 @@ import { ContextBar } from "@/components/context-bar";
 import { TruncationWarning } from "@/components/truncation-warning";
 import { type RiskAssessment } from "@/lib/risk";
 import { formatCost } from "@/lib/formatters";
+import { trackEvent } from "@/lib/analytics/posthog";
 
 interface ResultsPanelProps {
   analysis: RiskAssessment | null;
@@ -57,6 +58,7 @@ export function ResultsPanel({
 
   function handleCopy() {
     if (!compressedText) return;
+    trackEvent("copy_compressed_clicked");
     navigator.clipboard.writeText(compressedText).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);

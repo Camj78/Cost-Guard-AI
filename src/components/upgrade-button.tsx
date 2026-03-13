@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { copyByMoment, type UpgradeMoment } from "@/config/monetization";
+import { trackEvent } from "@/lib/analytics/posthog";
 
 interface UpgradeButtonProps {
   moment: UpgradeMoment;
@@ -26,7 +27,7 @@ export function UpgradeButton({
           : undefined
       }
     >
-      <a href="/upgrade">{ctaLabel}</a>
+      <a href="/upgrade" onClick={() => trackEvent("upgrade_clicked")}>{ctaLabel}</a>
     </Button>
   );
 }

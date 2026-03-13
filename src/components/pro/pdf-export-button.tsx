@@ -3,6 +3,7 @@
 import type { RiskAssessment } from "@/lib/risk";
 import type { ModelConfig } from "@/config/models";
 import { formatCost, formatNumber, formatPercent } from "@/lib/formatters";
+import { trackEvent } from "@/lib/analytics/posthog";
 
 interface PdfExportButtonProps {
   analysis: RiskAssessment;
@@ -37,6 +38,14 @@ function getRiskColor(level: string): [number, number, number] {
   }
 }
 
+/** Maps CostGuard Safety Score (0–100, higher = safer) to a band label. */
+function getSafetyBand(safetyScore: number): string {
+  if (safetyScore >= 91) return "Hardened";
+  if (safetyScore >= 71) return "Safe";
+  if (safetyScore >= 41) return "Needs Hardening";
+  return "Unsafe";
+}
+
 async function getLogoDataUrl(): Promise<string | null> {
   try {
     const res = await fetch("/logo.png");
@@ -59,6 +68,7 @@ export function PdfExportButton({
   compressionDelta,
 }: PdfExportButtonProps) {
   async function handleExport() {
+    trackEvent("export_pdf_clicked");
     const { jsPDF } = await import("jspdf");
     const doc = new jsPDF({ unit: "pt", format: "letter" });
 
@@ -69,8 +79,9 @@ export function PdfExportButton({
     const HEADER_H = 88;
 
     const logoDataUrl = await getLogoDataUrl();
-    const riskColor   = getRiskColor(analysis.riskLevel);
-    const riskLabel   = analysis.riskLevel.charAt(0).toUpperCase() + analysis.riskLevel.slice(1);
+    const riskColor    = getRiskColor(analysis.riskLevel);
+    const safetyScore  = 100 - analysis.riskScore;
+    const safetyBand   = getSafetyBand(safetyScore);
 
     let y = HEADER_H + 22;
 
@@ -218,12 +229,12 @@ export function PdfExportButton({
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
     sc(C.white);
-    doc.text(`${analysis.riskScore}`, MARGIN + col3 / 2, y + 28, { align: "center" });
+    doc.text(`${safetyScore}`, MARGIN + col3 / 2, y + 28, { align: "center" });
     doc.setFontSize(8);
-    doc.text(riskLabel.toUpperCase(), MARGIN + col3 / 2, y + 42, { align: "center" });
+    doc.text(safetyBand.toUpperCase(), MARGIN + col3 / 2, y + 42, { align: "center" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
-    doc.text("RISK SCORE", MARGIN + col3 / 2, y + 52, { align: "center" });
+    doc.text("SAFETY SCORE", MARGIN + col3 / 2, y + 52, { align: "center" });
 
     // Column dividers
     ss(C.cardBdr);
@@ -302,10 +313,10 @@ export function PdfExportButton({
     totalRow("Total per request", formatCost(analysis.estimatedCostTotal));
     y += 4;
 
-    // ── 6. Risk Assessment ────────────────────────────────────────────────
-    sectionTitle("Risk Assessment");
-    fieldRow("Risk score", `${analysis.riskScore} / 100`);
-    fieldRow("Risk level", riskLabel, true);
+    // ── 6. Safety Assessment ──────────────────────────────────────────────
+    sectionTitle("Safety Assessment");
+    fieldRow("CostGuard Safety Score", `${safetyScore} / 100`);
+    fieldRow("Band", safetyBand, true);
 
     // Top risk drivers
     if (analysis.riskDrivers.length > 0) {

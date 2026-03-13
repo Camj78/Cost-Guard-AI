@@ -5,16 +5,28 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const email = String(body.email || "").trim().toLowerCase();
+    const firstName = typeof body.first_name === "string" ? body.first_name.trim() : undefined;
+    const lastName = typeof body.last_name === "string" ? body.last_name.trim() : undefined;
+    const next = typeof body.next === "string" && body.next.trim() ? body.next.trim() : undefined;
 
     if (!email || !email.includes("@")) {
       return NextResponse.json({ error: "Invalid email" }, { status: 400 });
     }
 
+    const baseCallback = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
+    const emailRedirectTo = next
+      ? `${baseCallback}?next=${encodeURIComponent(next)}`
+      : baseCallback;
+
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+        emailRedirectTo,
+        data: {
+          ...(firstName ? { first_name: firstName } : {}),
+          ...(lastName ? { last_name: lastName } : {}),
+        },
       },
     });
 
