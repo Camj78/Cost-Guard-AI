@@ -32,14 +32,7 @@ export const dynamic = "force-dynamic";
 
 import { createHash } from "crypto";
 import { NextResponse } from "next/server";
-// Sentry stub — @sentry/nextjs not installed; replace with real SDK when available
-const Sentry = {
-  startSpan: async <T>(_ctx: unknown, fn: (span: { setAttribute: (k: string, v: unknown) => void }) => Promise<T>): Promise<T> => {
-    const stub = { setAttribute: (_k: string, _v: unknown) => {} };
-    return fn(stub);
-  },
-  captureException: (_err: unknown, _opts?: unknown): void => {},
-};
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@supabase/supabase-js";
 import {
   listIssueComments,
