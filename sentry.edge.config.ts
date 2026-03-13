@@ -1,8 +1,2 @@
-import * as Sentry from "@sentry/nextjs";
-
-Sentry.init({
-  dsn: process.env.SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN,
-  tracesSampleRate: 0.05,
-  sendDefaultPii: false,
-  debug: false,
-});
+// Sentry SDK not installed — stub config (no-op)
+export {};
