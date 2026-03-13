@@ -6,6 +6,7 @@
 
 import {
   RISK_LEVELS,
+  buildExplanation,
   type RiskAssessment,
   type RiskDriver,
   type RiskFactor,
@@ -139,7 +140,14 @@ export function validateClientSnapshot(
     message: truncObj.message,
   };
 
-  // Construct fresh, allowlisted RiskAssessment
+  // score_version: pass through if present and valid, otherwise default
+  const score_version =
+    typeof analysis.score_version === "string" && analysis.score_version.length <= 20
+      ? analysis.score_version
+      : "v1.0";
+
+  // Construct fresh, allowlisted RiskAssessment.
+  // explanation is always rebuilt server-side from validated fields — never accepted from client.
   const validatedAnalysis: RiskAssessment = {
     inputTokens: analysis.inputTokens as number,
     contextWindow: analysis.contextWindow as number,
@@ -151,13 +159,16 @@ export function validateClientSnapshot(
     estimatedCostInput: analysis.estimatedCostInput as number,
     estimatedCostOutput: analysis.estimatedCostOutput as number,
     estimatedCostTotal: analysis.estimatedCostTotal as number,
+    base_risk_score: riskScore,
     riskScore,
+    score_version,
     riskLevel: riskLevel as RiskAssessment["riskLevel"],
     riskFactors,
     riskExplanation,
     riskDrivers,
     truncation,
     isEstimated: analysis.isEstimated as boolean,
+    explanation: buildExplanation(riskScore, riskLevel, riskDrivers),
   };
 
   return { analysis: validatedAnalysis, modelId };
