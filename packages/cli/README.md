@@ -3,7 +3,7 @@
 > Preflight analysis for LLM prompts. Catch cost overruns and failure risk before they ship.
 
 ```sh
-npm install -g costguardai
+npm install -g @camj78/costguardai
 costguardai ci --fail-on-risk 70
 ```
 
@@ -12,7 +12,7 @@ costguardai ci --fail-on-risk 70
 ## Install
 
 ```sh
-npm install -g costguardai
+npm install -g @camj78/costguardai
 ```
 
 ## Usage
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: npm install -g costguardai
+      - run: npm install -g @camj78/costguardai
       - run: costguardai ci --fail-on-risk 70
 ```
 

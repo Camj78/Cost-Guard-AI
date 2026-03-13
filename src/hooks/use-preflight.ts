@@ -11,7 +11,6 @@ import {
   MIN_EXPECTED_OUTPUT,
   type ModelConfig,
 } from "@/config/models";
-import { trackEvent } from "@/lib/analytics/posthog";
 
 // Prompts > 200K chars pause realtime analysis — user must click "Analyze"
 const PERF_GUARD_CHAR_LIMIT = 200_000;
@@ -57,8 +56,6 @@ async function recordAnalysis(
   result: RiskAssessment,
   promptText: string,
   mdlId: string,
-  compressionDelta: number,
-  latencyMs: number,
   onRecorded?: () => void,
   onIdCaptured?: (id: string) => void
 ) {
@@ -82,9 +79,6 @@ async function recordAnalysis(
         output_tokens: result.expectedOutputTokens,
         cost_total: result.estimatedCostTotal,
         risk_score: result.riskScore,
-        truncated: result.truncation.level !== "safe",
-        compression_used: compressionDelta > 0,
-        latency_ms: latencyMs,
       }),
     });
 
@@ -100,7 +94,7 @@ async function recordAnalysis(
   }
 }
 
-export function usePreflight(options?: { onRecorded?: () => void; plan?: string | null; onOnboardingComplete?: () => void }): PreflightState {
+export function usePreflight(options?: { onRecorded?: () => void }): PreflightState {
   // Pre-fill from dashboard "Load" if sessionStorage key is set
   const [prompt, setPromptRaw] = useState(() => {
     if (typeof window === "undefined") return "";
@@ -132,10 +126,6 @@ export function usePreflight(options?: { onRecorded?: () => void; plan?: string 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onRecordedRef = useRef<(() => void) | undefined>(options?.onRecorded);
   useEffect(() => { onRecordedRef.current = options?.onRecorded; }, [options?.onRecorded]);
-  const planRef = useRef<string | null | undefined>(options?.plan);
-  useEffect(() => { planRef.current = options?.plan; }, [options?.plan]);
-  const onOnboardingCompleteRef = useRef<(() => void) | undefined>(options?.onOnboardingComplete);
-  useEffect(() => { onOnboardingCompleteRef.current = options?.onOnboardingComplete; }, [options?.onOnboardingComplete]);
 
   // Resolve model from id
   const model = useMemo(
@@ -162,70 +152,50 @@ export function usePreflight(options?: { onRecorded?: () => void; plan?: string 
         return;
       }
 
-      trackEvent("analysis_started", { model: mdl.id, plan: planRef.current ?? undefined });
-
       setIsAnalyzing(true);
-      const analysisStart = Date.now();
 
-      try {
-        // Token count
-        const inputTokens = countTokens(text, mdl);
+      // Token count
+      const inputTokens = countTokens(text, mdl);
 
-        // Compression preview (used for compressionDelta in risk score)
-        const preview = compressPrompt(text);
-        const compressedTokens = countTokens(preview.compressed, mdl);
+      // Compression preview (used for compressionDelta in risk score)
+      const preview = compressPrompt(text);
+      const compressedTokens = countTokens(preview.compressed, mdl);
 
-        // compressionDelta = (1 - compressedTokens / inputTokens) * 100
-        const delta =
-          inputTokens > 0
-            ? Math.max(0, (1 - compressedTokens / inputTokens) * 100)
-            : 0;
+      // compressionDelta = (1 - compressedTokens / inputTokens) * 100
+      const delta =
+        inputTokens > 0
+          ? Math.max(0, (1 - compressedTokens / inputTokens) * 100)
+          : 0;
 
-        setCompressionPreview(preview);
-        setCompressionDelta(delta);
+      setCompressionPreview(preview);
+      setCompressionDelta(delta);
 
-        // Risk assessment
-        const result = assessRisk({
-          promptText: text,
-          inputTokens,
-          contextWindow: mdl.contextWindow,
-          expectedOutputTokens: expected,
-          maxOutputTokens: mdl.maxOutputTokens,
-          compressionDelta: delta,
-          tokenStrategy: mdl.tokenStrategy,
-          inputPricePer1M: mdl.inputPricePer1M,
-          outputPricePer1M: mdl.outputPricePer1M,
-        });
+      // Risk assessment
+      const result = assessRisk({
+        promptText: text,
+        inputTokens,
+        contextWindow: mdl.contextWindow,
+        expectedOutputTokens: expected,
+        maxOutputTokens: mdl.maxOutputTokens,
+        compressionDelta: delta,
+        tokenStrategy: mdl.tokenStrategy,
+        inputPricePer1M: mdl.inputPricePer1M,
+        outputPricePer1M: mdl.outputPricePer1M,
+      });
 
-        setAnalysis(result);
+      setAnalysis(result);
 
-        // Record to server (fire-and-forget, silently no-ops if not signed in)
-        const latencyMs = Date.now() - analysisStart;
-        recordAnalysis(result, text, mdl.id, delta, latencyMs, onRecordedRef.current, setLastAnalysisId);
+      // Record to server (fire-and-forget, silently no-ops if not signed in)
+      recordAnalysis(result, text, mdl.id, onRecordedRef.current, setLastAnalysisId);
 
-        // Compression metrics (precomputed here for ResultsPanel diff card)
-        const compCostTotal =
-          (compressedTokens / 1_000_000) * mdl.inputPricePer1M +
-          (result.expectedOutputTokens / 1_000_000) * mdl.outputPricePer1M;
-        setCompressedTokens(compressedTokens);
-        setCompressedCostTotal(compCostTotal);
-        setTokenDelta(inputTokens - compressedTokens);
-        setCostDelta(result.estimatedCostTotal - compCostTotal);
-
-        trackEvent("analysis_completed", {
-          model: mdl.id,
-          plan: planRef.current ?? undefined,
-          truncated: result.truncation.level !== "safe",
-        });
-
-        if (typeof window !== "undefined" && !localStorage.getItem("cg_onboarding_completed")) {
-          localStorage.setItem("cg_onboarding_completed", "true");
-          trackEvent("onboarding_completed");
-          onOnboardingCompleteRef.current?.();
-        }
-      } catch {
-        trackEvent("analysis_failed");
-      }
+      // Compression metrics (precomputed here for ResultsPanel diff card)
+      const compCostTotal =
+        (compressedTokens / 1_000_000) * mdl.inputPricePer1M +
+        (result.expectedOutputTokens / 1_000_000) * mdl.outputPricePer1M;
+      setCompressedTokens(compressedTokens);
+      setCompressedCostTotal(compCostTotal);
+      setTokenDelta(inputTokens - compressedTokens);
+      setCostDelta(result.estimatedCostTotal - compCostTotal);
 
       setIsAnalyzing(false);
     },

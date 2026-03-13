@@ -1,7 +1,0 @@
-### Task
-
-Summarize the following article in exactly 3 bullet points.
-
-- Focus on the main argument
-- Keep each point under 20 words
-- Return as a JSON array with field "points"

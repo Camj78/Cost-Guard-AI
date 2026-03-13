@@ -3,7 +3,7 @@ import { runInit } from "./commands/init";
 import { runCi } from "./commands/ci";
 import { runTrends } from "./trends";
 
-const PKG_VERSION = "0.2.0";
+const PKG_VERSION = "0.2.4";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -59,8 +59,8 @@ function printHelp(): void {
       "",
       "EXIT CODES",
       "  0   All files below threshold (or no threshold set)",
-      "  1   Runtime error",
-      "  2   One or more files at or above threshold",
+      "  1   One or more files at or above threshold (or policy violation)",
+      "  2   Runtime error",
       "",
     ].join("\n"),
   );

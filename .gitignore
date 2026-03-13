@@ -14,7 +14,3 @@ dist/
 
 # Screenshot loop artifacts
 temporary_screenshots/
-
-.next
-.next 2
-artifacts/benchmarks/*.json

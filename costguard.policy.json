@@ -1,6 +1,0 @@
-{
-  "max_risk_score": 70,
-  "max_prompt_tokens": 4000,
-  "block_injection_risk": true,
-  "require_schema_constraints": true
-}

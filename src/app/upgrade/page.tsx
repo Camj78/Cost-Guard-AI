@@ -3,17 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { PRICING } from "@/config/pricing";
-import { PLANS } from "@/config/plans";
 
 type View = "loading" | "login" | "upgrade" | "pro";
-
-const PLAN_LABEL: Record<string, string> = {
-  free: "Free plan",
-  pro: "Pro plan active",
-  team: "Team plan active",
-  enterprise: "Enterprise plan",
-};
 
 const FEATURES: { label: string; free: string; pro: string }[] = [
   { label: "Preflight analyses", free: "25 / month", pro: "Unlimited" },
@@ -28,33 +19,10 @@ const FEATURES: { label: string; free: string; pro: string }[] = [
 export default function UpgradePage() {
   const [view, setView] = useState<View>("loading");
   const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activePlan, setActivePlan] = useState<string>("free");
-  const [plan, setPlan] = useState<"monthly" | "annual">(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("plan") === "annual") return "annual";
-    }
-    return "monthly";
-  });
-  const [intent] = useState<"free" | "pro" | null>(() => {
-    if (typeof window !== "undefined") {
-      const v = new URLSearchParams(window.location.search).get("intent");
-      if (v === "free") return "free";
-      if (v === "pro") return "pro";
-    }
-    return null;
-  });
-  const [tier, setTier] = useState<"pro" | "team">("pro");
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("tier") === "team") setTier("team");
-  }, []);
+  const [plan, setPlan] = useState<"monthly" | "annual">("monthly");
   const [cooldownSecs, setCooldownSecs] = useState(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -85,14 +53,9 @@ export default function UpgradePage() {
     fetch("/api/me")
       .then((r) => r.json())
       .then((d) => {
-        if (d.plan && d.plan !== "free") {
-          setActivePlan(d.plan as string);
-          setView("pro");
-        } else if (d.is_authed === true) {
-          setView("upgrade");
-        } else {
-          setView("login");
-        }
+        if (d.pro === true) setView("pro");
+        else if (d.is_authed === true) setView("upgrade");
+        else setView("login");
       })
       .catch(() => setView("login"));
   }, []);
@@ -101,16 +64,10 @@ export default function UpgradePage() {
     setBusy(true);
     setError(null);
     try {
-      const nextParam = new URLSearchParams(window.location.search).get("next") ?? undefined;
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: emailAddr,
-          ...(nextParam ? { next: nextParam } : {}),
-          ...(intent === "free" && firstName.trim() ? { first_name: firstName.trim() } : {}),
-          ...(intent === "free" && lastName.trim() ? { last_name: lastName.trim() } : {}),
-        }),
+        body: JSON.stringify({ email: emailAddr }),
       });
       const d = await res.json();
       if (!res.ok) {
@@ -139,7 +96,7 @@ export default function UpgradePage() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, tier }),
+        body: JSON.stringify({ plan }),
       });
       if (res.status === 401) {
         setView("login");
@@ -185,23 +142,14 @@ export default function UpgradePage() {
         {/* Header */}
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            {intent === "free" ? "CostGuardAI Free" : `CostGuardAI ${tier === PLANS.TEAM ? "Team" : "Pro"}`}
+            CostGuardAI Pro
           </p>
           <h1 className="text-2xl font-semibold tracking-tight">
-            {intent === "free"
-              ? "Start Free"
-              : "Ship AI features without cost surprises or production failures."}
+            Ship AI features without cost surprises or production failures.
           </h1>
           <p className="text-sm text-muted-foreground">
-            {intent === "free"
-              ? "Create your account to begin using CostGuardAI with limited free preflight access."
-              : "The preflight layer between your prompts and production. Catch token overflow, cost drift, and failure risk before a request ships."}
+            The preflight layer between your prompts and production. Catch token overflow, cost drift, and failure risk before a request ships.
           </p>
-          {intent === "free" && (
-            <p className="text-xs text-muted-foreground">
-              Upgrade to Pro later for command center access, history, and deeper workflow tools.
-            </p>
-          )}
         </div>
 
         {/* Feature comparison table — always visible */}
@@ -243,9 +191,7 @@ export default function UpgradePage() {
 
         {view === "pro" && (
           <div className="space-y-4">
-            <p className="text-sm font-medium text-emerald-400">
-              {PLAN_LABEL[activePlan] ?? "Plan active"}
-            </p>
+            <p className="text-sm font-medium text-emerald-400">You&apos;re on Pro.</p>
             <Button onClick={handleBilling} disabled={busy} className="w-full">
               {busy ? "Redirecting..." : "Manage Billing"}
             </Button>
@@ -255,29 +201,9 @@ export default function UpgradePage() {
         {view === "login" && !emailSent && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {intent === "free"
-                ? "Enter your email to create your free account."
-                : "Enter your email to log in, then upgrade."}
+              Enter your email to log in, then upgrade.
             </p>
             <form onSubmit={handleLogin} className="space-y-3">
-              {intent === "free" && (
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="First name"
-                    className="rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Last name"
-                    className="rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-              )}
               <input
                 type="email"
                 required
@@ -311,67 +237,70 @@ export default function UpgradePage() {
 
         {view === "upgrade" && (
           <div className="space-y-4">
-            {/* Plan toggle — only shown for Pro (Team has no annual billing) */}
-            {tier === PLANS.PRO && (
-              <div className="flex items-center gap-1 bg-muted/20 border border-white/10 rounded-lg p-1 w-fit">
-                <button
-                  type="button"
-                  onClick={() => setPlan("monthly")}
-                  className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
-                    plan === "monthly"
-                      ? "bg-white/10 text-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Monthly
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPlan("annual")}
-                  className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
-                    plan === "annual"
-                      ? "bg-white/10 text-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Annual
-                  <span className="ml-2 text-xs text-emerald-400 font-medium">
-                    Save 17%
-                  </span>
-                </button>
-              </div>
-            )}
+            {/* Plan toggle */}
+            <div className="flex items-center gap-1 bg-muted/20 border border-white/10 rounded-lg p-1 w-fit">
+              <button
+                type="button"
+                onClick={() => setPlan("monthly")}
+                className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
+                  plan === "monthly"
+                    ? "bg-white/10 text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlan("annual")}
+                className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
+                  plan === "annual"
+                    ? "bg-white/10 text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Annual
+                <span className="ml-2 text-xs text-emerald-400 font-medium">
+                  Save $149
+                </span>
+              </button>
+            </div>
 
-            {/* Price display — derived from PRICING config */}
-            {(() => {
-              const tierConfig = PRICING.find((p) => p.id === tier)!;
-              const monthlyPrice = tierConfig.priceMonthly ?? 0;
-              const yearlyPrice = tierConfig.priceYearly;
-              const showAnnual = tier === PLANS.PRO && plan === "annual" && yearlyPrice !== undefined;
-              const monthlyEquiv = yearlyPrice ? (yearlyPrice / 12).toFixed(2) : null;
-              return (
-                <div className="space-y-0.5">
+            {/* Price display */}
+            <div className="space-y-0.5">
+              {plan === "monthly" ? (
+                <>
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-4xl font-black font-mono tracking-tight">
-                      ${showAnnual ? yearlyPrice : monthlyPrice}
+                      $29
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      {showAnnual ? "/ year" : "/ month"}
+                      / month
                     </span>
                   </div>
-                  {showAnnual ? (
-                    <p className="text-xs text-muted-foreground">
-                      ${monthlyEquiv}/month billed annually.{" "}
-                      <span className="text-emerald-400 font-medium">
-                        Save 17% vs monthly.
-                      </span>
-                    </p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">Cancel anytime.</p>
-                  )}
-                </div>
-              );
-            })()}
+                  <p className="text-xs text-muted-foreground">
+                    Cancel anytime.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-4xl font-black font-mono tracking-tight">
+                      $199
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      / year
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    $16.58/month billed annually.{" "}
+                    <span className="text-emerald-400 font-medium">
+                      Save $149 vs monthly.
+                    </span>
+                  </p>
+                </>
+              )}
+            </div>
 
             {/* Risk reversal */}
             <p className="text-xs text-muted-foreground">
@@ -385,11 +314,9 @@ export default function UpgradePage() {
             >
               {busy
                 ? "Redirecting..."
-                : tier === PLANS.TEAM
-                ? "Upgrade to Team — $79/month"
                 : plan === "monthly"
                 ? "Upgrade to Pro — $29/month"
-                : "Upgrade to Pro — $290/year"}
+                : "Upgrade to Pro — $199/year"}
             </Button>
           </div>
         )}
@@ -398,10 +325,7 @@ export default function UpgradePage() {
           <div className="space-y-3">
             <p className="text-sm font-medium">Check your email.</p>
             <p className="text-sm text-muted-foreground">
-              We sent a magic link to <strong>{email}</strong>. Click it to{" "}
-              {intent === "free"
-                ? "access your free account."
-                : "log in, then come back here to upgrade."}
+              We sent a magic link to <strong>{email}</strong>. Click it to log in, then come back here to upgrade.
             </p>
             {cooldownSecs > 0 ? (
               <p className="text-xs text-muted-foreground">

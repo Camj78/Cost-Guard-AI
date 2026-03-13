@@ -3,7 +3,6 @@ import { Inter_Tight, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import { PostHogProvider } from "@/components/PostHogProvider";
 
 const interTight = Inter_Tight({
   variable: "--font-inter-tight",
@@ -62,11 +61,9 @@ export default function RootLayout({
       <body
         className={`${interTight.variable} ${geistMono.variable} antialiased`}
       >
-        <PostHogProvider>
-          <ThemeProvider>
-            <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
-          </ThemeProvider>
-        </PostHogProvider>
+        <ThemeProvider>
+          <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -56,7 +56,7 @@ pnpm dev
 **Model pricing and limits** are in a single file:
 
 ```
-src/lib/ai/models.ts
+src/config/models.ts
 ```
 
 To update a price or add a model, edit that file. The `pricingLastUpdated` string is shown in the footer. No other files need to change.
@@ -70,19 +70,17 @@ To update a price or add a model, edit that file. The `pricingLastUpdated` strin
 vercel --prod
 ```
 
-Or connect the repo in the Vercel dashboard. Set the env vars from `.env.example` in Vercel's environment panel.
+Or connect the repo in the Vercel dashboard. Zero configuration needed — it's a static Next.js app.
 
-Set `NEXT_PUBLIC_APP_URL` to your production URL for correct OpenGraph metadata.
+Set `NEXT_PUBLIC_APP_URL` to your production URL in Vercel's environment variables for correct OpenGraph metadata.
 
 ---
 
 ## Stack
 
-- **Next.js 16** (App Router)
-- **Supabase** (auth + Postgres)
+- **Next.js 15** (App Router, static output)
 - **Tailwind CSS v4** + **shadcn/ui** (new-york)
 - **js-tiktoken** for OpenAI token counting
-- **Stripe** (billing) · **Sentry** (error tracking) · **PostHog** (analytics)
 - **pnpm** package manager
 
 ---
@@ -91,101 +89,35 @@ Set `NEXT_PUBLIC_APP_URL` to your production URL for correct OpenGraph metadata.
 
 ```
 src/
+  config/models.ts          ← Single source of truth (edit here to update pricing)
   lib/
-    ai/models.ts            ← Model catalog + pricing (edit here to update pricing)
-    risk.ts                 ← Failure Risk Score engine
     tokenizer.ts            ← Token counting (js-tiktoken wrapper)
+    risk.ts                 ← Failure Risk Score engine
     compressor.ts           ← Rule-based prompt compression
     formatters.ts           ← Number/currency formatting
-    trust.ts                ← Reproducibility: version + hash exports
   hooks/
-    use-preflight.ts        ← Main analysis hook
+    use-preflight.ts        ← Main hook (debounce, perf guard, model-switch clamping)
   components/
-    risk-score.tsx          ← Score + badge + explainability
+    risk-score.tsx          ← Score + badge + deterministic explanation
+    compression-panel.tsx   ← Compression preview and apply
+    model-assumptions.tsx   ← Read-only model config modal
     results-panel.tsx       ← Composes all result cards
     ...
   app/
-    page.tsx                ← Main preflight page
-    dashboard/
-      observability/        ← Token/cost/risk trend charts
-    report/[id]/            ← Public shareable report
-    s/[id]/                 ← Short URL redirect
-    api/v1/analyze/         ← Public REST API
-    upgrade/                ← Pricing + Stripe checkout
-cli/
-  index.js                  ← costguard CLI (analyze, ci, replay)
-.github/
-  workflows/costguard.yml   ← GitHub Action (PR analysis + comments)
+    page.tsx                ← The single page
+    layout.tsx              ← Root layout + metadata
 ```
 
 ---
 
-## CLI Usage
+## V2 ideas
 
-Run preflight analysis directly from your terminal — no browser required.
-
-```bash
-npx costguard analyze prompt.txt --api-key $COSTGUARD_API_KEY
-```
-
-**Options**
-
-| Flag | Description | Default |
-|---|---|---|
-| `--api-key` | Your CostGuardAI API key (or set `COSTGUARD_API_KEY`) | — |
-| `--host` | API base URL | `https://costguardai.io` |
-| `--model` | Model ID to analyze against | `gpt-4o-mini` |
-| `--requests` | Requests/month for monthly cost estimate | `1000` |
-
-**Example output**
-
-```
-CostGuardAI Report
-
-Risk:                HIGH
-Estimated Cost:      $24.80
-Truncation Risk:     37%
-
-Recommended Model:   gpt-4o-mini
-
-Share: https://costguardai.io/s/<uuid>
-```
-
-**Generate an API key** in your dashboard under Settings → API Keys.
-
----
-
-## Pricing
-
-| | Free | Pro | Team |
-|---|---|---|---|
-| **Price** | $0 | $29 / month | $99 / month _(on request)_ |
-| CLI analysis | ✓ | ✓ | ✓ |
-| RiskScore + explainability | ✓ | ✓ | ✓ |
-| Shareable reports | ✓ | ✓ | ✓ |
-| Analyses per month | 25 | Unlimited | Unlimited |
-| Basic CI usage | ✓ | ✓ | ✓ |
-| CI guardrails (`--fail-on-risk`) | — | ✓ | ✓ |
-| PR comments | — | ✓ | ✓ |
-| Observability dashboard | — | ✓ | ✓ |
-| Replay support | — | ✓ | ✓ |
-| Organization dashboard | — | — | ✓ |
-| Team risk policies | — | — | ✓ |
-| Repo-level thresholds | — | — | ✓ |
-| Cross-project cost tracking | — | — | ✓ |
-| Audit logs | — | — | ✓ |
-
-> Team plan is backend-ready. Self-serve checkout coming soon — contact [team@costguardai.io](mailto:team@costguardai.io) to activate.
-
-→ [Full pricing details](docs/pricing.md)
-
----
-
-## Roadmap
-
+- User accounts + prompt history
 - Live pricing sync from provider APIs
-- Browser extension (VSCode + Chrome)
-- Team risk policies and repo-level thresholds
+- Browser extension
+- Team/workspace sharing
+- API endpoint for CI/CD prompt validation
+- Dark mode
 
 ---
 
