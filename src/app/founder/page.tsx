@@ -94,6 +94,26 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
+function Delta({
+  current,
+  prev,
+  suffix = " vs prev 24h",
+}: {
+  current: number;
+  prev: number;
+  suffix?: string;
+}) {
+  const delta = current - prev;
+  if (delta === 0)
+    return <span className="text-xs text-muted-foreground">No change{suffix}</span>;
+  const up = delta > 0;
+  return (
+    <span className={`text-xs font-mono ${up ? "text-green-400" : "text-red-400"}`}>
+      {up ? "+" : ""}{delta}{suffix}
+    </span>
+  );
+}
+
 // ── Admin client factory ──────────────────────────────────────────────────────
 
 function getAdminClient() {
@@ -140,6 +160,12 @@ export default async function FounderPage({
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   const dayLabel = days === 1 ? "today" : `last ${days} days`;
 
+  // Fixed windows for launch telemetry (independent of the day-range selector)
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const since48h = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+  const since6h  = new Date(Date.now() - 6  * 60 * 60 * 1000).toISOString();
+  const since12h = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+
   // ── Admin client ────────────────────────────────────────────────────────────
 
   const admin = getAdminClient();
@@ -176,6 +202,18 @@ export default async function FounderPage({
   let usageEvents: UsageEventRow[] = [];
   let totalIncidents = 0;
   let dbHealthy = false;
+
+  // Launch telemetry (24h / 6h windows)
+  let signups24h      = 0;
+  let signupsPrev     = 0;
+  let analyses24h     = 0;
+  let analysesPrev    = 0;
+  let shareLinks24h   = 0;
+  let shareLinksPrev  = 0;
+  let firstAnalyses6h     = 0;
+  let firstAnalysesPrev6h = 0;
+  let cliUsage24h = 0;
+  let errors24h   = 0;
 
   if (admin) {
     const [
@@ -228,6 +266,49 @@ export default async function FounderPage({
     billingRows = (billingRes.data ?? []) as BillingRow[];
     totalIncidents = incidentRes.count ?? 0;
     usageEvents = (usageEventsRes.data ?? []) as UsageEventRow[];
+  }
+
+  // ── Launch telemetry queries (fixed 24h / 6h windows) ─────────────────────
+
+  if (admin) {
+    type UidRow = { user_id: string | null };
+    const [
+      s24Res, sPrevRes,
+      a24Res, aPrevRes,
+      sl24Res, slPrevRes,
+      u6Res, uPrev6Res,
+      cli24Res, err24Res,
+    ] = await Promise.all([
+      admin.from("users").select("id", { count: "exact", head: true }).gte("created_at", since24h),
+      admin.from("users").select("id", { count: "exact", head: true }).gte("created_at", since48h).lt("created_at", since24h),
+      admin.from("analysis_history").select("id", { count: "exact", head: true }).gte("created_at", since24h),
+      admin.from("analysis_history").select("id", { count: "exact", head: true }).gte("created_at", since48h).lt("created_at", since24h),
+      admin.from("share_links").select("id", { count: "exact", head: true }).gte("created_at", since24h),
+      admin.from("share_links").select("id", { count: "exact", head: true }).gte("created_at", since48h).lt("created_at", since24h),
+      admin.from("analysis_history").select("user_id").gte("created_at", since6h).limit(2000),
+      admin.from("analysis_history").select("user_id").gte("created_at", since12h).lt("created_at", since6h).limit(2000),
+      admin.from("ai_usage_events").select("id", { count: "exact", head: true }).eq("source", "cli").gte("ts", since24h),
+      admin.from("request_logs").select("id", { count: "exact", head: true }).gte("status_code", 500).gte("created_at", since24h),
+    ]);
+
+    signups24h    = s24Res.count  ?? 0;
+    signupsPrev   = sPrevRes.count ?? 0;
+    analyses24h   = a24Res.count  ?? 0;
+    analysesPrev  = aPrevRes.count ?? 0;
+    shareLinks24h  = sl24Res.count  ?? 0;
+    shareLinksPrev = slPrevRes.count ?? 0;
+    cliUsage24h   = cli24Res.count ?? 0;
+    errors24h     = err24Res.count ?? 0;
+
+    const uids6h = new Set(
+      (u6Res.data ?? []).map((r: UidRow) => r.user_id).filter(Boolean)
+    );
+    firstAnalyses6h = uids6h.size;
+
+    const uidsPrev6h = new Set(
+      (uPrev6Res.data ?? []).map((r: UidRow) => r.user_id).filter(Boolean)
+    );
+    firstAnalysesPrev6h = uidsPrev6h.size;
   }
 
   // ── Derived metrics ─────────────────────────────────────────────────────────
@@ -573,6 +654,62 @@ export default async function FounderPage({
                   {label}
                 </Link>
               ))}
+            </div>
+          </div>
+
+          {/* ── 0. Launch Telemetry ───────────────────────────────────────── */}
+          <div className="space-y-3">
+            <SectionHeading>Launch Telemetry</SectionHeading>
+
+            {/* 5 metric cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+              <div className="glass-card p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Signups (24h)</p>
+                <p className="text-2xl font-semibold tracking-tight font-mono tabular-nums mt-2">{signups24h}</p>
+                <div className="mt-1"><Delta current={signups24h} prev={signupsPrev} /></div>
+              </div>
+              <div className="glass-card p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">API Analyses (24h)</p>
+                <p className="text-2xl font-semibold tracking-tight font-mono tabular-nums mt-2">{analyses24h}</p>
+                <div className="mt-1"><Delta current={analyses24h} prev={analysesPrev} /></div>
+              </div>
+              <div className="glass-card p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">CLI Usage (24h)</p>
+                <p className="text-2xl font-semibold tracking-tight font-mono tabular-nums mt-2">{cliUsage24h}</p>
+                <p className="text-xs text-muted-foreground mt-1">API calls via CLI source</p>
+              </div>
+              <div className="glass-card p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Share Links (24h)</p>
+                <p className="text-2xl font-semibold tracking-tight font-mono tabular-nums mt-2">{shareLinks24h}</p>
+                <div className="mt-1"><Delta current={shareLinks24h} prev={shareLinksPrev} /></div>
+              </div>
+              <div className="glass-card p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Errors (24h)</p>
+                <p className={`text-2xl font-semibold tracking-tight font-mono tabular-nums mt-2 ${errors24h > 0 ? "text-red-400" : ""}`}>{errors24h}</p>
+                <p className="text-xs text-muted-foreground mt-1">5xx API errors logged</p>
+              </div>
+            </div>
+
+            {/* Launch Health Signal */}
+            <div className="glass-card p-6 border-l-2 border-l-amber-500">
+              <div className="flex items-start justify-between gap-6 flex-wrap">
+                <div>
+                  <SectionHeading>Launch Health Signal</SectionHeading>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Unique users who ran an analysis in the last 6 hours
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-3 max-w-md">
+                    For developer tools, the strongest launch predictor is not signups but first meaningful product usage — a user running an analysis confirms discovery, comprehension, and real intent.
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-4xl font-semibold tracking-tight font-mono tabular-nums">{firstAnalyses6h}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mt-1">Unique First Analyses (6h)</p>
+                  <div className="mt-1">
+                    <Delta current={firstAnalyses6h} prev={firstAnalysesPrev6h} suffix=" vs prev 6h" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

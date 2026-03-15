@@ -1,0 +1,22 @@
+name: CostGuard Prompt Safety
+
+on:
+  pull_request:
+    paths:
+      - "**/*.prompt"
+      - "**/prompts/**"
+
+jobs:
+  costguard:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: costguardai/prompt-scan@v1
+        with:
+          api_key: ${{ secrets.COSTGUARD_API_KEY }}
+          # Block if safety score drops below 25 (risk score above 75)
+          risk_threshold: 75

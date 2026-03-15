@@ -1,9 +1,9 @@
 import { runAnalyze } from "./commands/analyze";
 import { runInit } from "./commands/init";
 import { runCi } from "./commands/ci";
+import { runFix } from "./commands/fix";
 import { runTrends } from "./trends";
-
-const PKG_VERSION = "0.2.4";
+import { version as PKG_VERSION } from "../package.json";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -13,7 +13,7 @@ function printTip(): void {
     "\n  Tip: run `costguardai init` to add CostGuardAI to your repo.\n\n" +
     "  ────────────────────────\n" +
     "  Docs:   https://costguardai.io/docs\n" +
-    "  GitHub: https://github.com/costguardai/costguard\n" +
+    "  GitHub: https://github.com/Camj78/Cost-Guard-AI\n" +
     "  Star if useful ⭐\n" +
     "  ────────────────────────\n\n",
   );
@@ -29,6 +29,7 @@ function printHelp(): void {
       "",
       "COMMANDS",
       "  analyze <path>    Analyze prompt files in a directory or a single file",
+      "  fix <file>        Harden a prompt and improve its safety score",
       "  ci                CI-native scan with exit codes (use --fail-on-risk)",
       "  trends            Show risk trend intelligence from git history",
       "  init              Bootstrap CostGuardAI in this repo (interactive or CI-safe defaults)",
@@ -98,6 +99,11 @@ async function main(): Promise<void> {
         (a === "--format" && arr[i + 1] === "json"),
     );
     if (code === 0 && !isJsonMode) printTip();
+    process.exit(code);
+  }
+
+  if (command === "fix") {
+    const code = await runFix(args.slice(1));
     process.exit(code);
   }
 

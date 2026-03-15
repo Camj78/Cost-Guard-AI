@@ -68,43 +68,78 @@ export default function Page() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-center">
 
             {/* Left: text content */}
-            <div className="space-y-4 animate-fade-in-up">
+            <div className="space-y-5 animate-fade-in-up">
               <h1 className="text-5xl md:text-6xl font-black tracking-tight">
-                Preflight safety for AI products in production.
+                Catch risky, expensive AI prompts before they ship.
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-                Detect token overflow, cost drift, and failure risk before you deploy.
+                CostGuardAI scans prompts and AI workflows for jailbreak risk, ambiguity, hallucination risk, and cost blowups — before they hit production.
               </p>
-              <p className="text-sm text-muted-foreground">
-                Used by AI founders before every deploy.
+
+              {/* CLI install block — above the fold, copy-paste ready */}
+              <div
+                id="install"
+                className="bg-black/50 border border-white/[0.08] rounded-lg px-4 py-3 space-y-1 font-mono text-sm"
+              >
+                <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/50 mb-2">
+                  Quick install
+                </div>
+                <div>
+                  <span className="text-muted-foreground/40 select-none">$ </span>
+                  <span className="text-foreground">npm install -g @camj78/costguardai</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground/40 select-none">$ </span>
+                  <span className="text-foreground">costguardai analyze prompt.txt</span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Get a CostGuardAI Safety Score, top risks, and fix recommendations in seconds.
               </p>
-              <div className="flex flex-wrap items-center gap-3 pt-2">
+
+              {/* Primary + secondary CTAs */}
+              <div className="flex flex-wrap items-center gap-3">
                 <Button
+                  asChild
                   className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 border-0"
-                  onClick={() => window.scrollTo({ top: 500, behavior: "smooth" })}
                 >
-                  Run Preflight <Zap className="w-4 h-4" />
+                  <a href="#install">Try the CLI</a>
                 </Button>
+                <a
+                  href="/report/demo"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] px-4 py-2 rounded-md transition-colors"
+                >
+                  View Demo Report →
+                </a>
                 {isAuthed && (
                   <a
                     href="/dashboard"
                     className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Open Command Center →
+                    Command Center →
                   </a>
                 )}
               </div>
-              {/* Integration signal chips — credibility, no links */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {["API", "CLI", "CI/CD"].map((chip) => (
-                  <span
-                    key={chip}
-                    className="text-xs font-mono text-muted-foreground border border-white/[0.07] bg-transparent px-3 py-1 rounded-full"
-                  >
-                    {chip}
-                  </span>
+
+              {/* Proof bullets */}
+              <ul className="space-y-1.5 pt-1">
+                {[
+                  "CLI-first workflow",
+                  "Static shareable reports",
+                  "GitHub + CI ready",
+                ].map((bullet) => (
+                  <li key={bullet} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="w-1 h-1 rounded-full bg-primary/60 shrink-0" aria-hidden="true" />
+                    {bullet}
+                  </li>
                 ))}
-              </div>
+                <li className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="w-1 h-1 rounded-full bg-primary/60 shrink-0" aria-hidden="true" />
+                  <a href="/benchmarks" className="hover:text-foreground transition-colors">
+                    See Benchmarks →
+                  </a>
+                </li>
+              </ul>
             </div>
 
             {/* Right: static product preview — no animation, pointer-events-none */}
@@ -120,7 +155,7 @@ export default function Page() {
                   </span>
                 </div>
 
-                {/* Risk Score — tier first, score subordinate */}
+                {/* CostGuardAI Safety Score — tier first, score subordinate */}
                 <div className="space-y-2">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-400">
                     HIGH RISK
@@ -236,6 +271,7 @@ export default function Page() {
               { label: "Methodology", href: "/methodology" },
               { label: "Vulnerabilities", href: "/vulnerabilities" },
               { label: "Examples", href: "/examples" },
+              { label: "Benchmarks", href: "/benchmarks" },
               { label: "Calibration", href: "/methodology/calibration" },
             ].map(({ label, href }, i) => (
               <span key={label} className="flex items-center gap-4">
@@ -470,7 +506,7 @@ export default function Page() {
             </div>
 
             <div className="glass-card p-4 space-y-1">
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Risk Score</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">CostGuardAI Safety Score</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Signal of production instability — not legal advice, just operational risk.
               </p>

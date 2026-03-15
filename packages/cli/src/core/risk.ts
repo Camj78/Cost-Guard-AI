@@ -1,5 +1,5 @@
 /**
- * CostGuardAI — Failure Risk Score engine.
+ * CostGuardAI — CostGuardAI Safety Score engine.
  * Vendored copy for self-contained CLI distribution.
  * Source of truth: packages/core/src/risk.ts
  */

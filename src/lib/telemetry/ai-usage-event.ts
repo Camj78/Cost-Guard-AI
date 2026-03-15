@@ -48,6 +48,7 @@ export interface AiUsageEventInput {
   orgId?: string | null;
   projectId?: string | null;
   promptText?: string;
+  source?: string;
 }
 
 /**
@@ -96,6 +97,7 @@ export async function recordAiUsageEvent(
       env,
       prompt_hash: promptHash,
       prompt_preview: promptPreview,
+      source: input.source ?? null,
     });
   } catch {
     // Non-blocking telemetry: silently discard errors

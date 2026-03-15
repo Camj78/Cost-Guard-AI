@@ -8,7 +8,13 @@ Prevent unsafe AI prompts from reaching production.
 npm install -g @camj78/costguardai
 ```
 
-CostGuardAI analyzes AI prompts and prevents unsafe prompts from reaching production.
+Scan prompts locally, fail risky pull requests in CI, and harden prompts with `costguardai fix`. Use CostGuardAI as a pull request safety gate for prompt security.
+
+```bash
+costguardai analyze prompt.txt
+costguardai fix prompt.txt
+costguardai ci --fail-on-risk 70
+```
 
 If you find this useful, consider ⭐ starring the repo — it helps other developers discover it.
 

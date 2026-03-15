@@ -7,7 +7,10 @@ export function Footer() {
   return (
     <footer className="border-t border-white/10 px-6 py-6 mt-auto">
       <div className="mx-auto max-w-5xl flex flex-col items-center gap-2 text-center text-xs text-muted-foreground/60">
-        <span className="font-mono">API Docs · CLI · Status</span>
+        <span className="font-mono">
+          <Link href="/docs" className="hover:text-muted-foreground transition-colors">Docs</Link>
+          {" · "}CLI · Status
+        </span>
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
           <Link href="/methodology" className="hover:text-muted-foreground transition-colors">
             Methodology

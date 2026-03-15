@@ -1,0 +1,175 @@
+{
+  "createdAt": "2026-03-04T19:26:30.371Z",
+  "gitCommit": "a5f6e89",
+  "gitBranch": "main",
+  "results": {
+    "short-clean|gpt-4o": {
+      "inputTokens": 23,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.0051775,
+      "riskScore": 28,
+      "compressionActive": false
+    },
+    "short-clean|gpt-4o-mini": {
+      "inputTokens": 23,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.00031065,
+      "riskScore": 28,
+      "compressionActive": false
+    },
+    "short-clean|claude-sonnet-4-6": {
+      "inputTokens": 25,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.007755,
+      "riskScore": 28,
+      "compressionActive": false
+    },
+    "short-clean|claude-haiku-4-5": {
+      "inputTokens": 25,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.002068,
+      "riskScore": 28,
+      "compressionActive": false
+    },
+    "short-clean|gemini-2.5-flash-lite": {
+      "inputTokens": 25,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.000155475,
+      "riskScore": 28,
+      "compressionActive": false
+    },
+    "short-clean|llama-3.3-70b": {
+      "inputTokens": 26,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.00041982,
+      "riskScore": 28,
+      "compressionActive": false
+    },
+    "verbose-medium|gpt-4o": {
+      "inputTokens": 100,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.00537,
+      "riskScore": 36,
+      "compressionActive": true
+    },
+    "verbose-medium|gpt-4o-mini": {
+      "inputTokens": 100,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.00032219999999999997,
+      "riskScore": 36,
+      "compressionActive": true
+    },
+    "verbose-medium|claude-sonnet-4-6": {
+      "inputTokens": 105,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.007994999999999999,
+      "riskScore": 36,
+      "compressionActive": true
+    },
+    "verbose-medium|claude-haiku-4-5": {
+      "inputTokens": 105,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.0021319999999999998,
+      "riskScore": 36,
+      "compressionActive": true
+    },
+    "verbose-medium|gemini-2.5-flash-lite": {
+      "inputTokens": 108,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.0001617,
+      "riskScore": 36,
+      "compressionActive": true
+    },
+    "verbose-medium|llama-3.3-70b": {
+      "inputTokens": 111,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.00046997,
+      "riskScore": 36,
+      "compressionActive": true
+    },
+    "large-context-stress|gpt-4o": {
+      "inputTokens": 788,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.007089999999999999,
+      "riskScore": 18,
+      "compressionActive": false
+    },
+    "large-context-stress|gpt-4o-mini": {
+      "inputTokens": 788,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.0004254,
+      "riskScore": 18,
+      "compressionActive": false
+    },
+    "large-context-stress|claude-sonnet-4-6": {
+      "inputTokens": 834,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.010182,
+      "riskScore": 18,
+      "compressionActive": false
+    },
+    "large-context-stress|claude-haiku-4-5": {
+      "inputTokens": 834,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.0027152,
+      "riskScore": 18,
+      "compressionActive": false
+    },
+    "large-context-stress|gemini-2.5-flash-lite": {
+      "inputTokens": 858,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.00021795,
+      "riskScore": 18,
+      "compressionActive": false
+    },
+    "large-context-stress|llama-3.3-70b": {
+      "inputTokens": 874,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.0009201399999999998,
+      "riskScore": 18,
+      "compressionActive": false
+    },
+    "output-collision-trigger|gpt-4o": {
+      "inputTokens": 291,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.005847499999999999,
+      "riskScore": 19,
+      "compressionActive": true
+    },
+    "output-collision-trigger|gpt-4o-mini": {
+      "inputTokens": 291,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.00035085,
+      "riskScore": 19,
+      "compressionActive": true
+    },
+    "output-collision-trigger|claude-sonnet-4-6": {
+      "inputTokens": 303,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.008589,
+      "riskScore": 19,
+      "compressionActive": true
+    },
+    "output-collision-trigger|claude-haiku-4-5": {
+      "inputTokens": 303,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.0022903999999999997,
+      "riskScore": 19,
+      "compressionActive": true
+    },
+    "output-collision-trigger|gemini-2.5-flash-lite": {
+      "inputTokens": 312,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.000177,
+      "riskScore": 19,
+      "compressionActive": true
+    },
+    "output-collision-trigger|llama-3.3-70b": {
+      "inputTokens": 317,
+      "outputTokens": 512,
+      "estimatedCostTotal": 0.00059151,
+      "riskScore": 19,
+      "compressionActive": true
+    }
+  }
+}

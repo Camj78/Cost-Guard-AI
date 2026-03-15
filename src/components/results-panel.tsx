@@ -77,7 +77,7 @@ export function ResultsPanel({
             Paste a prompt above
           </p>
           <p className="text-sm text-muted-foreground max-w-[260px] leading-relaxed">
-            Token count, cost estimate, and Failure Risk Score appear as you type — no account needed.
+            Token count, cost estimate, and CostGuardAI Safety Score appear as you type — no account needed.
           </p>
         </div>
         <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
@@ -113,7 +113,7 @@ export function ResultsPanel({
 
   return (
     <div className="space-y-4">
-      {/* 1. Failure Risk Score — THE moat */}
+      {/* 1. CostGuardAI Safety Score — THE moat */}
       <Card className="glass-card shadow-none relative animate-data-arrive transition-all duration-100 hover:-translate-y-[1px] hover:border-white/[0.14]" style={{ animationDelay: "0ms" }}>
         <div className="absolute top-0 left-6 right-6 h-px bg-primary/30" />
         <CardContent className="pt-5 pb-4">

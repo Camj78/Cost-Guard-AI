@@ -237,7 +237,7 @@ export function CostAtScalePanel({ analysis, model }: CostAtScalePanelProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-0.5">
-                    Failure Risk Score
+                    CostGuardAI Safety Score
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Relative risk (not a probability).

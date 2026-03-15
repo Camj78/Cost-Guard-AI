@@ -18,15 +18,47 @@ npm install -g @camj78/costguardai
 ## Usage
 
 ```sh
-# Analyze a single prompt file
-costguardai analyze prompt.prompt
+# Analyze a prompt
+costguardai analyze my-prompt.txt
 
-# Scan entire repo, fail CI if risk >= 70
+# Block unsafe prompts in CI
 costguardai ci --fail-on-risk 70
 
-# Initialize config
+# Initialize CostGuardAI in your repo
 costguardai init
 ```
+
+CostGuardAI CI will fail if the prompt's CostGuardAI Safety Score falls below your configured threshold.
+
+## Automatic Prompt Hardening
+
+```sh
+costguardai fix prompt.txt
+```
+
+CostGuardAI can automatically harden prompts by adding injection protections,
+system boundaries, and safety guards.
+
+```
+CostGuardAI Fix Mode
+────────────────────────────────────────────────
+Original Safety Score: 58
+Issues Detected:
+  • Structural Risk
+  • Ambiguity Risk
+
+Applying prompt hardening...
+  ✔ Added system boundary protections
+  ✔ Removed injection vulnerability
+  ✔ Added explicit instruction scoping
+
+New Safety Score: 92
+
+Hardened prompt written to:
+  prompt.hardened.txt
+```
+
+The hardened prompt is written to `<original-name>.hardened.<ext>` alongside the original file.
 
 ## GitHub Actions
 
@@ -55,6 +87,7 @@ jobs:
 | Command | Description |
 |---------|-------------|
 | `analyze <path>` | Analyze prompt files in a directory or single file |
+| `fix <file>` | Harden a prompt and improve its safety score |
 | `ci [path]` | CI-native scan with `--fail-on-risk <n>` |
 | `init` | Create `costguard.config.json` with defaults |
 
@@ -75,4 +108,4 @@ jobs:
 
 - Docs: https://costguardai.io/docs
 - Web app: https://costguardai.io
-- GitHub: https://github.com/costguardai/costguard
+- GitHub: https://github.com/Camj78/Cost-Guard-AI

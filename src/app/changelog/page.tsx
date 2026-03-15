@@ -28,7 +28,7 @@ const ENTRIES: Entry[] = [
         heading: "Added",
         items: [
           "Token + cost estimation across supported models",
-          "Failure Risk Score engine",
+          "CostGuardAI Safety Score engine",
           "Compression detection panel for verbose prompts",
           "Model pricing configuration",
           "Production-ready UI and deploy prep",

@@ -1,0 +1,28 @@
+name: CostGuard Prompt Safety
+
+on:
+  pull_request:
+    paths:
+      - "**/*.prompt"
+      - "**/prompts/**"
+
+jobs:
+  costguard:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: costguardai/prompt-scan@v1
+        id: scan
+        with:
+          api_key: ${{ secrets.COSTGUARD_API_KEY }}
+          # RAG prompts include retrieved chunks — watch for token explosion
+          risk_threshold: 65
+
+      - name: Print scan summary
+        run: |
+          echo "Highest risk: ${{ steps.scan.outputs.highest_risk_score }}"
+          echo "Files scanned: ${{ steps.scan.outputs.scanned_files }}"

@@ -1,0 +1,21 @@
+{
+  "name": "high-near-critical",
+  "description": "Near-full context window (86%) with high saturation (98%), maximum ambiguity terms, and one volatility phrase. Just below critical threshold.",
+  "input": {
+    "prompt": "optimize improve better good high quality fast efficient robust flexible clean scalable advanced modern comprehensive",
+    "inputTokens": 110000,
+    "contextWindow": 128000,
+    "expectedOutputTokens": 16000,
+    "maxOutputTokens": 16384
+  },
+  "expected": {
+    "score_range": [78, 88],
+    "risk_band": "high",
+    "top_risk_drivers": [
+      "Structural Risk",
+      "Context Saturation Risk",
+      "Length Risk"
+    ]
+  },
+  "notes": "Length 110000/128000=0.859→bucket=90. Context (126000/128000)=0.984→bucket=95. Ambiguity: 13 matches/15 words=0.867→bucket=90. Structural=100. Volatility: comprehensive(+25), 16000<220000→bucket=25. Score=83."
+}

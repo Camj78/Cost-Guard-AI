@@ -1,8 +1,16 @@
 {
   "name": "@camj78/costguardai",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "CostGuardAI CLI — preflight analysis for LLM prompts",
   "license": "MIT",
+  "homepage": "https://costguardai.io/docs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Camj78/Cost-Guard-AI"
+  },
+  "bugs": {
+    "url": "https://github.com/Camj78/Cost-Guard-AI/issues"
+  },
   "engines": {
     "node": ">=18"
   },

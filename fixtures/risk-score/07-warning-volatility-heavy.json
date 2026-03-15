@@ -1,0 +1,21 @@
+{
+  "name": "warning-volatility-heavy",
+  "description": "Prompt saturated with 5 volatility phrases (bucket capped at 100) plus 2 ambiguous terms. Tests that volatility + ambiguity + structural can reach warning.",
+  "input": {
+    "prompt": "Write a detailed comprehensive summary. Thoroughly explain every aspect in depth, as much as possible. Please optimize the output to be better quality.",
+    "inputTokens": 30,
+    "contextWindow": 128000,
+    "expectedOutputTokens": 256,
+    "maxOutputTokens": 16384
+  },
+  "expected": {
+    "score_range": [50, 60],
+    "risk_band": "warning",
+    "top_risk_drivers": [
+      "Structural Risk",
+      "Output Volatility Risk",
+      "Ambiguity Risk"
+    ]
+  },
+  "notes": "Volatility phrases: write a detailed(+25)+comprehensive(+25)+thoroughly explain(+25)+in depth(+25)+as much as possible(+25)=125+256>60(+30)=155→capped=100. Ambiguity: optimize+better=2 matches/23 words=0.087→bucket=90. Structural=100. Score=55."
+}

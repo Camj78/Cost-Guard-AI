@@ -1,0 +1,328 @@
+# CostGuardAI CI Risk Gate
+#
+# Runs on every PR and enforces a hard risk threshold (default: 75).
+# When any changed prompt file exceeds the threshold:
+#   1. Runs `costguard ci --fail-on-risk 75 --json` to capture structured output.
+#   2. Posts (or updates) a PR comment explaining the elevated risk.
+#   3. Fails the job so the PR is blocked.
+#
+# Idempotency:
+#   The comment is keyed by the hidden marker <!-- costguard-ci -->.
+#   Re-runs update the existing comment rather than creating a new one.
+#
+# Permissions:
+#   Same-repo PRs: full comment support.
+#   Fork PRs:      analysis runs; the comment step gracefully skips (GitHub
+#                  security model restricts write access for fork workflows).
+
+name: CostGuardAI CI Risk Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  risk-gate:
+    name: Risk Threshold Gate (>75)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── 2. Setup pnpm ────────────────────────────────────────────────────────
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      # ── 3. Setup Node.js ─────────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── 4. Build CLI ─────────────────────────────────────────────────────────
+      - name: Build CLI
+        run: pnpm --filter ./packages/cli build
+
+      # ── 5. Detect changed prompt files ───────────────────────────────────────
+      - name: Detect changed prompt files
+        id: changed
+        run: |
+          git diff --name-only \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}" \
+            | grep -E '\.(prompt|txt|md)$' \
+            > changed_prompts.txt || true
+
+          if [ ! -s changed_prompts.txt ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No prompt files changed. Skipping risk gate."
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "Changed prompt files:"
+            cat changed_prompts.txt
+          fi
+
+      # ── 6. Run CostGuard CI gate ─────────────────────────────────────────────
+      #
+      # Runs analysis over changed prompt files with --threshold 75 (equivalent
+      # to `costguard ci --fail-on-risk 75`).  We capture the exit code manually
+      # with `set +e` so the subsequent comment step can run on failure.
+      #
+      # Exit codes from the CLI:
+      #   0  All files below threshold — gate passes
+      #   1  At least one file > threshold — gate fails, comment posted
+      #   2  Runtime error (bad args, missing files) — job skips comment
+      - name: Run CostGuard CI gate
+        id: ci_gate
+        if: steps.changed.outputs.found == 'true'
+        run: |
+          # Build a space-separated file list from changed_prompts.txt
+          FILES=$(cat changed_prompts.txt | tr '\n' ' ')
+
+          set +e
+          # Analyze each changed file individually and merge into a single JSON.
+          # The CLI accepts a single path; we pick the highest-risk result.
+          node - << 'JSEOF'
+          const fs = require("fs");
+          const { spawnSync } = require("child_process");
+
+          const files = fs
+            .readFileSync("changed_prompts.txt", "utf8")
+            .trim()
+            .split("\n")
+            .filter((f) => f && fs.existsSync(f));
+
+          const THRESHOLD = 75;
+          const allFiles = [];
+          let scoreVersion = "1";
+          let rulesetHash = "";
+
+          for (const file of files) {
+            const result = spawnSync(
+              "node",
+              [
+                "packages/cli/dist/bin.js",
+                "analyze",
+                file,
+                "--format", "json",
+                "--threshold", String(THRESHOLD),
+              ],
+              { encoding: "utf8", maxBuffer: 10 * 1024 * 1024 }
+            );
+
+            if (result.error) {
+              process.stderr.write("Spawn error for " + file + ": " + result.error.message + "\n");
+              continue;
+            }
+
+            try {
+              const parsed = JSON.parse(result.stdout || "{}");
+              if (Array.isArray(parsed.files)) {
+                scoreVersion = parsed.score_version || scoreVersion;
+                rulesetHash  = parsed.ruleset_hash  || rulesetHash;
+                allFiles.push(...parsed.files);
+              }
+            } catch (e) {
+              process.stderr.write("Parse error for " + file + ": " + e.message + "\n");
+            }
+          }
+
+          const maxRiskScore =
+            allFiles.length > 0
+              ? Math.max(...allFiles.map((f) => f.risk_score))
+              : 0;
+
+          const aboveThreshold = maxRiskScore > THRESHOLD;
+
+          const merged = {
+            score_version: scoreVersion,
+            ruleset_hash:  rulesetHash,
+            files:         allFiles,
+            summary: {
+              total_files:     allFiles.length,
+              max_risk_score:  maxRiskScore,
+              above_threshold: aboveThreshold,
+              threshold:       THRESHOLD,
+            },
+          };
+
+          fs.writeFileSync("costguard-ci.json", JSON.stringify(merged, null, 2));
+          process.stdout.write(
+            "Analysis complete: " + allFiles.length + " file(s) analyzed. " +
+            "Max risk: " + maxRiskScore + ". Above threshold: " + aboveThreshold + "\n"
+          );
+
+          process.exit(aboveThreshold ? 1 : 0);
+          JSEOF
+          EXIT_CODE=$?
+          echo "exit_code=${EXIT_CODE}" >> "$GITHUB_OUTPUT"
+          set -e
+          # Always exit 0 here — the enforcement step below fails the job
+          # only after the PR comment has been posted.
+          exit 0
+
+      # ── 7. Post elevated-risk PR comment ─────────────────────────────────────
+      #
+      # Only runs when the gate detected a threshold breach (exit_code == 1).
+      # Uses the hidden marker <!-- costguard-ci --> for idempotent upsert.
+      #
+      # Comment template (rendered Markdown):
+      #
+      #   ⚠️ CostGuard detected elevated prompt risk
+      #   Safety Score: 18 / 100 (risk score 82 exceeds threshold 75)
+      #
+      #   | Driver                  | Impact |
+      #   |-------------------------|--------|
+      #   | Instruction ambiguity   | +18    |
+      #   | Token concentration     | +12    |
+      #   | Output format drift     | +7     |
+      #
+      #   Recommendation:
+      #   - Add explicit output constraints
+      #   - Reduce prompt length
+      #   - Define max response tokens
+      #
+      #   Run locally:
+      #   costguard analyze path/to/prompt.txt
+      #
+      #   Learn more: https://costguardai.io/methodology
+      - name: Post elevated-risk PR comment
+        if: steps.changed.outputs.found == 'true' && steps.ci_gate.outputs.exit_code == '1'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // ── JSON parsing snippet ─────────────────────────────────────────
+            const fs   = require("fs");
+            const MARKER    = "<!-- costguard-ci -->";
+            const THRESHOLD = 75;
+
+            // Parse structured analysis output written by the gate step.
+            let data;
+            try {
+              data = JSON.parse(fs.readFileSync("costguard-ci.json", "utf8"));
+            } catch (err) {
+              core.warning(`Could not parse costguard-ci.json: ${err.message}`);
+              return;
+            }
+
+            // Find the highest-risk file (the one that breached the threshold).
+            const worst = (data.files ?? []).reduce(
+              (max, f) => (f.risk_score > (max?.risk_score ?? -1) ? f : max),
+              null
+            );
+
+            if (!worst) {
+              core.warning("No file results in CostGuard output — skipping comment.");
+              return;
+            }
+
+            // Derive Safety Score (inverted risk scale).
+            const riskScore   = worst.risk_score;          // e.g. 59
+            const safetyScore = 100 - riskScore;           // e.g. 41
+
+            // Top 3 risk drivers sorted by descending impact.
+            const topDrivers = (worst.risk_drivers ?? [])
+              .sort((a, b) => b.impact - a.impact)
+              .slice(0, 3);
+
+            // ── Build driver table rows ──────────────────────────────────────
+            const driverRows = topDrivers.length > 0
+              ? topDrivers.map(d => `| ${d.name} | +${d.impact} |`).join("\n")
+              : "| No risk drivers identified | — |";
+
+            const filePath    = worst.file;
+            const scoreVersion = data.score_version ?? "1";
+
+            // ── Assemble PR comment (template) ───────────────────────────────
+            const body = [
+              MARKER,
+              `## ⚠️ CostGuard detected elevated prompt risk`,
+              ``,
+              `**Safety Score: ${safetyScore} / 100** (risk score ${riskScore} exceeds threshold ${THRESHOLD})`,
+              ``,
+              `**Top Risk Drivers:**`,
+              ``,
+              `| Driver | Impact |`,
+              `|--------|--------|`,
+              driverRows,
+              ``,
+              `**Recommendation:**`,
+              `- Add explicit output constraints`,
+              `- Reduce prompt length`,
+              `- Define max response tokens`,
+              ``,
+              `**Run locally:**`,
+              `\`\`\``,
+              `costguard analyze ${filePath}`,
+              `\`\`\``,
+              ``,
+              `[Learn more about the scoring methodology](https://costguardai.io/methodology)`,
+              ``,
+              `---`,
+              `_Analyzed by [CostGuardAI](https://costguardai.io) · score v${scoreVersion} · threshold ${THRESHOLD}_`,
+            ].join("\n");
+
+            // ── Idempotent upsert via hidden marker ──────────────────────────
+            const prNumber = context.payload.pull_request.number;
+
+            try {
+              const { data: comments } = await github.rest.issues.listComments({
+                owner:        context.repo.owner,
+                repo:         context.repo.repo,
+                issue_number: prNumber,
+                per_page:     100,
+              });
+
+              const existing = comments.find(c => c.body && c.body.includes(MARKER));
+
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner:      context.repo.owner,
+                  repo:       context.repo.repo,
+                  comment_id: existing.id,
+                  body,
+                });
+                console.log(`Updated CostGuardAI elevated-risk comment on PR #${prNumber}.`);
+              } else {
+                await github.rest.issues.createComment({
+                  owner:        context.repo.owner,
+                  repo:         context.repo.repo,
+                  issue_number: prNumber,
+                  body,
+                });
+                console.log(`Posted CostGuardAI elevated-risk comment on PR #${prNumber}.`);
+              }
+            } catch (err) {
+              // Fork PRs from external contributors have read-only GITHUB_TOKEN.
+              // Log a warning so the gate step still fails (as intended).
+              core.warning(`Could not post PR comment: ${err.message}`);
+            }
+
+      # ── 8. Enforce risk gate (fail the job) ──────────────────────────────────
+      #
+      # Separated from the analysis step so the comment is always posted before
+      # the job fails.  The PR is blocked only after the developer has context.
+      - name: Enforce risk gate
+        if: steps.changed.outputs.found == 'true' && steps.ci_gate.outputs.exit_code == '1'
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║  CostGuardAI: risk threshold exceeded                        ║"
+          echo "║  One or more prompt files scored > 75 (safety score < 25).   ║"
+          echo "║  Review the PR comment for top risk drivers and fixes.       ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+          exit 1

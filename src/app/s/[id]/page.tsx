@@ -121,7 +121,7 @@ export default async function SharedAnalysisPage({
             </span>
           </div>
 
-          {/* Risk Score */}
+          {/* CostGuardAI Safety Score */}
           <Card className="glass-card shadow-none relative">
             <div className="absolute top-0 left-6 right-6 h-px bg-primary/30" />
             <CardContent className="pt-5 pb-4">

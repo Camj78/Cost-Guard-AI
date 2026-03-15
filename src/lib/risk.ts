@@ -1,5 +1,5 @@
 /**
- * CostGuardAI — Failure Risk Score engine
+ * CostGuardAI — CostGuardAI Safety Score engine
  * Re-exports from @costguard/core (packages/core/src/risk.ts).
  * All existing imports continue to work.
  */

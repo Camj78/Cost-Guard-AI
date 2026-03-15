@@ -4,6 +4,7 @@ import { countTokens } from "@/lib/tokenizer";
 import { assessRisk } from "@/lib/risk";
 import { createShareReport } from "@/lib/reports/create-share-report";
 import { recordAiUsageEvent } from "@/lib/telemetry/ai-usage-event";
+import { logRequestError } from "@/lib/telemetry/log-request-error";
 import { ANALYSIS_VERSION, RULESET_HASH, hashInput } from "@/lib/trust";
 import { estimateCostImpact } from "@/lib/cost-estimator";
 import {
@@ -22,6 +23,15 @@ function formatCostValue(amount: number): number {
 export async function POST(req: Request) {
   const _start = Date.now();
   const analysisId = crypto.randomUUID();
+
+  // Detect CLI origin — set by costguard CLI via x-costguard-cli header or UA
+  const ua = req.headers.get("user-agent") ?? "";
+  const isCli =
+    req.headers.get("x-costguard-cli") === "true" ||
+    ua.startsWith("costguard-cli/");
+  const source = isCli ? "cli" : undefined;
+
+  try {
   // 1. Verify API key
   const apiKey = req.headers.get("x-api-key") ?? "";
   const keyRecord = await verifyApiKey(apiKey);
@@ -128,6 +138,7 @@ export async function POST(req: Request) {
     latencyMs: Date.now() - _start,
     orgId: keyRecord.id,
     promptText: prompt,
+    source,
   });
 
   // 7. Build and return response
@@ -157,4 +168,9 @@ export async function POST(req: Request) {
     share_url: shareResult?.absoluteUrl ?? null,
     explanation: assessment.explanation,
   });
+  } catch (err) {
+    void logRequestError("/api/v1/analyze", 500, source);
+    console.error("[/api/v1/analyze] unhandled error", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

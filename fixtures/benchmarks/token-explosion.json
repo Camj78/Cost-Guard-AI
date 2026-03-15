@@ -1,0 +1,11 @@
+{
+  "id": "token-explosion",
+  "description": "Open-ended output directives that trigger token explosion risk",
+  "risk_type": "token_explosion",
+  "prompt": "Write a detailed guide. As much as possible, cover every subtopic thoroughly. In depth coverage of all related areas. Comprehensively explain each concept. Thoroughly explain all aspects of the subject matter from every angle.",
+  "model": "gpt-4o",
+  "expected_output_tokens": 2000,
+  "expected_risk_score_range": [28, 50],
+  "expected_safety_score_range": [50, 72],
+  "notes": "Multiple volatility phrases (write a detailed, as much as possible, thoroughly explain, in depth) accumulate output volatility risk. Calibrated: engine produces risk_score=38."
+}

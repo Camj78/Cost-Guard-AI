@@ -1,5 +1,5 @@
 /**
- * CostGuardAI — Failure Risk Score engine.
+ * CostGuardAI — CostGuardAI Safety Score engine.
  * Canonical source of truth used by BOTH the web app and CLI.
  * 5 components: Length, Context Saturation, Ambiguity, Structural, Output Volatility.
  * Final score: weighted sum, 0–100. riskDrivers: top 3 by unweighted bucket score.

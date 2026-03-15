@@ -1,0 +1,23 @@
+name: CostGuard Prompt Safety
+
+on:
+  pull_request:
+    paths:
+      - "**/*.prompt"
+      - "**/prompts/**"
+      - "**/agents/**"
+
+jobs:
+  costguard:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: costguardai/prompt-scan@v1
+        with:
+          api_key: ${{ secrets.COSTGUARD_API_KEY }}
+          # Agent prompts are high-risk by nature — enforce a strict threshold
+          risk_threshold: 60

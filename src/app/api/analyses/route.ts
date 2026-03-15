@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { createSupabaseServerClient } from "@/lib/supabase-ssr";
 import { recordAnalysisRun } from "@/lib/telemetry/analysis-run";
 import { recordAiUsageEvent } from "@/lib/telemetry/ai-usage-event";
+import { logRequestError } from "@/lib/telemetry/log-request-error";
 
 export const dynamic = "force-dynamic";
 
@@ -27,11 +28,13 @@ export async function GET() {
       .limit(50);
 
     if (error) {
+      void logRequestError("/api/analyses", 500);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ analyses: data ?? [] });
   } catch {
+    void logRequestError("/api/analyses", 500);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -208,6 +211,7 @@ export async function POST(req: Request) {
                   score_version,
                   ruleset_hash,
                   input_hash,
+                  source: "web",
                 })
                 .select("id")
                 .single();

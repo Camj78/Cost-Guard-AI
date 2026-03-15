@@ -1,0 +1,15 @@
+{
+  "file": "system.prompt",
+  "model": "gpt-4o-mini",
+  "token_count": 94,
+  "context_usage_pct": 0.1,
+  "estimated_cost_per_1k_calls": "$0.0141",
+  "truncation_risk": "SAFE",
+  "safety_score": 82,
+  "risk_band": "Safe",
+  "top_drivers": [
+    { "factor": "Output length ambiguity", "points": 8 },
+    { "factor": "Instruction density", "points": 6 }
+  ],
+  "analysis_version": "1.0.0"
+}

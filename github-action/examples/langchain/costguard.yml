@@ -1,0 +1,23 @@
+name: CostGuard Prompt Safety
+
+on:
+  pull_request:
+    paths:
+      - "**/*.prompt"
+      - "**/prompts/**"
+      - "**/*.py"
+
+jobs:
+  costguard:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: costguardai/prompt-scan@v1
+        with:
+          api_key: ${{ secrets.COSTGUARD_API_KEY }}
+          path: prompts/
+          risk_threshold: 70
