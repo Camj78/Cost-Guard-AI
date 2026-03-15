@@ -1,8 +1,108 @@
 # CostGuardAI
 
+Prevent unsafe AI prompts from reaching production.
+
+[![GitHub stars](https://img.shields.io/github/stars/Camj78/Cost-Guard-AI?style=social)](https://github.com/Camj78/Cost-Guard-AI) [![npm version](https://img.shields.io/npm/v/@camj78/costguardai)](https://www.npmjs.com/package/@camj78/costguardai) [![License](https://img.shields.io/github/license/Camj78/Cost-Guard-AI)](LICENSE)
+
+```bash
+npm install -g @camj78/costguardai
+```
+
+CostGuardAI analyzes AI prompts and prevents unsafe prompts from reaching production.
+
+If you find this useful, consider ⭐ starring the repo — it helps other developers discover it.
+
+---
+
+## Quick Start
+
+Run CostGuardAI locally in under 30 seconds:
+
+```bash
+# Install the CostGuardAI CLI
+npm install -g @camj78/costguardai
+
+# Analyze a prompt
+costguardai analyze my-prompt.txt
+
+# Block unsafe prompts in CI
+costguardai ci --fail-on-risk 70
+
+# Initialize CostGuardAI in your repo
+costguardai init
+```
+
+CostGuardAI CI will fail if a prompt's CostGuardAI Safety Score falls below your configured threshold.
+
+### Example Output
+
+```
+costguardai analyze login.prompt
+
+CostGuardAI Safety Score: 72/100
+Detected issues:
+• prompt injection risk
+• token explosion risk
+• unstable output structure
+```
+
+[![CostGuardAI Safety](https://costguardai.io/badge.svg)](https://costguardai.io)
+
 **Know before you send.**
 
-Single-screen AI prompt preflight tool. Paste a prompt, select a model, and instantly see: token count, cost estimate, context usage, truncation risk, and a Failure Risk Score (0–100) — all running locally in your browser.
+Single-screen AI prompt preflight tool. Paste a prompt, select a model, and instantly see: token count, cost estimate, context usage, truncation risk, and a CostGuardAI Safety Score (0–100) — all running locally in your browser.
+
+---
+
+## Add CostGuardAI to your repo in 60 seconds
+
+**Step 1 — Install CLI**
+
+```bash
+npm install -g @camj78/costguardai
+```
+
+**Step 2 — Initialize**
+
+```bash
+costguardai init
+```
+
+**Step 3 — Add CI gate**
+
+```bash
+costguardai ci --fail-on-risk 75
+```
+
+**Step 4 — Commit**
+
+```bash
+git add .
+git commit -m "Add CostGuardAI preflight checks"
+```
+
+Copy the workflow template into your repo:
+
+```yaml
+# .github/workflows/costguardai.yml
+name: CostGuardAI Prompt Safety
+
+on:
+  pull_request:
+    paths:
+      - "**/*.prompt"
+      - "**/prompts/**"
+
+jobs:
+  costguardai:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install -g @camj78/costguardai
+      - run: costguardai ci --fail-on-risk 75
+```
+
+> If this project uses prompts, add the CostGuardAI preflight badge: `[![CostGuardAI Safety](https://costguardai.io/badge.svg)](https://costguardai.io)`
 
 ---
 
@@ -14,7 +114,7 @@ Single-screen AI prompt preflight tool. Paste a prompt, select a model, and inst
 | Cost estimate | Input + output cost per call, based on configurable pricing table |
 | Context usage | Visual progress bar, color-coded by risk level |
 | Truncation warning | Separate signal: Safe / Warning / Danger |
-| **Failure Risk Score (heuristic)** | 0–100 score from 5 weighted factors (context pressure, output collision, output cap, verbosity, estimation uncertainty) |
+| **CostGuardAI Safety Score (heuristic)** | 0–100 score from 5 weighted factors (context pressure, output collision, output cap, verbosity, estimation uncertainty) |
 | Prompt compression | 1-click rule-based compression — no API calls, instant |
 | Model assumptions | Read-only modal showing every model's config values |
 
@@ -93,7 +193,7 @@ Set `NEXT_PUBLIC_APP_URL` to your production URL for correct OpenGraph metadata.
 src/
   lib/
     ai/models.ts            ← Model catalog + pricing (edit here to update pricing)
-    risk.ts                 ← Failure Risk Score engine
+    risk.ts                 ← CostGuardAI Safety Score engine
     tokenizer.ts            ← Token counting (js-tiktoken wrapper)
     compressor.ts           ← Rule-based prompt compression
     formatters.ts           ← Number/currency formatting
@@ -113,7 +213,7 @@ src/
     api/v1/analyze/         ← Public REST API
     upgrade/                ← Pricing + Stripe checkout
 cli/
-  index.js                  ← costguard CLI (analyze, ci, replay)
+  index.js                  ← costguardai CLI (legacy entry; see packages/cli/ for source)
 .github/
   workflows/costguard.yml   ← GitHub Action (PR analysis + comments)
 ```
@@ -125,33 +225,27 @@ cli/
 Run preflight analysis directly from your terminal — no browser required.
 
 ```bash
-npx costguard analyze prompt.txt --api-key $COSTGUARD_API_KEY
+npm install -g @camj78/costguardai
+costguardai analyze my-prompt.txt
+```
+
+**CI gate**
+
+```bash
+costguardai ci --fail-on-risk 70
 ```
 
 **Options**
 
 | Flag | Description | Default |
 |---|---|---|
-| `--api-key` | Your CostGuardAI API key (or set `COSTGUARD_API_KEY`) | — |
-| `--host` | API base URL | `https://costguardai.io` |
-| `--model` | Model ID to analyze against | `gpt-4o-mini` |
-| `--requests` | Requests/month for monthly cost estimate | `1000` |
+| `--model <id>` | Model to analyze against | `gpt-4o-mini` |
+| `--format text\|md\|json` | Output format | `text` |
+| `--threshold <n>` | Exit 1 if any file risk_score >= n | — |
+| `--ext <exts>` | Comma-separated file extensions | `.txt,.md,.prompt` |
+| `--expected-output <n>` | Expected output tokens | `512` |
 
-**Example output**
-
-```
-CostGuardAI Report
-
-Risk:                HIGH
-Estimated Cost:      $24.80
-Truncation Risk:     37%
-
-Recommended Model:   gpt-4o-mini
-
-Share: https://costguardai.io/s/<uuid>
-```
-
-**Generate an API key** in your dashboard under Settings → API Keys.
+See `costguardai --help` for all commands and options.
 
 ---
 
@@ -161,7 +255,7 @@ Share: https://costguardai.io/s/<uuid>
 |---|---|---|---|
 | **Price** | $0 | $29 / month | $99 / month _(on request)_ |
 | CLI analysis | ✓ | ✓ | ✓ |
-| RiskScore + explainability | ✓ | ✓ | ✓ |
+| Safety Score + explainability | ✓ | ✓ | ✓ |
 | Shareable reports | ✓ | ✓ | ✓ |
 | Analyses per month | 25 | Unlimited | Unlimited |
 | Basic CI usage | ✓ | ✓ | ✓ |
