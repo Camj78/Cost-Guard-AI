@@ -239,7 +239,7 @@ function fmtCostDisplay(n: number): string {
 
 function formatText(output: AnalysisOutput): string {
   const SEP = "─".repeat(56);
-  const lines: string[] = ["CostGuard Preflight Analysis", SEP];
+  const lines: string[] = ["CostGuardAI Preflight Analysis", SEP];
 
   for (const f of output.files) {
     lines.push(`  File:           ${f.file}`);
@@ -275,7 +275,7 @@ function formatText(output: AnalysisOutput): string {
 }
 
 function formatMd(output: AnalysisOutput): string {
-  const lines: string[] = ["# CostGuard Preflight Analysis", ""];
+  const lines: string[] = ["# CostGuardAI Preflight Analysis", ""];
 
   for (const f of output.files) {
     lines.push(`## \`${f.file}\``, "");
