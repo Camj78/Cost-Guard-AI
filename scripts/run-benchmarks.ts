@@ -83,10 +83,10 @@ interface BenchmarkSummary {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function scoreBand(safetyScore: number): string {
-  if (safetyScore >= 91) return "Hardened";
-  if (safetyScore >= 71) return "Safe";
-  if (safetyScore >= 41) return "Needs Hardening";
-  return "Unsafe";
+  if (safetyScore >= 85) return "Safe";
+  if (safetyScore >= 70) return "Low";
+  if (safetyScore >= 40) return "Warning";
+  return "High";
 }
 
 function persistSummary(results: BenchmarkResult[]): void {
@@ -94,10 +94,10 @@ function persistSummary(results: BenchmarkResult[]): void {
     fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
     const passed = results.filter((r) => r.passed).length;
     const bandDist: Record<string, number> = {
-      Hardened: 0,
       Safe: 0,
-      "Needs Hardening": 0,
-      Unsafe: 0,
+      Low: 0,
+      Warning: 0,
+      High: 0,
     };
     for (const r of results) {
       if (r.safetyScore >= 0) {

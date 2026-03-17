@@ -53,10 +53,10 @@ function loadSummaries(): BenchmarkSummary[] {
 }
 
 const BAND_COLORS: Record<string, string> = {
-  Hardened:        "text-emerald-400",
-  Safe:            "text-blue-400",
-  "Needs Hardening": "text-amber-400",
-  Unsafe:          "text-red-400",
+  Safe:    "text-emerald-400",
+  Low:     "text-blue-400",
+  Warning: "text-amber-400",
+  High:    "text-red-400",
 };
 
 export default function CalibrationHistoryPage() {

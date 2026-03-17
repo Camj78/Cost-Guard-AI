@@ -95,11 +95,12 @@ async function main(): Promise<void> {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+/** Maps CostGuardAI Safety Score (0–100, higher = safer) to the canonical band. */
 function toSafetyBand(safetyScore: number): string {
-  if (safetyScore >= 80) return "Safe";
-  if (safetyScore >= 60) return "Needs Review";
-  if (safetyScore >= 40) return "Risky";
-  return "Unsafe";
+  if (safetyScore >= 85) return "Safe";
+  if (safetyScore >= 70) return "Low";
+  if (safetyScore >= 40) return "Warning";
+  return "High";
 }
 
 // ── Comment builder ───────────────────────────────────────────────────────────

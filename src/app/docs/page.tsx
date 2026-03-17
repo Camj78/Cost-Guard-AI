@@ -34,7 +34,7 @@ export default function DocsPage() {
 {`# Analyze a prompt file
 costguardai analyze my-prompt.txt
 
-# CI gate — fail if risk score >= 70
+# CI gate — block if Safety Score <= 30 (risk_score >= 70)
 costguardai ci --fail-on-risk 70
 
 # Initialize config in your repo

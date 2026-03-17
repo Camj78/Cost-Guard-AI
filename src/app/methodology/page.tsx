@@ -79,10 +79,10 @@ const COMPONENTS = [
 ];
 
 const BANDS = [
-  { range: "91–100", label: "Hardened", color: "text-emerald-400", description: "Structurally isolated, explicit, and resistant to exploitation." },
-  { range: "71–90",  label: "Safe",     color: "text-blue-400",    description: "Meets baseline safety requirements for production deployment." },
-  { range: "41–70",  label: "Needs Hardening", color: "text-amber-400", description: "Structural weaknesses that should be addressed before deployment." },
-  { range: "0–40",   label: "Unsafe",   color: "text-red-400",     description: "High exploitation risk. Do not deploy without remediation." },
+  { range: "85–100", label: "Safe",    color: "text-emerald-400", description: "Prompt is structurally sound and resistant to exploitation." },
+  { range: "70–84",  label: "Low",     color: "text-blue-400",    description: "Meets baseline requirements with minor structural gaps." },
+  { range: "40–69",  label: "Warning", color: "text-amber-400",   description: "Structural weaknesses that should be addressed before deployment." },
+  { range: "0–39",   label: "High",    color: "text-red-400",     description: "High exploitation risk. Do not deploy without remediation." },
 ];
 
 const CVE_ADJUSTMENTS = [

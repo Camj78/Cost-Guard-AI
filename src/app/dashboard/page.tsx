@@ -71,20 +71,22 @@ function getModelName(modelId: string): string {
   return MODELS.find((m) => m.id === modelId)?.name ?? modelId;
 }
 
+/** Badge styling based on CostGuardAI Safety Score band (input is risk_score 0–100). */
 function riskBadgeClass(score: number): string {
-  if (score <= 24) return "text-emerald-400 bg-emerald-500/10";
-  if (score <= 49) return "text-blue-400 bg-blue-500/10";
-  if (score <= 69) return "text-amber-400 bg-amber-500/10";
-  if (score <= 84) return "text-orange-400 bg-orange-500/10";
+  const s = 100 - score; // convert to safety score
+  if (s >= 85) return "text-emerald-400 bg-emerald-500/10";
+  if (s >= 70) return "text-blue-400 bg-blue-500/10";
+  if (s >= 40) return "text-amber-400 bg-amber-500/10";
   return "text-red-400 bg-red-500/10";
 }
 
+/** Safety band label based on CostGuardAI Safety Score (input is risk_score 0–100). */
 function riskLabel(score: number): string {
-  if (score <= 24) return "Safe";
-  if (score <= 49) return "Low";
-  if (score <= 69) return "Warning";
-  if (score <= 84) return "High";
-  return "Critical";
+  const s = 100 - score; // convert to safety score
+  if (s >= 85) return "Safe";
+  if (s >= 70) return "Low";
+  if (s >= 40) return "Warning";
+  return "High";
 }
 
 // ─── Dashboard helpers ─────────────────────────────────────────────────────────
@@ -873,7 +875,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex items-center gap-4 shrink-0">
                           <span className={`font-mono tabular-nums text-xs rounded-full px-2 py-0.5 font-medium ${riskBadgeClass(scan.risk_score)}`}>
-                            {scan.risk_score}
+                            {100 - scan.risk_score}
                           </span>
                           <span className="text-xs text-muted-foreground tabular-nums">
                             {timeAgo(scan.created_at)}
@@ -1231,7 +1233,7 @@ export default function DashboardPage() {
                                   a.risk_score
                                 )}`}
                               >
-                                {a.risk_score} {riskLabel(a.risk_score)}
+                                {100 - a.risk_score} {riskLabel(a.risk_score)}
                               </span>
                             </td>
                           </tr>

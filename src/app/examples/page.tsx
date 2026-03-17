@@ -53,7 +53,7 @@ const EXAMPLES: DisasterExample[] = [
     badPrompt:
       "You are an autonomous research agent.\nContinue searching and summarizing information until the task is fully complete.\nUse as many tool calls as necessary.\nDo not stop until you are confident the answer is complete.",
     badScore: 12,
-    badBand: "Unsafe",
+    badBand: "High",
     badCost: "$48,000 / month",
     badDrivers: [
       "Recursive agent loop — no termination condition",
@@ -67,7 +67,7 @@ const EXAMPLES: DisasterExample[] = [
     goodCost: "$1,920 / month",
     savings: "$46,080 / month",
     cliOutput:
-      "$ npx costguardai analyze agent-loop.prompt\n\nCostGuardAI Safety Score: 12 / 100 (Unsafe)\n\nTop Drivers\n  · Recursive loop risk\n  · Tool call amplification\n  · Token explosion\n\nEstimated Monthly Cost\n  $48,000\n\nSuggested Fix\n  Limit agent iterations to 3\n  Add deterministic task boundaries\n  Set hard token ceiling per loop",
+      "$ npx costguardai analyze agent-loop.prompt\n\nCostGuardAI Safety Score: 12 / 100 (High)\n\nTop Drivers\n  · Recursive loop risk\n  · Tool call amplification\n  · Token explosion\n\nEstimated Monthly Cost\n  $48,000\n\nSuggested Fix\n  Limit agent iterations to 3\n  Add deterministic task boundaries\n  Set hard token ceiling per loop",
   },
   {
     id: "prompt-injection",
@@ -77,7 +77,7 @@ const EXAMPLES: DisasterExample[] = [
     badPrompt:
       "You are a helpful assistant. The user said:\n{user_input}\n\nPlease respond helpfully to whatever they asked.",
     badScore: 18,
-    badBand: "Unsafe",
+    badBand: "High",
     badCost: "$12,400 / month",
     badDrivers: [
       "Unvalidated user input injected into system context",
@@ -91,7 +91,7 @@ const EXAMPLES: DisasterExample[] = [
     goodCost: "$2,100 / month",
     savings: "$10,300 / month",
     cliOutput:
-      "$ npx costguardai analyze prompt-injection.prompt\n\nCostGuardAI Safety Score: 18 / 100 (Unsafe)\n\nTop Drivers\n  · Injection vector — unvalidated input in system context\n  · Missing role boundary enforcement\n  · Instruction override susceptibility\n\nEstimated Monthly Cost\n  $12,400\n\nSuggested Fix\n  Isolate user content with structural delimiters\n  Anchor system instructions before user content\n  Validate and sanitize input before embedding",
+      "$ npx costguardai analyze prompt-injection.prompt\n\nCostGuardAI Safety Score: 18 / 100 (High)\n\nTop Drivers\n  · Injection vector — unvalidated input in system context\n  · Missing role boundary enforcement\n  · Instruction override susceptibility\n\nEstimated Monthly Cost\n  $12,400\n\nSuggested Fix\n  Isolate user content with structural delimiters\n  Anchor system instructions before user content\n  Validate and sanitize input before embedding",
   },
   {
     id: "massive-context",
@@ -101,7 +101,7 @@ const EXAMPLES: DisasterExample[] = [
     badPrompt:
       "Here is our entire codebase:\n\n{full_repository_contents}\n\nAnalyze it for security vulnerabilities and provide a complete report.",
     badScore: 24,
-    badBand: "Unsafe",
+    badBand: "High",
     badCost: "$31,200 / month",
     badDrivers: [
       "Context saturation — unbounded document injection",
@@ -115,7 +115,7 @@ const EXAMPLES: DisasterExample[] = [
     goodCost: "$4,800 / month",
     savings: "$26,400 / month",
     cliOutput:
-      "$ npx costguardai analyze massive-context.prompt\n\nCostGuardAI Safety Score: 24 / 100 (Unsafe)\n\nTop Drivers\n  · Context saturation risk\n  · Unbounded document injection\n  · Truncation before task completion\n\nEstimated Monthly Cost\n  $31,200\n\nSuggested Fix\n  Chunk input to 2,000 token segments\n  Analyze files individually\n  Use structured output per chunk",
+      "$ npx costguardai analyze massive-context.prompt\n\nCostGuardAI Safety Score: 24 / 100 (High)\n\nTop Drivers\n  · Context saturation risk\n  · Unbounded document injection\n  · Truncation before task completion\n\nEstimated Monthly Cost\n  $31,200\n\nSuggested Fix\n  Chunk input to 2,000 token segments\n  Analyze files individually\n  Use structured output per chunk",
   },
   {
     id: "recursive-summary",
@@ -125,7 +125,7 @@ const EXAMPLES: DisasterExample[] = [
     badPrompt:
       "Summarize the following document. If the summary is longer than 500 words, summarize the summary again. Repeat until the result is under 100 words.\n\n{long_document}",
     badScore: 21,
-    badBand: "Unsafe",
+    badBand: "High",
     badCost: "$22,800 / month",
     badDrivers: [
       "Recursive summarization loop — unbounded iterations",
@@ -139,7 +139,7 @@ const EXAMPLES: DisasterExample[] = [
     goodCost: "$3,600 / month",
     savings: "$19,200 / month",
     cliOutput:
-      "$ npx costguardai analyze recursive-summary.prompt\n\nCostGuardAI Safety Score: 21 / 100 (Unsafe)\n\nTop Drivers\n  · Recursive summarization loop\n  · Unbounded pass count\n  · Context accumulation risk\n\nEstimated Monthly Cost\n  $22,800\n\nSuggested Fix\n  Set hard limit of 2 summarization passes\n  Use structured bullet reduction\n  Define target length before first pass",
+      "$ npx costguardai analyze recursive-summary.prompt\n\nCostGuardAI Safety Score: 21 / 100 (High)\n\nTop Drivers\n  · Recursive summarization loop\n  · Unbounded pass count\n  · Context accumulation risk\n\nEstimated Monthly Cost\n  $22,800\n\nSuggested Fix\n  Set hard limit of 2 summarization passes\n  Use structured bullet reduction\n  Define target length before first pass",
   },
   {
     id: "unbounded-functions",
@@ -149,7 +149,7 @@ const EXAMPLES: DisasterExample[] = [
     badPrompt:
       "You have access to the following tools: search, read_file, write_file, execute_code, send_email, create_task.\n\nComplete the user's request using whatever tools are necessary.\nUser request: {user_request}",
     badScore: 16,
-    badBand: "Unsafe",
+    badBand: "High",
     badCost: "$38,400 / month",
     badDrivers: [
       "No tool call limit — unbounded function invocations",
@@ -163,15 +163,15 @@ const EXAMPLES: DisasterExample[] = [
     goodCost: "$2,880 / month",
     savings: "$35,520 / month",
     cliOutput:
-      "$ npx costguardai analyze unbounded-functions.prompt\n\nCostGuardAI Safety Score: 16 / 100 (Unsafe)\n\nTop Drivers\n  · Unbounded tool call count\n  · High-cost action exposure\n  · Tool output amplification\n\nEstimated Monthly Cost\n  $38,400\n\nSuggested Fix\n  Limit tool calls to 5 per request\n  Restrict to read-only tools by default\n  Require confirmation for write/send actions",
+      "$ npx costguardai analyze unbounded-functions.prompt\n\nCostGuardAI Safety Score: 16 / 100 (High)\n\nTop Drivers\n  · Unbounded tool call count\n  · High-cost action exposure\n  · Tool output amplification\n\nEstimated Monthly Cost\n  $38,400\n\nSuggested Fix\n  Limit tool calls to 5 per request\n  Restrict to read-only tools by default\n  Require confirmation for write/send actions",
   },
 ];
 
 const BAND_COLOR: Record<string, string> = {
-  Hardened: "text-emerald-400",
-  Safe: "text-blue-400",
-  "Needs Hardening": "text-amber-400",
-  Unsafe: "text-red-400",
+  Safe:    "text-emerald-400",
+  Low:     "text-blue-400",
+  Warning: "text-amber-400",
+  High:    "text-red-400",
 };
 
 export default function DisasterGalleryPage() {

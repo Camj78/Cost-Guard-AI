@@ -38,12 +38,12 @@ function getRiskColor(level: string): [number, number, number] {
   }
 }
 
-/** Maps CostGuard Safety Score (0–100, higher = safer) to a band label. */
+/** Maps CostGuardAI Safety Score (0–100, higher = safer) to the canonical band label. */
 function getSafetyBand(safetyScore: number): string {
-  if (safetyScore >= 91) return "Hardened";
-  if (safetyScore >= 71) return "Safe";
-  if (safetyScore >= 41) return "Needs Hardening";
-  return "Unsafe";
+  if (safetyScore >= 85) return "Safe";
+  if (safetyScore >= 70) return "Low";
+  if (safetyScore >= 40) return "Warning";
+  return "High";
 }
 
 async function getLogoDataUrl(): Promise<string | null> {

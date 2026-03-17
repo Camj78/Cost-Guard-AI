@@ -50,7 +50,7 @@ async function collectConfig(): Promise<typeof DEFAULT_CONFIG> {
   const expectedOutputTokens =
     parseInt(budgetInput, 10) > 0 ? parseInt(budgetInput, 10) : 512;
 
-  const thresholdInput = (await ask(rl, "\nFail threshold (risk score 0–100) [70]: ")).trim();
+  const thresholdInput = (await ask(rl, "\nFail threshold — risk score 0–100 (e.g. 70 = Safety Score ≤ 30) [70]: ")).trim();
   const threshold =
     parseInt(thresholdInput, 10) > 0 ? parseInt(thresholdInput, 10) : 70;
 

@@ -254,6 +254,7 @@ async function main() {
   if (files.length === 0) {
     console.log('No prompt files found. Scan complete.');
     setOutput('highest_risk_score', '0');
+    setOutput('lowest_safety_score', '100');
     setOutput('scanned_files', '0');
     setOutput('blocked', 'false');
     process.exit(0);
@@ -272,6 +273,7 @@ async function main() {
   if (tasks.length === 0) {
     console.log('No extractable prompts found. Scan complete.');
     setOutput('highest_risk_score', '0');
+    setOutput('lowest_safety_score', '100');
     setOutput('scanned_files', String(files.length));
     setOutput('blocked', 'false');
     process.exit(0);
@@ -291,7 +293,8 @@ async function main() {
   const results = await runWithConcurrency(apiTasks, CONCURRENCY);
 
   // 4. Aggregate
-  let highestScore = 0;
+  let highestRiskScore = 0;    // for blocking (risk-oriented threshold)
+  let lowestSafetyScore = 100; // for display (safety-oriented; lower = worse)
   let blockedCount = 0;
   const reportLines = [];
 
@@ -304,26 +307,29 @@ async function main() {
       continue;
     }
 
-    const score    = typeof data.risk_score === 'number' ? data.risk_score : 0;
-    const risk     = typeof data.risk === 'string' ? data.risk : 'UNKNOWN';
-    const cost1k   = fmtCost(data.estimated_cost_per_1k_calls);
-    const drivers  = Array.isArray(data.explanation?.top_risk_drivers)
+    const riskScore   = typeof data.risk_score === 'number' ? data.risk_score : 0;
+    // Use safety_score from API (available since API v1.2); fall back to derived value.
+    const safetyScore = typeof data.safety_score === 'number' ? data.safety_score : (100 - riskScore);
+    const risk        = typeof data.risk === 'string' ? data.risk : 'UNKNOWN';
+    const cost1k      = fmtCost(data.estimated_cost_per_1k_calls);
+    const drivers     = Array.isArray(data.explanation?.top_risk_drivers)
       ? data.explanation.top_risk_drivers.slice(0, 3)
       : [];
-    const shareUrl = typeof data.share_url === 'string' ? data.share_url : null;
+    const shareUrl    = typeof data.share_url === 'string' ? data.share_url : null;
 
-    if (score > highestScore) highestScore = score;
-    if (score >= THRESHOLD)   blockedCount++;
+    if (riskScore > highestRiskScore) highestRiskScore = riskScore;
+    if (safetyScore < lowestSafetyScore) lowestSafetyScore = safetyScore;
+    if (riskScore >= THRESHOLD) blockedCount++;
 
-    const badge = score >= THRESHOLD ? '🚫' : '✅';
+    const badge = riskScore >= THRESHOLD ? '🚫' : '✅';
     reportLines.push(`${badge} **${rel}**`);
-    reportLines.push(`  - CostGuardAI Safety Score: \`${score}\` (${risk})  |  Cost / 1k calls: ${cost1k}`);
+    reportLines.push(`  - CostGuardAI Safety Score: \`${safetyScore}\` (${risk})  |  Cost / 1k calls: ${cost1k}`);
     if (drivers.length > 0) {
       reportLines.push(`  - Top Risks: ${drivers.map(d => `\`${d}\``).join(', ')}`);
     }
     if (shareUrl) reportLines.push(`  - [Full report](${shareUrl})`);
 
-    console.log(`  ${rel}: score=${score} (${risk}) cost/1k=${cost1k}`);
+    console.log(`  ${rel}: safety_score=${safetyScore} risk_score=${riskScore} (${risk}) cost/1k=${cost1k}`);
   }
 
   // If every prompt failed due to API errors (e.g. bad key, network down), treat
@@ -340,49 +346,50 @@ async function main() {
 
   // 5. Console summary
   console.log('');
-  console.log(`Highest CostGuardAI Safety Score: ${highestScore}`);
-  console.log(`Files Scanned:      ${files.length}`);
-  console.log(`Threshold:          ${THRESHOLD}`);
+  console.log(`Lowest Safety Score: ${lowestSafetyScore}`);
+  console.log(`Files Scanned:       ${files.length}`);
+  console.log(`Risk Threshold:      ${THRESHOLD}`);
   if (blocked) {
-    console.log(`Status:             BLOCKED — ${blockedCount} prompt(s) exceeded threshold`);
+    console.log(`Status:              BLOCKED — ${blockedCount} prompt(s) exceeded risk threshold`);
   } else {
-    console.log(`Status:             PASSED`);
+    console.log(`Status:              PASSED`);
   }
   console.log('─────────────────────────────────────────');
 
   // 6. PR comment
   const statusIcon  = blocked ? '🚫' : '✅';
   const statusLabel = blocked
-    ? `Deployment blocked — ${blockedCount} prompt(s) exceeded risk threshold (${THRESHOLD})`
-    : `All prompts passed (highest score: ${highestScore} / threshold: ${THRESHOLD})`;
+    ? `Deployment blocked — ${blockedCount} prompt(s) below Safety Score threshold`
+    : `All prompts passed (lowest Safety Score: ${lowestSafetyScore})`;
 
   const commentBody = [
-    `## ${statusIcon} CostGuard Scan Results`,
+    `## ${statusIcon} CostGuardAI Safety Scan Results`,
     '',
     `**Status:** ${statusLabel}`,
-    `**Highest CostGuardAI Safety Score:** \`${highestScore}\``,
+    `**Lowest Safety Score:** \`${lowestSafetyScore}\``,
     `**Files Scanned:** ${files.length}`,
-    `**Threshold:** ${THRESHOLD}`,
+    `**Risk Threshold:** ${THRESHOLD}`,
     '',
     '### Results by File',
     '',
     ...reportLines,
     '',
     '---',
-    '_Powered by [CostGuard](https://costguardai.io) — AI cost & risk optimization for developers._',
+    '_Powered by [CostGuardAI](https://costguardai.io) — AI cost & safety optimization for developers._',
   ].join('\n');
 
   await postPrComment(commentBody);
 
   // 7. Outputs
-  setOutput('highest_risk_score', String(highestScore));
+  setOutput('highest_risk_score', String(highestRiskScore));   // backward compat
+  setOutput('lowest_safety_score', String(lowestSafetyScore)); // canonical
   setOutput('scanned_files', String(files.length));
   setOutput('blocked', blocked ? 'true' : 'false');
 
   // 8. Exit
   if (blocked) {
     console.log('');
-    console.error(`::error::Deployment blocked by CostGuard. Risk score ${highestScore} exceeds threshold ${THRESHOLD}.`);
+    console.error(`::error::Deployment blocked by CostGuardAI. Safety Score ${lowestSafetyScore} is below threshold (risk score ${highestRiskScore} >= ${THRESHOLD}).`);
     process.exit(1);
   }
 

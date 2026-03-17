@@ -56,12 +56,12 @@ const LEVEL_CONFIG: Record<
   },
 };
 
-/** Maps a CostGuard Safety Score (0–100, higher = safer) to a band label. */
+/** Maps a CostGuardAI Safety Score (0–100, higher = safer) to a band label. */
 function getSafetyBand(safetyScore: number): string {
-  if (safetyScore >= 91) return "Hardened";
-  if (safetyScore >= 71) return "Safe";
-  if (safetyScore >= 41) return "Needs Hardening";
-  return "Unsafe";
+  if (safetyScore >= 85) return "Safe";
+  if (safetyScore >= 70) return "Low";
+  if (safetyScore >= 40) return "Warning";
+  return "High";
 }
 
 /** Maps a driver impact (0–100, higher = riskier) to a severity label. */
@@ -109,7 +109,7 @@ export function RiskScore({ score, level, explanation, riskDrivers, showInlineDr
     <div className="space-y-3">
       {/* Label — Level 3 type */}
       <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-        CostGuard Safety Score
+        CostGuardAI Safety Score
       </p>
 
       {/* Score + band */}

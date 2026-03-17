@@ -104,8 +104,8 @@ function formatCommentBody(result: Omit<PrSafetyCheckResult, "commentBody">): st
 function riskLevelLabel(level: PrSafetyCheckResult["riskLevel"]): string {
   switch (level) {
     case "low":      return "Safe";
-    case "moderate": return "Needs Hardening";
-    case "high":     return "High Risk";
-    case "critical": return "Critical";
+    case "moderate": return "Warning";
+    case "high":     return "High";
+    case "critical": return "High";
   }
 }

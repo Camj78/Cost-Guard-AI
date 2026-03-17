@@ -37,8 +37,10 @@ export interface FileResult {
   model_id: string;
   input_tokens: number;
   is_estimated: boolean;
-  risk_score: number;
-  risk_level: string;
+  risk_score: number;        // internal: 0–100, higher = riskier (backward compat)
+  safety_score: number;      // canonical: 0–100, higher = safer (= 100 − risk_score)
+  risk_level: string;        // internal risk band (backward compat)
+  safety_band: string;       // canonical safety band: Safe|Low|Warning|High
   context_usage_pct: number;
   estimated_cost_per_request: number;
   truncation: string;
@@ -53,8 +55,9 @@ export interface AnalysisOutput {
   files: FileResult[];
   summary: {
     total_files: number;
-    max_risk_score: number;
-    max_risk_level: string;
+    max_risk_score: number;      // internal (backward compat)
+    max_risk_level: string;      // internal (backward compat)
+    min_safety_score: number;    // canonical: lowest safety score across files
     above_threshold: boolean;
     threshold: number | null;
   };
@@ -167,6 +170,16 @@ function walkDir(dir: string, extensions: string[], ignoreList: string[]): strin
   return results;
 }
 
+// ── Safety band mapping ───────────────────────────────────────────────────────
+
+/** Maps CostGuardAI Safety Score (0–100, higher = safer) to a band label. */
+function getSafetyBand(safetyScore: number): string {
+  if (safetyScore >= 85) return "Safe";
+  if (safetyScore >= 70) return "Low";
+  if (safetyScore >= 40) return "Warning";
+  return "High";
+}
+
 // ── Per-file analysis ─────────────────────────────────────────────────────────
 
 function fmtCostNum(n: number): number {
@@ -195,14 +208,20 @@ function analyzeFile(
     outputPricePer1M: model.outputPricePer1M,
   });
 
+  const riskScore = assessment.riskScore;
+  const safetyScore = 100 - riskScore;
+  const safetyBand = getSafetyBand(safetyScore);
+
   return {
     file: relativePath,
     input_hash: inputHash,
     model_id: model.id,
     input_tokens: assessment.inputTokens,
     is_estimated: assessment.isEstimated,
-    risk_score: assessment.riskScore,
+    risk_score: riskScore,
+    safety_score: safetyScore,
     risk_level: assessment.riskLevel.toUpperCase(),
+    safety_band: safetyBand,
     context_usage_pct: parseFloat(assessment.usagePercent.toFixed(1)),
     estimated_cost_per_request: fmtCostNum(assessment.estimatedCostTotal),
     truncation: assessment.truncation.level,
@@ -223,15 +242,15 @@ function formatText(output: AnalysisOutput): string {
   const lines: string[] = ["CostGuard Preflight Analysis", SEP];
 
   for (const f of output.files) {
-    lines.push(`  File:       ${f.file}`);
-    lines.push(`  Model:      ${f.model_id}`);
-    lines.push(`  Tokens:     ${f.input_tokens.toLocaleString()}`);
-    lines.push(`  Cost/req:   ${fmtCostDisplay(f.estimated_cost_per_request)}`);
-    lines.push(`  Risk:       ${f.risk_score} ${f.risk_level}`);
-    lines.push(`  Context:    ${f.context_usage_pct}%`);
-    lines.push(`  Truncation: ${f.truncation}`);
+    lines.push(`  File:           ${f.file}`);
+    lines.push(`  Model:          ${f.model_id}`);
+    lines.push(`  Tokens:         ${f.input_tokens.toLocaleString()}`);
+    lines.push(`  Cost/req:       ${fmtCostDisplay(f.estimated_cost_per_request)}`);
+    lines.push(`  CostGuardAI Safety Score: ${f.safety_score} (${f.safety_band})`);
+    lines.push(`  Context:        ${f.context_usage_pct}%`);
+    lines.push(`  Truncation:     ${f.truncation}`);
     if (f.risk_drivers.length > 0) {
-      lines.push("  Drivers:");
+      lines.push("  Risk Drivers:");
       for (const d of f.risk_drivers) {
         lines.push(`    ${d.name.padEnd(28)} (${d.impact})`);
       }
@@ -240,9 +259,16 @@ function formatText(output: AnalysisOutput): string {
   }
 
   const s = output.summary;
-  const parts = [`${s.total_files} file(s) analyzed.`, `Max risk: ${s.max_risk_score} (${s.max_risk_level}).`];
-  if (s.threshold !== null) parts.push(`Threshold: ${s.threshold}.`);
-  if (s.above_threshold) parts.push("ABOVE THRESHOLD.");
+  const thresholdSafety =
+    s.threshold !== null ? Math.max(0, Math.min(100, 100 - s.threshold)) : null;
+  const parts = [
+    `${s.total_files} file(s) analyzed.`,
+    `Lowest Safety Score: ${s.min_safety_score}.`,
+  ];
+  if (s.threshold !== null) {
+    parts.push(`Risk Threshold: ${s.threshold} (Safety Score <= ${thresholdSafety}).`);
+  }
+  if (s.above_threshold) parts.push("ABOVE THRESHOLD — BLOCKED.");
   lines.push(parts.join(" "));
 
   return lines.join("\n");
@@ -256,8 +282,8 @@ function formatMd(output: AnalysisOutput): string {
     lines.push("| Field | Value |", "|---|---|");
     lines.push(`| Model | \`${f.model_id}\` |`);
     lines.push(`| Input tokens | ${f.input_tokens.toLocaleString()} |`);
-    lines.push(`| Risk score | **${f.risk_score}** |`);
-    lines.push(`| Risk level | **${f.risk_level}** |`);
+    lines.push(`| CostGuardAI Safety Score | **${f.safety_score}** |`);
+    lines.push(`| Safety band | **${f.safety_band}** |`);
     lines.push(`| Context usage | ${f.context_usage_pct}% |`);
     lines.push(`| Cost/request | ${fmtCostDisplay(f.estimated_cost_per_request)} |`);
     lines.push(`| Truncation | ${f.truncation} |`);
@@ -271,9 +297,13 @@ function formatMd(output: AnalysisOutput): string {
 
   const s = output.summary;
   lines.push("---");
-  lines.push(`**${s.total_files} file(s) analyzed.** Max risk: ${s.max_risk_score} (${s.max_risk_level}).`);
+  lines.push(`**${s.total_files} file(s) analyzed.** Lowest Safety Score: **${s.min_safety_score}**.`);
   if (s.threshold !== null) {
-    lines.push(`Threshold: ${s.threshold}. Above threshold: **${s.above_threshold}**.`);
+    const thresholdSafety =
+      s.threshold !== null ? Math.max(0, Math.min(100, 100 - s.threshold)) : null;
+    lines.push(
+      `Risk Threshold: ${s.threshold} (Safety Score <= ${thresholdSafety}). Above threshold: **${s.above_threshold}**.`,
+    );
   }
 
   return lines.join("\n");
@@ -337,7 +367,7 @@ export async function analyzeToOutput(args: string[]): Promise<{
       score_version: SCORE_VERSION,
       ruleset_hash: RULESET_HASH,
       files: [],
-      summary: { total_files: 0, max_risk_score: 0, max_risk_level: "SAFE", above_threshold: false, threshold },
+      summary: { total_files: 0, max_risk_score: 0, max_risk_level: "SAFE", min_safety_score: 100, above_threshold: false, threshold },
     };
     return { output: empty, format, exitCode: 0 };
   }
@@ -357,6 +387,7 @@ export async function analyzeToOutput(args: string[]): Promise<{
   }
 
   const maxRiskScore = Math.max(...fileResults.map((f) => f.risk_score));
+  const minSafetyScore = Math.min(...fileResults.map((f) => f.safety_score));
   const maxRiskFile = fileResults.find((f) => f.risk_score === maxRiskScore)!;
   const aboveThreshold = threshold !== null && maxRiskScore >= threshold;
 
@@ -368,6 +399,7 @@ export async function analyzeToOutput(args: string[]): Promise<{
       total_files: fileResults.length,
       max_risk_score: maxRiskScore,
       max_risk_level: maxRiskFile.risk_level,
+      min_safety_score: minSafetyScore,
       above_threshold: aboveThreshold,
       threshold,
     },

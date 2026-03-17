@@ -172,10 +172,10 @@ export default async function RiskReportPage({
               </p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                 {[
-                  { range: "91–100", label: "Hardened", color: "text-emerald-400" },
-                  { range: "71–90",  label: "Safe",     color: "text-blue-400" },
-                  { range: "41–70",  label: "Needs Hardening", color: "text-amber-400" },
-                  { range: "0–40",   label: "Unsafe",   color: "text-red-400" },
+                  { range: "85–100", label: "Safe",    color: "text-emerald-400" },
+                  { range: "70–84",  label: "Low",     color: "text-blue-400" },
+                  { range: "40–69",  label: "Warning", color: "text-amber-400" },
+                  { range: "0–39",   label: "High",    color: "text-red-400" },
                 ].map(({ range, label, color }) => (
                   <div key={range} className="flex items-center justify-between gap-2">
                     <span className="font-mono tabular-nums text-xs text-muted-foreground/60">{range}</span>

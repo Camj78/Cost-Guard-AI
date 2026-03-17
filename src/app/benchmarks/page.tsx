@@ -34,17 +34,17 @@ interface BenchmarkEntry {
 // Helpers
 // ---------------------------------------------------------------------------
 function scoreColor(s: number): string {
-  if (s >= 91) return "text-emerald-400";
-  if (s >= 71) return "text-blue-400";
-  if (s >= 41) return "text-amber-400";
+  if (s >= 85) return "text-emerald-400";
+  if (s >= 70) return "text-blue-400";
+  if (s >= 40) return "text-amber-400";
   return "text-red-400";
 }
 
 function scoreBand(s: number): string {
-  if (s >= 91) return "Hardened";
-  if (s >= 71) return "Safe";
-  if (s >= 41) return "Needs Hardening";
-  return "Unsafe";
+  if (s >= 85) return "Safe";
+  if (s >= 70) return "Low";
+  if (s >= 40) return "Warning";
+  return "High";
 }
 
 function impactLabel(impact: number): string {

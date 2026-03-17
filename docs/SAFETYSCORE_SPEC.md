@@ -1,6 +1,6 @@
 # CostGuard Safety Score — Formal Specification
 
-**Version:** 1.2.0
+**Version:** 1.3.0
 **Status:** Published
 **Maintainer:** CostGuardAI
 
@@ -267,15 +267,19 @@ each layer independently auditable.
 
 | CSS Range | Band | Meaning |
 |---|---|---|
-| 91–100 | **Hardened** | Prompt is structurally isolated, explicit, and resistant to exploitation |
-| 71–90 | **Safe** | Prompt meets baseline safety requirements for production deployment |
-| 41–70 | **Needs Hardening** | Prompt has structural weaknesses that should be addressed before deployment |
-| 0–40 | **Unsafe** | Prompt exhibits high exploitation risk; do not deploy without remediation |
+| 85–100 | **Safe** | Prompt is structurally sound and resistant to exploitation |
+| 70–84 | **Low** | Prompt meets baseline requirements with minor structural gaps |
+| 40–69 | **Warning** | Prompt has structural weaknesses that should be addressed before deployment |
+| 0–39 | **High** | Prompt exhibits high exploitation risk; do not deploy without remediation |
 
 Score bands are defined by benchmark-calibrated thresholds and are preserved across
 `analysis_version` updates. A weight or threshold change that would shift more than 5% of
 historical benchmark fixtures across a band boundary requires a `major` version increment and
 a full benchmark suite review before release.
+
+> **v1.3.0 change:** Bands renamed from Hardened/Safe/Needs Hardening/Unsafe to Safe/Low/Warning/High
+> and thresholds adjusted to 85/70/40/0 for consistency with standard security severity terminology.
+> The scoring formula and weights are unchanged.
 
 ---
 
