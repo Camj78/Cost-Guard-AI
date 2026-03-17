@@ -26,3 +26,33 @@ test-results/
 .costguard/
 *.tgz
 DEC_*_REPORT.md
+
+# local env
+.env*
+!.env.example
+
+# internal reports
+DEC_*_REPORT.md
+LAUNCH_READINESS_REPORT.md
+
+# test artifacts
+playwright-report/
+test-results/
+
+# local config
+.costguard/
+
+# packaged builds
+*.tgz
+
+# macOS
+.DS_Store
+
+
+# CostGuardAI
+.costguard/
+DEC_*_REPORT.md
+*.tgz
+screenshots/
+playwright-report/
+test-results/
