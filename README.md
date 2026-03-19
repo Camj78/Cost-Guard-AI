@@ -1,104 +1,94 @@
 # CostGuardAI
+> Prevent unsafe, expensive AI prompts from ever reaching production.
 
-Prevent unsafe AI prompts from reaching production.
-
-[![GitHub stars](https://img.shields.io/github/stars/Camj78/Cost-Guard-AI?style=social)](https://github.com/Camj78/Cost-Guard-AI) [![npm version](https://img.shields.io/npm/v/@camj78/costguardai)](https://www.npmjs.com/package/@camj78/costguardai) [![License](https://img.shields.io/github/license/Camj78/Cost-Guard-AI)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/Camj78/Cost-Guard-AI?style=social)](https://github.com/Camj78/Cost-Guard-AI)
+[![npm version](https://img.shields.io/npm/v/@camj78/costguardai)](https://www.npmjs.com/package/@camj78/costguardai)
+[![License](https://img.shields.io/github/license/Camj78/Cost-Guard-AI)](LICENSE)
+[![CI](https://img.shields.io/badge/CI%20gate-ready-brightgreen)](https://github.com/Camj78/Cost-Guard-AI)
 
 ```bash
 npm install -g @camj78/costguardai
 ```
 
-Scan prompts locally, fail risky pull requests in CI, and harden prompts with `costguardai fix`. Use CostGuardAI as a pull request safety gate for prompt security.
-
-```bash
-costguardai analyze prompt.txt
-costguardai fix prompt.txt
-costguardai ci --fail-on-risk 70
-```
-
-If you find this useful, consider ⭐ starring the repo — it helps other developers discover it.
+**CostGuardAI** is a CLI + web tool that analyzes AI prompts _before_ they hit production.
+Scan for prompt injection, token explosion, cost overruns, and truncation risk — locally, in CI, or in your browser.
 
 ---
 
-## Quick Start
+## What it catches
 
-Run CostGuardAI locally in under 30 seconds:
+| Risk | Example |
+|---|---|
+| 🔴 Prompt injection | User input overriding system instructions |
+| 💸 Token explosion | Prompts that will cost 10x what you expect |
+| ✂️ Truncation risk | Context window overflow mid-response |
+| ⚠️ Output collision | Conflicting instructions producing unstable output |
+| 🔒 Missing guardrails | No output constraints = unpredictable behavior |
+
+**CostGuardAI Safety Score: 0–100.** Know your risk before you ship.
+
+---
+
+## 30-second quickstart
 
 ```bash
-# Install the CostGuardAI CLI
+# Install
 npm install -g @camj78/costguardai
 
 # Analyze a prompt
 costguardai analyze my-prompt.txt
 
-# Block unsafe prompts in CI
+# Example output:
+# CostGuardAI Safety Score: 72/100
+# Detected issues:
+# • prompt injection risk
+# • token explosion risk
+# • unstable output structure
+
+# Auto-fix issues
+costguardai fix my-prompt.txt
+
+# Block risky prompts in CI
 costguardai ci --fail-on-risk 70
-
-# Initialize CostGuardAI in your repo
-costguardai init
 ```
 
-CostGuardAI CI will fail if a prompt's CostGuardAI Safety Score falls below your configured threshold.
-
-### Example Output
-
-```
-costguardai analyze login.prompt
-
-CostGuardAI Safety Score: 72/100
-Detected issues:
-• prompt injection risk
-• token explosion risk
-• unstable output structure
-```
-
-[![CostGuardAI Safety](https://costguardai.io/badge.svg)](https://costguardai.io)
-
-**Know before you send.**
-
-Single-screen AI prompt preflight tool. Paste a prompt, select a model, and instantly see: token count, cost estimate, context usage, truncation risk, and a CostGuardAI Safety Score (0–100) — all running locally in your browser.
+**All analysis runs locally. Your prompts never leave your machine.**
 
 ---
 
-## Add CostGuardAI to your repo in 60 seconds
+## Why I built this
 
-**Step 1 — Install CLI**
+I kept shipping AI features and discovering problems in production — runaway token costs,
+prompts that got injected, responses that truncated mid-sentence. There was no `eslint`
+for prompts. So I built one.
 
+CostGuardAI is the preflight check I wish I'd had from day one.
+
+— [@Camj78](https://github.com/Camj78)
+
+---
+
+## Add to CI in 60 seconds
+
+**Step 1 — Install**
 ```bash
 npm install -g @camj78/costguardai
 ```
 
 **Step 2 — Initialize**
-
 ```bash
 costguardai init
 ```
 
 **Step 3 — Add CI gate**
-
-```bash
-costguardai ci --fail-on-risk 75
-```
-
-**Step 4 — Commit**
-
-```bash
-git add .
-git commit -m "Add CostGuardAI preflight checks"
-```
-
-Copy the workflow template into your repo:
-
 ```yaml
 # .github/workflows/costguardai.yml
 name: CostGuardAI Prompt Safety
-
 on:
   pull_request:
     paths:
       - "**/*.prompt"
       - "**/prompts/**"
-
 jobs:
   costguardai:
     runs-on: ubuntu-latest
@@ -108,29 +98,55 @@ jobs:
       - run: costguardai ci --fail-on-risk 75
 ```
 
-> If this project uses prompts, add the CostGuardAI preflight badge: `[![CostGuardAI Safety](https://costguardai.io/badge.svg)](https://costguardai.io)`
+**Step 4 — Commit**
+```bash
+git add .
+git commit -m "Add CostGuardAI preflight checks"
+```
+
+> Add the safety badge to your repo:
+> `[![CostGuardAI Safety](https://costguardai.io/badge.svg)](https://costguardai.io)`
 
 ---
 
-## What it does
+## CLI Reference
 
-| Feature | Detail |
+| Command | Description |
 |---|---|
-| Token count | Exact for OpenAI (js-tiktoken); Estimated ±5–8% for others |
-| Cost estimate | Input + output cost per call, based on configurable pricing table |
-| Context usage | Visual progress bar, color-coded by risk level |
-| Truncation warning | Separate signal: Safe / Warning / Danger |
-| **CostGuardAI Safety Score (heuristic)** | 0–100 score from 5 weighted factors (context pressure, output collision, output cap, verbosity, estimation uncertainty) |
-| Prompt compression | 1-click rule-based compression — no API calls, instant |
-| Model assumptions | Read-only modal showing every model's config values |
+| `costguardai analyze <file>` | Analyze a prompt file |
+| `costguardai fix <file>` | Auto-fix detected issues |
+| `costguardai ci --fail-on-risk <n>` | CI gate — exit 1 if risk score ≥ n |
+| `costguardai init` | Initialize config in current repo |
 
-**All analysis is client-side. Prompts never leave your browser.**
+**Options**
+
+| Flag | Description | Default |
+|---|---|---|
+| `--model <id>` | Model to analyze against | `gpt-4o-mini` |
+| `--format text\|md\|json` | Output format | `text` |
+| `--threshold <n>` | Exit 1 if any file risk_score ≥ n | — |
+| `--ext <exts>` | File extensions to scan | `.txt,.md,.prompt` |
+| `--expected-output <n>` | Expected output tokens | `512` |
 
 ---
 
-## Models (V1)
+## Web UI
 
-| Model | Provider | Context | Strategy |
+**[costguardai.io](https://costguardai.io)** — Paste a prompt, select a model, and instantly see:
+
+- Token count (exact for OpenAI via js-tiktoken; ±5–8% estimated for others)
+- Cost estimate (input + output per call)
+- Context usage bar (color-coded by risk level)
+- Truncation warning
+- CostGuardAI Safety Score with full explainability
+
+All client-side. Nothing sent to a server.
+
+---
+
+## Supported Models (V1)
+
+| Model | Provider | Context | Token Strategy |
 |---|---|---|---|
 | GPT-4o | OpenAI | 128K | Exact |
 | GPT-4o Mini | OpenAI | 128K | Exact |
@@ -141,152 +157,49 @@ jobs:
 
 ---
 
-## Getting started
+## Pricing
 
-```bash
-# 1. Clone and install
-pnpm install
-
-# 2. Copy env template (no changes needed for V1)
-cp .env.example .env
-
-# 3. Run dev server
-pnpm dev
-# → http://localhost:3000
-```
-
----
-
-## Configuration
-
-**Model pricing and limits** are in a single file:
-
-```
-src/lib/ai/models.ts
-```
-
-To update a price or add a model, edit that file. The `pricingLastUpdated` string is shown in the footer. No other files need to change.
-
----
-
-## Deployment (Vercel)
-
-```bash
-# Push to GitHub, then:
-vercel --prod
-```
-
-Or connect the repo in the Vercel dashboard. Set the env vars from `.env.example` in Vercel's environment panel.
-
-Set `NEXT_PUBLIC_APP_URL` to your production URL for correct OpenGraph metadata.
+| | Free | Pro | Team |
+|---|---|---|---|
+| **Price** | $0 | $29/mo | $99/mo |
+| CLI analysis | ✓ | ✓ | ✓ |
+| Safety Score + explainability | ✓ | ✓ | ✓ |
+| Shareable reports | ✓ | ✓ | ✓ |
+| Analyses / month | 25 | Unlimited | Unlimited |
+| CI guardrails (`--fail-on-risk`) | — | ✓ | ✓ |
+| PR comments | — | ✓ | ✓ |
+| Observability dashboard | — | ✓ | ✓ |
+| Team risk policies | — | — | ✓ |
+| Cross-project cost tracking | — | — | ✓ |
+| Audit logs | — | — | ✓ |
 
 ---
 
 ## Stack
 
-- **Next.js 16** (App Router)
+- **Next.js 15** (App Router) · **TypeScript**
 - **Supabase** (auth + Postgres)
-- **Tailwind CSS v4** + **shadcn/ui** (new-york)
-- **js-tiktoken** for OpenAI token counting
-- **Stripe** (billing) · **Sentry** (error tracking) · **PostHog** (analytics)
-- **pnpm** package manager
-
----
-
-## Project structure
-
-```
-src/
-  lib/
-    ai/models.ts            ← Model catalog + pricing (edit here to update pricing)
-    risk.ts                 ← CostGuardAI Safety Score engine
-    tokenizer.ts            ← Token counting (js-tiktoken wrapper)
-    compressor.ts           ← Rule-based prompt compression
-    formatters.ts           ← Number/currency formatting
-    trust.ts                ← Reproducibility: version + hash exports
-  hooks/
-    use-preflight.ts        ← Main analysis hook
-  components/
-    risk-score.tsx          ← Score + badge + explainability
-    results-panel.tsx       ← Composes all result cards
-    ...
-  app/
-    page.tsx                ← Main preflight page
-    dashboard/
-      observability/        ← Token/cost/risk trend charts
-    report/[id]/            ← Public shareable report
-    s/[id]/                 ← Short URL redirect
-    api/v1/analyze/         ← Public REST API
-    upgrade/                ← Pricing + Stripe checkout
-cli/
-  index.js                  ← costguardai CLI (legacy entry; see packages/cli/ for source)
-.github/
-  workflows/costguard.yml   ← GitHub Action (PR analysis + comments)
-```
-
----
-
-## CLI Usage
-
-Run preflight analysis directly from your terminal — no browser required.
-
-```bash
-npm install -g @camj78/costguardai
-costguardai analyze my-prompt.txt
-```
-
-**CI gate**
-
-```bash
-costguardai ci --fail-on-risk 70
-```
-
-**Options**
-
-| Flag | Description | Default |
-|---|---|---|
-| `--model <id>` | Model to analyze against | `gpt-4o-mini` |
-| `--format text\|md\|json` | Output format | `text` |
-| `--threshold <n>` | Exit 1 if any file risk_score >= n | — |
-| `--ext <exts>` | Comma-separated file extensions | `.txt,.md,.prompt` |
-| `--expected-output <n>` | Expected output tokens | `512` |
-
-See `costguardai --help` for all commands and options.
-
----
-
-## Pricing
-
-| | Free | Pro | Team |
-|---|---|---|---|
-| **Price** | $0 | $29 / month | $99 / month _(on request)_ |
-| CLI analysis | ✓ | ✓ | ✓ |
-| Safety Score + explainability | ✓ | ✓ | ✓ |
-| Shareable reports | ✓ | ✓ | ✓ |
-| Analyses per month | 25 | Unlimited | Unlimited |
-| Basic CI usage | ✓ | ✓ | ✓ |
-| CI guardrails (`--fail-on-risk`) | — | ✓ | ✓ |
-| PR comments | — | ✓ | ✓ |
-| Observability dashboard | — | ✓ | ✓ |
-| Replay support | — | ✓ | ✓ |
-| Organization dashboard | — | — | ✓ |
-| Team risk policies | — | — | ✓ |
-| Repo-level thresholds | — | — | ✓ |
-| Cross-project cost tracking | — | — | ✓ |
-| Audit logs | — | — | ✓ |
-
-> Team plan is backend-ready. Self-serve checkout coming soon — contact [team@costguardai.io](mailto:team@costguardai.io) to activate.
-
-→ [Full pricing details](docs/pricing.md)
+- **Tailwind CSS v4** + **shadcn/ui**
+- **js-tiktoken** (OpenAI token counting)
+- **Stripe** · **Sentry** · **PostHog**
 
 ---
 
 ## Roadmap
 
-- Live pricing sync from provider APIs
-- Browser extension (VSCode + Chrome)
-- Team risk policies and repo-level thresholds
+- [ ] Live pricing sync from provider APIs
+- [ ] VSCode extension
+- [ ] Chrome extension
+- [ ] Team risk policies (self-serve)
+- [ ] More model support
 
 ---
 
-*Prices configurable. Verify with provider before purchase decisions.*
+## Contributing
+
+Issues, PRs, and feedback welcome.
+
+If this saves you from a bad prompt in production, consider ⭐ starring — it helps
+other developers find it.
+
+→ [costguardai.io](https://costguardai.io) · [npm](https://www.npmjs.com/package/@camj78/costguardai) · [team@costguardai.io](mailto:team@costguardai.io)
