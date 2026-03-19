@@ -1,0 +1,20 @@
+{
+  "title": "Tool Abuse Risk",
+  "description": "An agentic prompt with high instruction ambiguity and no scope constraints on tool use. In agentic deployments, vague instructions combined with broad tool access lead to hallucinated or unintended tool invocations.",
+  "structure_summary": "tool call access declaration + high ambiguity density + no explicit output format instruction + no scope constraints on tool use + no refusal boundary for tool invocation",
+  "verification_prompt": "Use the available tools to optimize and improve the results. Enhance and scale the solution efficiently. The output should be flexible and robust with a clean implementation. Make it better and more advanced than the current version.",
+  "expected_score": "55",
+  "risk_band": "Needs Hardening",
+  "risk_drivers": [
+    { "name": "Instruction Ambiguity", "level": "High" },
+    { "name": "Structural Failure", "level": "High" },
+    { "name": "Tool Misuse", "level": "Medium" }
+  ],
+  "explanation": "The combination of high ambiguity density (optimize, improve, flexible, robust, clean, better, advanced) and absent structural constraints is particularly dangerous in agentic contexts. Without scope constraints on tool invocation, the model may call tools for unintended tasks, chain tool calls without bounds, or produce hallucinated tool outputs. The structural bucket is elevated by missing output format instruction (+25) and missing output constraints (+20). The ambiguity bucket is driven by multiple vague quality modifiers exceeding the high-density threshold.",
+  "mitigations": [
+    "Explicitly list which tools the model is permitted to call and under what conditions",
+    "Add a scope constraint: only invoke tools when the user explicitly requests an action",
+    "Add an output format instruction to enforce structured tool call responses",
+    "Add a refusal boundary: if the intent is unclear, ask for clarification before invoking any tool"
+  ]
+}

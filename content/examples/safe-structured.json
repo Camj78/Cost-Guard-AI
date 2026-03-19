@@ -1,0 +1,18 @@
+{
+  "title": "Safe Structured Prompt",
+  "description": "A well-structured system prompt with explicit role boundaries, output format constraints, and scope limiters. Represents best practices for production LLM deployments.",
+  "structure_summary": "system role declaration + explicit output format instruction + output constraints (max, limit) + section delimiters + refusal boundary",
+  "verification_prompt": "### Task Instructions\n\nYou are a data extraction assistant. Complete the following task:\n\n- Extract all product names from the text below\n- Return results as a JSON array with max 20 items\n- Limit your response to exactly 200 words\n- Format output as: {\"products\": [\"ProductA\", \"ProductB\"]}\n\n### Input Text\n\nThe catalog includes items from brands such as TechPro, NovaStar, and EcoLine. Please identify all product names only.\n\n### Constraints\n- Max 20 items\n- JSON format only\n- No additional commentary",
+  "expected_score": "88",
+  "risk_band": "Safe",
+  "risk_drivers": [
+    { "name": "Instruction Ambiguity", "level": "Low" },
+    { "name": "Structural Failure", "level": "Low" },
+    { "name": "Token Output Volatility", "level": "Low" }
+  ],
+  "explanation": "This prompt achieves a Safe score because it includes explicit output format instructions, uses section delimiters to isolate system context from user input, and constrains output length. Ambiguity density is low — qualitative modifiers are absent. The primary residual risk is moderate context saturation from a dense system prompt.",
+  "mitigations": [
+    "Reduce system prompt length if context window utilization exceeds 30%",
+    "Add explicit refusal instruction to handle out-of-scope user requests"
+  ]
+}

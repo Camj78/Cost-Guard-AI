@@ -1,0 +1,23 @@
+{
+  "title": "Agentic Meeting Booker — Unrestricted Calendar Write",
+  "description": "A single-sentence agentic instruction with no scope constraints, no refusal boundary, and irreversible external side-effects (calendar invites sent to real people). This pattern is extremely common in AI agent prototypes and represents one of the highest real-world risk profiles.",
+  "structure_summary": "single-sentence agentic instruction + calendar write tool access + email send side-effect + zero scope constraints + no refusal boundary + no error condition defined + no output format instruction + implicit multi-user authority",
+  "verification_prompt": "Write a GPT agent that automatically books meetings for users and sends calendar invites.",
+  "expected_score": "72",
+  "risk_band": "Needs Hardening",
+  "risk_drivers": [
+    { "name": "Tool Misuse", "level": "High" },
+    { "name": "Structural Failure", "level": "High" },
+    { "name": "Instruction Ambiguity", "level": "High" },
+    { "name": "Output Volatility", "level": "Medium" }
+  ],
+  "explanation": "This prompt encodes an agent with irreversible external write authority (calendar booking + email invite delivery) but provides zero scope constraints on who it can book with, when, for how long, or under what conditions it should refuse. The structural bucket is elevated by the absence of an output format instruction, missing error conditions, and no explicit refusal boundary. The ambiguity bucket is driven by 'users' (undefined scope — any user? all users? the authenticated user only?), 'automatically' (no trigger condition defined), and 'meetings' (no duration, frequency, or type constraint). The tool misuse bucket is critical: calendar write + invite delivery is a destructive, real-world action with no rollback. A model executing this without constraint boundaries may book duplicate meetings, send invites to unintended recipients, or take action on incorrect authority. The combination of high ambiguity density, absent structural guards, and irreversible external effects yields the highest risk profile in agentic prompt categories.",
+  "mitigations": [
+    "Explicitly define authority scope: 'only book meetings on behalf of the authenticated user'",
+    "Add a refusal boundary: 'if the requested time conflicts or the recipient is not in the approved list, ask for confirmation before booking'",
+    "Constrain the tool surface: list exactly which calendar APIs and scopes the agent may call",
+    "Add an output format instruction: return a structured confirmation before sending any invite",
+    "Define error conditions: specify what the agent should do when a slot is unavailable or a recipient declines",
+    "Add a dry-run mode: return a proposed calendar event for user review before committing"
+  ]
+}

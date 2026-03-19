@@ -1,0 +1,19 @@
+{
+  "model": "gpt-4o-mini",
+  "extensions": [
+    ".txt",
+    ".md",
+    ".prompt"
+  ],
+  "ignore": [
+    "node_modules",
+    ".git",
+    "dist",
+    "build",
+    ".next",
+    "coverage",
+    ".cache"
+  ],
+  "expectedOutputTokens": 512,
+  "threshold": 70
+}

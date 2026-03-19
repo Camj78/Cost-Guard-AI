@@ -1,0 +1,12 @@
+{
+  "name": "costguard",
+  "version": "0.1.0",
+  "description": "CLI for CostGuardAI — preflight analysis for LLM prompts",
+  "bin": {
+    "costguard": "./index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
