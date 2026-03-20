@@ -1,6 +1,6 @@
 {
   "name": "@camj78/costguardai",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "CostGuardAI CLI — preflight analysis for LLM prompts",
   "license": "MIT",
   "homepage": "https://costguardai.io/docs",

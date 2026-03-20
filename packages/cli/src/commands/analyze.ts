@@ -257,6 +257,7 @@ function formatText(output: AnalysisOutput): string {
     }
     lines.push(SEP);
   }
+  lines.push(`⭐ Found this useful? Star us: https://github.com/Camj78/Cost-Guard-AI`);
 
   const s = output.summary;
   const thresholdSafety =
