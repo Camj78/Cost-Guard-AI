@@ -1,4 +1,6 @@
 # CostGuardAI
+⭐ If this saves you a bad deploy, [star it](https://github.com/Camj78/Cost-Guard-AI) — it helps others find it.
+
 > Prevent unsafe, expensive AI prompts from ever reaching production.
 
 [![GitHub stars](https://img.shields.io/github/stars/Camj78/Cost-Guard-AI?style=social)](https://github.com/Camj78/Cost-Guard-AI)
