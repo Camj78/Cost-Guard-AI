@@ -154,6 +154,10 @@ npx @camj78/costguardai analyze prompt.txt
 
 No setup required.
 
+Or try with a demo prompt:
+
+`npx @camj78/costguardai analyze examples/demo-prompt.txt`
+
 ---
 
 ## Why I built this

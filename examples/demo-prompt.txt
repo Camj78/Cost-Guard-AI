@@ -1,0 +1,6 @@
+You are a helpful assistant.
+
+Summarize the following text in detail, include examples, provide multiple variations, and ensure completeness.
+
+Context:
+This is a long-form request that may grow significantly depending on interpretation. Include as much detail as possible.
