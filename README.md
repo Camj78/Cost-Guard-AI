@@ -1,3 +1,29 @@
+## 🚨 A prompt that looked fine cost $6,500 in production
+
+CostGuardAI detects:
+- token explosion risk
+- cost at scale
+- unstable outputs
+
+Run in seconds:
+
+```bash
+npx @camj78/costguardai analyze prompt.txt
+```
+
+---
+
+## Why this matters
+
+Small prompt changes can:
+- 10x token usage
+- silently increase API costs
+- break outputs at scale
+
+CostGuardAI flags this before it happens.
+
+---
+
 # CostGuardAI
 ⭐ If this saves you a bad deploy, [star it](https://github.com/Camj78/Cost-Guard-AI) — it helps others find it.
 
@@ -11,6 +37,66 @@
 ```bash
 npm install -g @camj78/costguardai
 ```
+
+Run in 5 seconds → `costguardai analyze prompt.txt`
+
+If this saves you from a bad deploy, consider giving it a ⭐
+
+---
+
+## ⚠️ Why this exists
+
+A single prompt can:
+- silently explode token costs in production
+- fail unpredictably in real usage
+- behave differently than in testing
+
+CostGuardAI catches these issues **before they hit production**.
+
+---
+
+## 🔍 Example
+
+Input prompt:
+
+> "Summarize customer conversations with full context"
+
+CostGuardAI output:
+
+```
+CostGuardAI Safety Score: 78 (HIGH)
+⚠️ Potential token explosion due to unbounded context
+⚠️ Output variability risk
+⚠️ Cost estimate: $420/month at scale
+→ Fix suggestions available in Pro
+```
+
+---
+
+### Real CLI output
+
+Example output when a risky production prompt is analyzed.
+
+```text
+$ costguardai analyze ./prompts/checkout-flow.txt
+
+CostGuardAI Safety Score: 78 (HIGH)
+⚠️ Potential token explosion due to unbounded context
+⚠️ Output variability risk
+⚠️ Cost estimate: $420/month at scale
+
+Free includes → basic analysis only
+🔒 Fix suggestions: Pro
+🔒 CI enforcement: Pro
+
+Upgrade → https://costguardai.io/upgrade
+Pro unlocks → fix suggestions, CI enforcement, safer prompt reviews
+
+Next step → run this on a real prompt from your codebase
+Example: costguardai analyze ./prompts/checkout-flow.txt
+```
+
+---
 
 **CostGuardAI** is a CLI + web tool that analyzes AI prompts _before_ they hit production.
 Scan for prompt injection, token explosion, cost overruns, and truncation risk — locally, in CI, or in your browser.
@@ -55,6 +141,18 @@ costguardai ci --fail-on-risk 70
 ```
 
 **All analysis runs locally. Your prompts never leave your machine.**
+
+---
+
+## Try it now
+
+Paste any prompt into a file and run:
+
+```bash
+npx @camj78/costguardai analyze prompt.txt
+```
+
+No setup required.
 
 ---
 
