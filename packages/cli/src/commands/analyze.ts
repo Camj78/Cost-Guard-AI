@@ -425,11 +425,14 @@ export async function runAnalyze(args: string[]): Promise<number> {
     return 0;
   }
 
-  const BADGE_SNIPPET = `\nAdd this badge to your repo:\n[![CostGuardAI Safety](https://costguardai.io/badge.svg)](https://costguardai.io)\n`;
-
   if (format === "json") {
     process.stdout.write(JSON.stringify(output, null, 2) + "\n");
-  } else if (format === "md") {
+    return exitCode;
+  }
+
+  const BADGE_SNIPPET = `\nAdd this badge to your repo:\n[![CostGuardAI Safety](https://costguardai.io/badge.svg)](https://costguardai.io)\n`;
+
+  if (format === "md") {
     process.stdout.write(formatMd(output) + "\n");
     process.stdout.write(BADGE_SNIPPET);
   } else {
@@ -450,7 +453,7 @@ export async function runAnalyze(args: string[]): Promise<number> {
   console.log("Next step → run this on a real prompt from your codebase");
   console.log("Example: costguardai analyze ./prompts/checkout-flow.txt");
 
-  if (format !== "json" && exitCode === 0) {
+  if (exitCode === 0) {
     process.stdout.write("\nIf this helped, consider starring:\nhttps://github.com/Camj78/Cost-Guard-AI\n");
   }
 
