@@ -91,13 +91,21 @@ async function main(): Promise<void> {
 
   if (command === "analyze") {
     const restArgs = args.slice(1);
-    const code = await runAnalyze(restArgs);
     const isJsonMode = restArgs.some(
       (a, i, arr) =>
         a === "--json" ||
         a === "--format=json" ||
         (a === "--format" && arr[i + 1] === "json"),
     );
+    if (isJsonMode) {
+      // Suppress all console.* output so stdout contains only the JSON object.
+      // process.stderr is left intact for error diagnostics.
+      const noop = (): void => {};
+      console.log = noop;
+      console.warn = noop;
+      console.info = noop;
+    }
+    const code = await runAnalyze(restArgs);
     if (code === 0 && !isJsonMode) printTip();
     process.exit(code);
   }
