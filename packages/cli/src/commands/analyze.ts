@@ -257,7 +257,6 @@ function formatText(output: AnalysisOutput): string {
     }
     lines.push(SEP);
   }
-  lines.push(`⭐ Found this useful? Star us: https://github.com/Camj78/Cost-Guard-AI`);
 
   const s = output.summary;
   const thresholdSafety =
@@ -436,6 +435,23 @@ export async function runAnalyze(args: string[]): Promise<number> {
   } else {
     process.stdout.write(formatText(output) + "\n");
     process.stdout.write(BADGE_SNIPPET);
+  }
+
+  console.log("");
+  console.log("⚠️  This prompt may cause production issues");
+  console.log("");
+  console.log("Free includes → basic analysis only");
+  console.log("🔒 Fix suggestions: Pro");
+  console.log("🔒 CI enforcement: Pro");
+  console.log("");
+  console.log("Upgrade → https://costguardai.io/upgrade");
+  console.log("Pro unlocks → fix suggestions, CI enforcement, safer prompt reviews");
+  console.log("");
+  console.log("Next step → run this on a real prompt from your codebase");
+  console.log("Example: costguardai analyze ./prompts/checkout-flow.txt");
+
+  if (format !== "json" && exitCode === 0) {
+    process.stdout.write("\nIf this helped, consider starring:\nhttps://github.com/Camj78/Cost-Guard-AI\n");
   }
 
   return exitCode;
