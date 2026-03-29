@@ -73,6 +73,26 @@ CostGuardAI catches these issues **before they hit production**.
 
 ---
 
+## Why developers use CostGuardAI
+
+If you've ever thought:
+
+- "Why is my OpenAI bill suddenly so high?"
+- "Why did this prompt explode in tokens?"
+- "Why is my LLM output inconsistent?"
+- "How do I test prompts before production?"
+- "How do I prevent prompt issues in CI?"
+
+CostGuardAI helps catch these issues before they hit production:
+
+- Detects token explosion risk
+- Flags ambiguous or unstable prompts
+- Estimates real usage cost
+- Surfaces output variability issues
+- Works in CI to block risky prompts
+
+---
+
 ## 🔍 Example
 
 Input prompt:
