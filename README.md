@@ -13,6 +13,15 @@ npx @camj78/costguardai analyze prompt.txt
 
 ---
 
+## Use cases
+
+- estimate OpenAI / Claude / LLM cost before deployment
+- detect token explosion in prompts
+- sanity check prompts before running experiments
+- prevent expensive prompt mistakes in production
+
+---
+
 ## Why this matters
 
 Small prompt changes can:
@@ -25,22 +34,31 @@ CostGuardAI flags this before it happens.
 ---
 
 # CostGuardAI
-⭐ If this saves you a bad deploy, [star it](https://github.com/Camj78/Cost-Guard-AI) — it helps others find it.
 
-> Prevent unsafe, expensive AI prompts from ever reaching production.
+⭐ If this saves you a bad deploy, star the repo — it helps others find it.
 
 [![GitHub stars](https://img.shields.io/github/stars/Camj78/Cost-Guard-AI?style=social)](https://github.com/Camj78/Cost-Guard-AI)
 [![npm version](https://img.shields.io/npm/v/@camj78/costguardai)](https://www.npmjs.com/package/@camj78/costguardai)
 [![License](https://img.shields.io/github/license/Camj78/Cost-Guard-AI)](LICENSE)
-[![CI](https://img.shields.io/badge/CI%20gate-ready-brightgreen)](https://github.com/Camj78/Cost-Guard-AI)
-
-```bash
-npm install -g @camj78/costguardai
-```
 
 Run in 5 seconds → `costguardai analyze prompt.txt`
 
-If this saves you from a bad deploy, consider giving it a ⭐
+Prevent unsafe and expensive AI prompts from reaching production.
+
+CostGuardAI is a CLI for **AI prompt testing, LLM cost optimization, and prompt validation**.
+
+Detect:
+- token explosions
+- unstable outputs
+- hidden OpenAI / Anthropic costs
+- prompt failures before production
+
+Built for:
+- AI CI pipelines
+- prompt safety enforcement
+- production-grade LLM workflows
+
+`npm install -g @camj78/costguardai`
 
 ---
 
@@ -100,6 +118,7 @@ Example: costguardai analyze ./prompts/checkout-flow.txt
 
 **CostGuardAI** is a CLI + web tool that analyzes AI prompts _before_ they hit production.
 Scan for prompt injection, token explosion, cost overruns, and truncation risk — locally, in CI, or in your browser.
+Supports prompt cost estimation for OpenAI cost, Claude cost, and LLM cost across all major providers.
 
 ---
 
