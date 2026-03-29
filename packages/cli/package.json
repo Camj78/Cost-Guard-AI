@@ -1,12 +1,28 @@
 {
   "name": "@camj78/costguardai",
-  "version": "0.2.6",
-  "description": "CostGuardAI CLI — preflight analysis for LLM prompts",
+  "version": "0.2.11",
+  "description": "CLI for AI prompt testing, LLM cost optimization, prompt validation, and CI safety checks before production.",
+  "keywords": [
+    "ai",
+    "llm",
+    "prompt",
+    "prompt-testing",
+    "prompt-validation",
+    "prompt-engineering",
+    "openai",
+    "anthropic",
+    "llmops",
+    "ai-safety",
+    "cost-optimization",
+    "developer-tools",
+    "cli",
+    "ci-cd"
+  ],
   "license": "MIT",
-  "homepage": "https://costguardai.io/docs",
+  "homepage": "https://costguardai.io",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Camj78/Cost-Guard-AI"
+    "url": "https://github.com/Camj78/Cost-Guard-AI.git"
   },
   "bugs": {
     "url": "https://github.com/Camj78/Cost-Guard-AI/issues"
