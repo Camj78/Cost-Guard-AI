@@ -28,6 +28,58 @@ function getAdminClient(): ReturnType<typeof createClient<any>> | null {
   return _admin;
 }
 
+// ── Safe insert with schema-drift fallback ─────────────────────────────────────
+async function insertAnalysisHistoryWithFallback(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  admin: ReturnType<typeof createClient<any>>,
+  fullPayload: {
+    user_id: string;
+    prompt_hash: string;
+    model_id: string;
+    input_tokens: number;
+    output_tokens: number;
+    cost_total: number;
+    risk_score: number;
+    analysis_version: string;
+    score_version: string;
+    ruleset_hash: string;
+    input_hash: string;
+    source: string;
+  }
+): Promise<void> {
+  const { error } = await admin.from("analysis_history").insert(fullPayload);
+
+  if (!error) {
+    console.log("[analysis_history] full insert ok");
+    return;
+  }
+
+  if (error.code === "42703") {
+    console.warn("[analysis_history] schema drift detected, retrying base insert");
+
+    const basePayload = {
+      user_id: fullPayload.user_id,
+      risk_score: fullPayload.risk_score,
+      created_at: new Date().toISOString(),
+    };
+
+    const { error: fallbackError } = await admin
+      .from("analysis_history")
+      .insert(basePayload);
+
+    if (!fallbackError) {
+      console.log("[analysis_history] fallback insert ok");
+      return;
+    }
+
+    console.error("[analysis_history] fallback insert failed", fallbackError);
+    throw fallbackError;
+  }
+
+  // Non-42703 error on full insert — surface it
+  throw error;
+}
+
 export const dynamic = "force-dynamic";
 
 function formatCostValue(amount: number): number {
@@ -143,7 +195,7 @@ export async function POST(req: Request) {
     modelName: model.name,
   });
 
-  // 6a. Record to analysis_history (fire-and-forget) — required for dashboard "Last Run"
+  // 6a. Record to analysis_history — awaited, with schema-drift fallback.
   //     Only possible when the API key is linked to a user account (user_id present).
   if (!keyRecord.user_id) {
     console.warn("[/api/v1/analyze] skipping analysis_history write: user_id is null (set FOUNDER_USER_ID in Vercel env, or use a DB-backed API key from /api/keys)");
@@ -152,9 +204,7 @@ export async function POST(req: Request) {
     const admin = getAdminClient();
     if (admin) {
       const insertSource = isCli ? "cli" : "api";
-      const cid = analysisId.slice(0, 8);
-      console.log(`[/api/v1/analyze] inserting analysis_history source=${insertSource} user_id=${keyRecord.user_id} cid=${cid}`);
-      void admin.from("analysis_history").insert({
+      await insertAnalysisHistoryWithFallback(admin, {
         user_id: keyRecord.user_id,
         prompt_hash: inputHash,
         model_id: model.id,
@@ -167,12 +217,6 @@ export async function POST(req: Request) {
         ruleset_hash: RULESET_HASH,
         input_hash: inputHash,
         source: insertSource,
-      }).then(({ error }) => {
-        if (error) {
-          console.error(`[/api/v1/analyze] analysis_history insert FAILED source=${insertSource} user_id=${keyRecord.user_id} cid=${cid} error=${error.message} code=${error.code}`);
-        } else {
-          console.log(`[/api/v1/analyze] analysis_history insert OK source=${insertSource} user_id=${keyRecord.user_id} cid=${cid}`);
-        }
       });
     } else {
       console.error("[/api/v1/analyze] skipping analysis_history insert: admin client unavailable (check SUPABASE_SERVICE_ROLE_KEY)");
