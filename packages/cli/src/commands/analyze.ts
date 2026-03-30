@@ -441,18 +441,29 @@ export async function runAnalyze(args: string[]): Promise<number> {
       process.stdout.write(BADGE_SNIPPET);
     }
 
-    console.log("");
-    console.log("⚠️  This prompt may cause production issues");
-    console.log("");
-    console.log("Free includes → basic analysis only");
-    console.log("🔒 Fix suggestions: Pro");
-    console.log("🔒 CI enforcement: Pro");
-    console.log("");
-    console.log("Upgrade → https://costguardai.io/upgrade");
-    console.log("Pro unlocks → fix suggestions, CI enforcement, safer prompt reviews");
-    console.log("");
-    console.log("Next step → run this on a real prompt from your codebase");
-    console.log("Example: costguardai analyze ./prompts/checkout-flow.txt");
+    process.stdout.write(
+      "\n---\n\n" +
+      "🚀 Next step (recommended):\n" +
+      "Run CostGuardAI on a real prompt from your codebase:\n\n" +
+      "  costguardai analyze ./prompts/your-prompt.txt\n\n" +
+      "Then protect production with CI:\n\n" +
+      "  costguardai ci --fail-on-risk 70\n\n" +
+      "  → Blocks unsafe prompts before production\n" +
+      "  → Prevents token explosions + cost spikes\n" +
+      "  → Required for teams / production workflows\n\n" +
+      "---\n",
+    );
+
+    process.stdout.write("\n");
+    process.stdout.write("⚠️  This prompt may cause production issues\n");
+    process.stdout.write("\n");
+    process.stdout.write("Free includes → basic analysis only\n");
+    process.stdout.write("🔒 Fix suggestions: Pro\n");
+    process.stdout.write("🔒 CI enforcement: Pro\n");
+    process.stdout.write("\n");
+    process.stdout.write("Upgrade → https://costguardai.io/upgrade\n");
+    process.stdout.write("Pro unlocks → fix suggestions, CI enforcement, safer prompt reviews\n");
+    process.stdout.write("\n");
 
     if (exitCode === 0) {
       process.stdout.write("\nIf this helped, consider starring:\nhttps://github.com/Camj78/Cost-Guard-AI\n");
