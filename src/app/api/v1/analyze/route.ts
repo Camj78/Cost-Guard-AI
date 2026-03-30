@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { verifyApiKey, checkFreeTierLimit } from "@/lib/api-keys/verify-api-key";
 import { countTokens } from "@/lib/tokenizer";
 import { assessRisk } from "@/lib/risk";
@@ -13,6 +14,19 @@ import {
   DEFAULT_EXPECTED_OUTPUT,
   resolveModel,
 } from "@/lib/ai/models";
+
+// ── Admin client (lazy, service-role) ──────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _admin: ReturnType<typeof createClient<any>> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getAdminClient(): ReturnType<typeof createClient<any>> | null {
+  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  if (!url || !key) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!_admin) _admin = createClient<any>(url, key);
+  return _admin;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -129,7 +143,43 @@ export async function POST(req: Request) {
     modelName: model.name,
   });
 
-  // 6. Record usage event (fire-and-forget)
+  // 6a. Record to analysis_history (fire-and-forget) — required for dashboard "Last Run"
+  //     Only possible when the API key is linked to a user account (user_id present).
+  if (!keyRecord.user_id) {
+    console.warn("[/api/v1/analyze] skipping analysis_history write: user_id is null (set FOUNDER_USER_ID in Vercel env, or use a DB-backed API key from /api/keys)");
+  }
+  if (keyRecord.user_id) {
+    const admin = getAdminClient();
+    if (admin) {
+      const insertSource = isCli ? "cli" : "api";
+      const cid = analysisId.slice(0, 8);
+      console.log(`[/api/v1/analyze] inserting analysis_history source=${insertSource} user_id=${keyRecord.user_id} cid=${cid}`);
+      void admin.from("analysis_history").insert({
+        user_id: keyRecord.user_id,
+        prompt_hash: inputHash,
+        model_id: model.id,
+        input_tokens: assessment.inputTokens,
+        output_tokens: expectedOutputTokens,
+        cost_total: assessment.estimatedCostTotal,
+        risk_score: assessment.riskScore,
+        analysis_version: ANALYSIS_VERSION,
+        score_version: assessment.score_version,
+        ruleset_hash: RULESET_HASH,
+        input_hash: inputHash,
+        source: insertSource,
+      }).then(({ error }) => {
+        if (error) {
+          console.error(`[/api/v1/analyze] analysis_history insert FAILED source=${insertSource} user_id=${keyRecord.user_id} cid=${cid} error=${error.message} code=${error.code}`);
+        } else {
+          console.log(`[/api/v1/analyze] analysis_history insert OK source=${insertSource} user_id=${keyRecord.user_id} cid=${cid}`);
+        }
+      });
+    } else {
+      console.error("[/api/v1/analyze] skipping analysis_history insert: admin client unavailable (check SUPABASE_SERVICE_ROLE_KEY)");
+    }
+  }
+
+  // 6b. Record usage event (fire-and-forget)
   void recordAiUsageEvent({
     endpoint: "/api/v1/analyze",
     model: model.id,
