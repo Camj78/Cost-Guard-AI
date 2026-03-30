@@ -340,15 +340,33 @@ function printAnalyzeReport(data, analysisId, manifestPath) {
 
   if (data.share_url) { console.log(`Share: ${data.share_url}`); }
 
-  console.log('');
-  console.log('Add this badge to your repo:');
-  console.log('[![CostGuardAI Safety](https://costguardai.io/badge.svg)](https://costguardai.io)');
-  console.log('');
   console.log(`Analysis ID:         ${analysisId}`);
   console.log(`Analysis Version:    ${data.analysis_version ?? 'n/a'}`);
   console.log(`Input Hash:          ${data.input_hash ?? 'n/a'}`);
   console.log(`Replay:              costguard replay ${analysisId}`);
   console.log(`Manifest:            ${manifestPath}`);
+  console.log('');
+
+  // ── Next step block ───────────────────────────────────────────────────────
+  console.log('🚀 Next step (recommended):');
+  console.log('Run CostGuardAI on a real prompt from your codebase:');
+  console.log('');
+  console.log('costguardai analyze ./prompts/your-prompt.txt');
+  console.log('');
+  console.log('Then protect production with CI:');
+  console.log('');
+  console.log('costguardai ci --fail-on-risk 70');
+  console.log('');
+  console.log('→ Blocks unsafe prompts before production');
+  console.log('→ Prevents token explosions + cost spikes');
+  console.log('→ Required for teams / production workflows');
+  console.log('');
+
+  // ── Upgrade CTA ───────────────────────────────────────────────────────────
+  console.log('Upgrade to Pro for unlimited analyses → https://costguardai.io/upgrade');
+  console.log('');
+  console.log('Add this badge to your repo:');
+  console.log('[![CostGuardAI Safety](https://costguardai.io/badge.svg)](https://costguardai.io)');
   console.log('');
 }
 
