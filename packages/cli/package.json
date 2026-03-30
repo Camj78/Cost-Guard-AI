@@ -1,6 +1,6 @@
 {
   "name": "@camj78/costguardai",
-  "version": "0.2.11",
+  "version": "0.2.14",
   "description": "CLI for AI prompt testing, LLM cost optimization, prompt validation, and CI safety checks before production.",
   "keywords": [
     "ai",
@@ -39,7 +39,8 @@
   ],
   "scripts": {
     "build": "tsup",
-    "build:watch": "tsup --watch"
+    "build:watch": "tsup --watch",
+    "prepublishOnly": "tsup"
   },
   "dependencies": {
     "js-tiktoken": "^1.0.21"
