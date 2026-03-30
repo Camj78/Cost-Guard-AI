@@ -430,34 +430,34 @@ export async function runAnalyze(args: string[]): Promise<number> {
     return exitCode;
   }
 
-  if (format !== "json") {
-    const BADGE_SNIPPET = `\nAdd this badge to your repo:\n[![CostGuardAI Safety](https://costguardai.io/badge.svg)](https://costguardai.io)\n`;
-
-    if (format === "md") {
-      process.stdout.write(formatMd(output) + "\n");
-      process.stdout.write(BADGE_SNIPPET);
-    } else {
-      process.stdout.write(formatText(output) + "\n");
-      process.stdout.write(BADGE_SNIPPET);
-    }
-
-    console.log("");
-    console.log("⚠️  This prompt may cause production issues");
-    console.log("");
-    console.log("Free includes → basic analysis only");
-    console.log("🔒 Fix suggestions: Pro");
-    console.log("🔒 CI enforcement: Pro");
-    console.log("");
-    console.log("Upgrade → https://costguardai.io/upgrade");
-    console.log("Pro unlocks → fix suggestions, CI enforcement, safer prompt reviews");
-    console.log("");
-    console.log("Next step → run this on a real prompt from your codebase");
-    console.log("Example: costguardai analyze ./prompts/checkout-flow.txt");
-
-    if (exitCode === 0) {
-      process.stdout.write("\nIf this helped, consider starring:\nhttps://github.com/Camj78/Cost-Guard-AI\n");
-    }
+  // 1) Analysis output
+  if (format === "md") {
+    process.stdout.write(formatMd(output) + "\n");
+  } else {
+    process.stdout.write(formatText(output) + "\n");
   }
+
+  // 2) Next step block
+  process.stdout.write(
+    "\n---\n" +
+    "\n🚀 Next step (recommended):\n" +
+    "Run CostGuardAI on a real prompt from your codebase:\n" +
+    "\ncostguardai analyze ./prompts/your-prompt.txt\n" +
+    "\nThen protect production with CI:\n" +
+    "\ncostguardai ci --fail-on-risk 70\n" +
+    "\n→ Blocks unsafe prompts before production\n" +
+    "→ Prevents token explosions + cost spikes\n" +
+    "→ Required for teams / production workflows\n" +
+    "\n---\n"
+  );
+
+  // 3) Upgrade CTA
+  process.stdout.write("\n⚠️  This prompt may cause production issues\n");
+  process.stdout.write("\nFree includes → basic analysis only\n");
+  process.stdout.write("🔒 Fix suggestions: Pro\n");
+  process.stdout.write("🔒 CI enforcement: Pro\n");
+  process.stdout.write("\nUpgrade → https://costguardai.io/upgrade\n");
+  process.stdout.write("Pro unlocks → fix suggestions, CI enforcement, safer prompt reviews\n");
 
   return exitCode;
 }
