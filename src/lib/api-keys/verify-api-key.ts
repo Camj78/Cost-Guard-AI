@@ -96,11 +96,17 @@ async function resolveFounderUserId(): Promise<string | null> {
  * Returns null if the key is missing, unknown, or revoked.
  */
 export async function verifyApiKey(key: string): Promise<ApiKeyRecord | null> {
+  const rawKey = key;
+  console.log("[verifyApiKey] raw key present:", Boolean(rawKey))
+  console.log("[verifyApiKey] env key present:", Boolean(process.env.COSTGUARD_API_KEY))
+  console.log("[verifyApiKey] raw key matches env key:", rawKey === process.env.COSTGUARD_API_KEY)
+
   if (!key) return null;
 
   // ── 1. Env-key fallback (founder / CLI) ────────────────────────────────
   const envKey = process.env.COSTGUARD_API_KEY;
   if (envKey && key === envKey) {
+    console.log("[verifyApiKey] using env-key path")
     if (!process.env.FOUNDER_USER_ID) {
       console.error(
         "[verifyApiKey] FOUNDER_USER_ID is not set in environment. " +
@@ -109,10 +115,18 @@ export async function verifyApiKey(key: string): Promise<ApiKeyRecord | null> {
       );
     }
     const founderId = await resolveFounderUserId();
-    return { id: "founder", plan: "pro", user_id: founderId };
+    const resolvedUserId = founderId;
+    console.log("[verifyApiKey] resolved user_id:", resolvedUserId ?? null)
+    const keyRecord = { id: "founder", plan: "pro", user_id: founderId };
+    console.log("[verifyApiKey] returning keyRecord:", {
+      hasUserId: Boolean(keyRecord?.user_id),
+      plan: keyRecord?.plan ?? null,
+    })
+    return keyRecord;
   }
 
   // ── 2. DB lookup (api_keys table) ──────────────────────────────────────
+  console.log("[verifyApiKey] using DB lookup path")
   try {
     const admin = getAdminClient();
     if (!admin) return null;
@@ -128,7 +142,14 @@ export async function verifyApiKey(key: string): Promise<ApiKeyRecord | null> {
 
     if (error || !data) return null;
 
-    return { id: data.id as string, plan: data.plan as string, user_id: (data.user_id as string | null) ?? null };
+    const keyRecord = { id: data.id as string, plan: data.plan as string, user_id: (data.user_id as string | null) ?? null };
+    const resolvedUserId = keyRecord.user_id;
+    console.log("[verifyApiKey] resolved user_id:", resolvedUserId ?? null)
+    console.log("[verifyApiKey] returning keyRecord:", {
+      hasUserId: Boolean(keyRecord?.user_id),
+      plan: keyRecord?.plan ?? null,
+    })
+    return keyRecord;
   } catch {
     return null;
   }

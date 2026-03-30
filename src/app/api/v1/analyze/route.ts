@@ -107,6 +107,10 @@ export async function POST(req: Request) {
       { status: 401 }
     );
   }
+  console.log("[/api/v1/analyze] verified keyRecord:", {
+    hasUserId: Boolean(keyRecord?.user_id),
+    userId: keyRecord?.user_id ?? null,
+  })
 
   // 1b. Enforce free-tier monthly limit
   if (keyRecord.plan === "free") {
@@ -197,7 +201,9 @@ export async function POST(req: Request) {
 
   // 6a. Record to analysis_history — awaited, with schema-drift fallback.
   //     Only possible when the API key is linked to a user account (user_id present).
+  console.log("[/api/v1/analyze] entering analysis_history write block")
   if (!keyRecord.user_id) {
+    console.warn("[/api/v1/analyze] skipping analysis_history write because user_id is null")
     console.warn("[/api/v1/analyze] skipping analysis_history write: user_id is null (set FOUNDER_USER_ID in Vercel env, or use a DB-backed API key from /api/keys)");
   }
   if (keyRecord.user_id) {
