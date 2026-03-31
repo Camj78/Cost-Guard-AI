@@ -40,7 +40,7 @@ export async function runCi(args: string[]): Promise<number> {
   }
 
   if (!hasPath) {
-    forwarded.unshift(".");
+    forwarded.unshift("--zero-config", ".");
     primaryFile = ".";
   }
 

@@ -92,6 +92,7 @@ interface ParsedArgs {
   configPath: string;
   extensions: string[] | null;
   expectedOutputTokens: number | null;
+  zeroConfig: boolean;
 }
 
 function parseArgs(args: string[]): ParsedArgs {
@@ -102,11 +103,14 @@ function parseArgs(args: string[]): ParsedArgs {
   let configPath = "costguard.config.json";
   let extensions: string[] | null = null;
   let expectedOutputTokens: number | null = null;
+  let zeroConfig = false;
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === "--json") {
       format = "json";
+    } else if (a === "--zero-config") {
+      zeroConfig = true;
     } else if (a === "--format" && args[i + 1]) {
       const f = args[++i];
       if (f === "text" || f === "md" || f === "json") format = f;
@@ -136,7 +140,7 @@ function parseArgs(args: string[]): ParsedArgs {
     }
   }
 
-  return { targetPath, model, format, threshold, configPath, extensions, expectedOutputTokens };
+  return { targetPath, model, format, threshold, configPath, extensions, expectedOutputTokens, zeroConfig };
 }
 
 // ── File walking ──────────────────────────────────────────────────────────────
@@ -168,6 +172,28 @@ function walkDir(dir: string, extensions: string[], ignoreList: string[]): strin
 
   walk(dir);
   return results;
+}
+
+// Zero-config CI discovery: only ./prompts/**/*.{txt,md} and ./**/*.prompt
+function walkDirZeroConfig(rootDir: string, ignoreList: string[]): string[] {
+  const seen = new Set<string>();
+  const results: string[] = [];
+
+  // ./prompts/**/*.txt and ./prompts/**/*.md
+  const promptsDir = path.join(rootDir, "prompts");
+  if (fs.existsSync(promptsDir) && fs.statSync(promptsDir).isDirectory()) {
+    for (const f of walkDir(promptsDir, [".txt", ".md"], ignoreList)) {
+      seen.add(f);
+      results.push(f);
+    }
+  }
+
+  // ./**/*.prompt anywhere in the repo
+  for (const f of walkDir(rootDir, [".prompt"], ignoreList)) {
+    if (!seen.has(f)) results.push(f);
+  }
+
+  return results.sort((a, b) => a.localeCompare(b));
 }
 
 // ── Safety band mapping ───────────────────────────────────────────────────────
@@ -405,7 +431,9 @@ export async function analyzeToOutput(args: string[]): Promise<{
   const stat = fs.statSync(targetPath);
   let files: string[];
   if (stat.isDirectory()) {
-    files = walkDir(targetPath, extensions, ignoreList);
+    files = parsed.zeroConfig
+      ? walkDirZeroConfig(targetPath, ignoreList)
+      : walkDir(targetPath, extensions, ignoreList);
   } else {
     const ext = path.extname(targetPath).toLowerCase();
     if (!extensions.includes(ext)) {
