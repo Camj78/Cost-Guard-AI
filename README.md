@@ -25,6 +25,46 @@ CostGuardAI Preflight Analysis
 1 file(s) analyzed. Lowest Safety Score: 48.
 ```
 
+---
+
+## 🚫 this would have blocked a bad prompt before deploy
+
+```bash
+npx @camj78/costguardai ci --fail-on-risk 70
+```
+
+```text
+CostGuardAI Preflight Analysis
+────────────────────────────────────────
+  ❌ FAILED  (score: 49)
+
+  File:           prompts/risky.prompt
+  CostGuardAI Safety Score: 49 (Warning)
+
+  Risk Notes:
+    • ambiguous instructions may increase output variance
+    • high output volatility — response length unpredictable
+
+  ⚠️  this prompt is likely to increase token usage significantly in production
+────────────────────────────────────────
+1 file(s) analyzed. Lowest Safety Score: 49.
+
+threshold behavior:
+  score < 40  →  exit 1 (fail)
+  score 40–70 →  warning
+  score > 70  →  pass
+
+❌ CI FAILED — blocked from deploy
+
+CostGuardAI blocked this merge.
+Safety Score: 49 (FAIL)
+
+Suggested fix:
+costguardai fix prompts/risky.prompt
+```
+
+---
+
 ## Quick Start
 
 ```bash
@@ -260,21 +300,24 @@ costguardai init
 ```
 
 **Step 3 — Add CI gate**
+
+Used in CI to prevent:
+- token explosions
+- unstable outputs
+- hidden LLM costs
+
 ```yaml
-# .github/workflows/costguardai.yml
-name: CostGuardAI Prompt Safety
-on:
-  pull_request:
-    paths:
-      - "**/*.prompt"
-      - "**/prompts/**"
+name: CostGuardAI
+
+on: [pull_request]
+
 jobs:
-  costguardai:
+  costguard:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: npm install -g @camj78/costguardai
-      - run: costguardai ci --fail-on-risk 75
+      - name: Run CostGuardAI
+        run: npx @camj78/costguardai@latest ci --fail-on-risk 70
 ```
 
 **Step 4 — Commit**
