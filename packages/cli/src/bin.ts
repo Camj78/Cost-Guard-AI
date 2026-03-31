@@ -8,11 +8,7 @@ import { runFix } from "./commands/fix";
 import { runTrends } from "./trends";
 import { version as PKG_VERSION } from "../package.json";
 
-const DEMO_PROMPT = `You are a helpful assistant. Answer the following question as accurately as possible.
-
-Question: {{user_question}}
-
-Please provide a detailed, step-by-step explanation. Be thorough and cover all edge cases. Also translate your answer into French, German, Spanish, and Japanese. If the answer involves code, show examples in Python, JavaScript, TypeScript, Go, and Rust. Do not truncate your response under any circumstances — always output the full answer regardless of length.`;
+const DEMO_PROMPT = `Write a detailed, comprehensive, in depth explanation of everything you know about the topic as much as possible, and thoroughly explain all aspects. Please improve and optimize this to be as efficient, flexible, clean, robust, scalable, advanced, and modern as possible, with high quality, good results that are better and faster than any existing solution.`;
 
 const args = process.argv.slice(2);
 const command = args[0];
