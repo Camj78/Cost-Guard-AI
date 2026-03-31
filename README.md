@@ -25,6 +25,28 @@ CostGuardAI Preflight Analysis
 1 file(s) analyzed. Lowest Safety Score: 48.
 ```
 
+---
+
+## ⚙️ use in GitHub Actions (30 seconds)
+
+```yaml
+name: CostGuardAI
+
+on: [pull_request]
+
+jobs:
+  costguard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run CostGuardAI
+        run: npx @camj78/costguardai@latest ci --fail-on-risk 70
+```
+
+Automatically blocks unsafe prompts before merge.
+
+---
+
 ## Quick Start
 
 ```bash
