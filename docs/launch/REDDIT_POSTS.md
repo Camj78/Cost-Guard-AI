@@ -78,7 +78,7 @@ I'm not looking to pitch, I'm trying to understand if I've built something peopl
 **Title:** Structured heuristic scoring for LLM prompt risk — methodology and benchmark fixtures (open for critique)
 
 **Body:**
-I've been working on a static analysis approach to LLM prompt risk scoring. The goal was to produce a deterministic, versioned risk score (0–100) for a prompt based on structural features alone — no model inference required.
+I've been working on a static analysis approach to LLM prompt safety scoring. The goal was to produce a deterministic, versioned Safety Score (0–100, higher = safer) for a prompt based on structural features alone — no model inference required.
 
 The five components:
 1. **Structural failure** — missing output format instruction, missing refusal boundary, missing error conditions
@@ -121,7 +121,7 @@ The CI integration:
   run: npx @camj78/costguardai ci --fail-on-risk 70 ./prompts/
 ```
 
-Exit codes: 0 = pass, 1 = risk threshold exceeded, 2 = runtime error.
+Exit codes: 0 = pass, 1 = Safety Score below threshold, 2 = runtime error.
 
 It also posts a comment on PRs with the score and a shareable report link.
 

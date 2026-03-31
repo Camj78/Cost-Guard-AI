@@ -251,7 +251,7 @@ jobs:
               MARKER,
               `## ⚠️ CostGuard detected elevated prompt risk`,
               ``,
-              `**Safety Score: ${safetyScore} / 100** (risk score ${riskScore} exceeds threshold ${THRESHOLD})`,
+              `**Safety Score: ${safetyScore} / 100** (below minimum threshold of ${100 - THRESHOLD})`,
               ``,
               `**Top Risk Drivers:**`,
               ``,
@@ -320,8 +320,8 @@ jobs:
         run: |
           echo ""
           echo "╔══════════════════════════════════════════════════════════════╗"
-          echo "║  CostGuardAI: risk threshold exceeded                        ║"
-          echo "║  One or more prompt files scored > 75 (safety score < 25).   ║"
+          echo "║  CostGuardAI: Safety Score below minimum threshold           ║"
+          echo "║  One or more prompt files have Safety Score < 25 / 100.      ║"
           echo "║  Review the PR comment for top risk drivers and fixes.       ║"
           echo "╚══════════════════════════════════════════════════════════════╝"
           echo ""

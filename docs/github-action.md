@@ -1,6 +1,6 @@
 # GitHub Action — CostGuard Prompt Scan
 
-Block deployments when AI prompts exceed your risk threshold.
+Block deployments when AI prompts fall below your Safety Score threshold.
 
 ```yaml
 - uses: costguardai/prompt-scan@v1
@@ -16,7 +16,7 @@ Block deployments when AI prompts exceed your risk threshold.
 2. Extracts prompt strings — full file content for text files, embedded template literals for source files.
 3. Calls the CostGuard API to score each prompt for cost and failure risk.
 4. Posts a summary comment to the pull request.
-5. Fails the build (`exit 1`) if any prompt's CostGuardAI Safety Score falls below the configured threshold.
+5. Fails the build (`exit 1`) if any prompt's Safety Score falls below the configured threshold.
 
 Completes in under 10 seconds on typical repositories.
 
@@ -28,7 +28,7 @@ Completes in under 10 seconds on typical repositories.
 |-------|----------|---------|-------------|
 | `api_key` | Yes | — | CostGuard API key. Store as a repository secret. Get one at [costguardai.io](https://costguardai.io). |
 | `path` | No | `.` | Directory to scan, relative to the repository root. Useful for monorepos. |
-| `risk_threshold` | No | `70` | Risk score 0–100. Build fails if any prompt exceeds this value. |
+| `risk_threshold` | No | `70` | Internal risk threshold 0–100. Build fails if any prompt's Safety Score falls below `100 − risk_threshold`. Default of `70` blocks prompts with Safety Score below 30. |
 
 ---
 
@@ -36,7 +36,7 @@ Completes in under 10 seconds on typical repositories.
 
 | Output | Type | Description |
 |--------|------|-------------|
-| `highest_risk_score` | string | Highest risk score found across all scanned prompts. |
+| `highest_risk_score` | string | Lowest Safety Score found across all scanned prompts (internal field name preserved for compatibility). |
 | `scanned_files` | string | Total number of files scanned. |
 | `blocked` | string | `"true"` if threshold was exceeded, `"false"` otherwise. |
 
@@ -104,7 +104,7 @@ Useful for monorepos or projects that store prompts in a dedicated folder:
 The action posts a comment to every pull request with:
 
 - Pass/fail status per file
-- Risk score and risk band (LOW / MEDIUM / HIGH / CRITICAL)
+- Safety Score and safety band (Safe / Low / Warning / High)
 - Estimated cost per 1k API calls
 - Top risk drivers
 - Link to the full CostGuard report
@@ -118,7 +118,7 @@ The comment is updated in place on subsequent pushes — it does not create dupl
 | Code | Meaning |
 |------|---------|
 | `0` | All prompts passed (or no prompts found). Build continues. |
-| `1` | One or more prompts exceeded the risk threshold. Build blocked. |
+| `1` | One or more prompts fell below the Safety Score threshold. Build blocked. |
 | `2` | Runtime error (invalid API key, network failure). Build blocked. |
 
 ---
@@ -147,7 +147,7 @@ Files larger than 100KB and directories (`node_modules`, `.git`, `.next`, `dist`
 
 - name: Print scan summary
   run: |
-    echo "Highest risk score: ${{ steps.scan.outputs.highest_risk_score }}"
+    echo "Lowest Safety Score: ${{ steps.scan.outputs.highest_risk_score }}"
     echo "Files scanned: ${{ steps.scan.outputs.scanned_files }}"
     echo "Blocked: ${{ steps.scan.outputs.blocked }}"
 ```
@@ -156,13 +156,13 @@ Files larger than 100KB and directories (`node_modules`, `.git`, `.next`, `dist`
 
 ## Soft mode (report only, never block)
 
-Set `risk_threshold` to `100` to post the PR comment without ever failing the build:
+Set `risk_threshold` to `0` to post the PR comment without ever failing the build (Safety Score threshold becomes 100, which no prompt can fall below):
 
 ```yaml
 - uses: costguardai/prompt-scan@v1
   with:
     api_key: ${{ secrets.COSTGUARD_API_KEY }}
-    risk_threshold: 100
+    risk_threshold: 0
 ```
 
 ---
@@ -180,11 +180,11 @@ Set `risk_threshold` to `100` to post the PR comment without ever failing the bu
 | `CostGuard server error (5xx)` | Upstream outage | Check costguardai.io/status; re-run the workflow |
 | `All N API request(s) failed` | Every scan failed (key, network, or quota) | Resolve the underlying error shown in the log |
 
-### Exit code 1 — threshold exceeded
+### Exit code 1 — Safety Score below threshold
 
-The build is intentionally blocked. Improve your prompt's CostGuardAI Safety Score by addressing the **Top Risks** listed in the PR comment, then push again.
+The build is intentionally blocked. Improve your prompt's Safety Score by addressing the **Top Risks** listed in the PR comment, then push again.
 
-To unblock temporarily: set `risk_threshold: 100` (soft mode) while you iterate, then restore the threshold before merging.
+To unblock temporarily: set `risk_threshold: 0` (soft mode) while you iterate, then restore the threshold before merging.
 
 ### No prompts found
 

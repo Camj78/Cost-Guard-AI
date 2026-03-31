@@ -15,7 +15,7 @@ Stored when a user saves an analysis run via the web dashboard or authenticated 
 | `input_tokens`     | int      | Counted or estimated input tokens              |
 | `output_tokens`    | int      | Expected output tokens                         |
 | `cost_total`       | numeric  | Estimated cost per request (USD)               |
-| `risk_score`       | int      | 0–100 risk score                               |
+| `risk_score`       | int      | Internal 0–100 risk score (Safety Score = 100 − risk_score) |
 | `analysis_version` | text     | Engine version (e.g. `1.0.0`)                  |
 | `score_version`    | text     | Scoring spec version (e.g. `v1.0`)             |
 | `ruleset_hash`     | text     | SHA-256 of risk rule definitions               |
@@ -119,7 +119,7 @@ Developer → POST /api/v1/analyze (prompt text, model)
     - createShareReport()        → share_reports table (no prompt text)
     - recordAiUsageEvent()       → ai_usage_events (prompt_hash only)
          ↓
-    Response: risk score, explanation, trust fields
+    Response: Safety Score, explanation, trust fields
          ↓
 CLI: saveReplayManifest()        → ~/.costguard/replays/<id>.json (LOCAL ONLY)
 ```

@@ -2,7 +2,7 @@
 
 **Title:**
 ```
-Show HN: CostGuard – RiskScore your LLM prompts before they ship
+Show HN: CostGuard – Safety Score your LLM prompts before they ship
 ```
 
 **Body:**
@@ -19,7 +19,7 @@ ship and it gives you:
 - A CostGuardAI Safety Score (0–100) based on heuristics: length, context saturation,
   ambiguity, structural quality, output volatility
 - Specific mitigation suggestions per driver
-- CI integration — fail builds when risk exceeds a threshold
+- CI integration — fail builds when Safety Score falls below a threshold
 - Shareable reports — permalink for async team review
 
 The CLI is one command:

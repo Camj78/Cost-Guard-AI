@@ -49,10 +49,10 @@ CostGuardAI Preflight Analysis
 ────────────────────────────────────────
 1 file(s) analyzed. Lowest Safety Score: 49.
 
-threshold behavior:
-  score < 40  →  exit 1 (fail)
-  score 40–70 →  warning
-  score > 70  →  pass
+threshold behavior (Safety Score):
+  Safety Score < 40  →  exit 1 (fail)
+  Safety Score 40–70 →  warning
+  Safety Score > 70  →  pass
 
 ❌ CI FAILED — blocked from deploy
 
@@ -178,7 +178,7 @@ Input prompt:
 CostGuardAI output:
 
 ```
-CostGuardAI Safety Score: 78 (HIGH)
+CostGuardAI Safety Score: 78 (Low Risk)
 ⚠️ Potential token explosion due to unbounded context
 ⚠️ Output variability risk
 ⚠️ Cost estimate: $420/month at scale
@@ -194,7 +194,7 @@ Example output when a risky production prompt is analyzed.
 ```text
 $ costguardai analyze ./prompts/checkout-flow.txt
 
-CostGuardAI Safety Score: 78 (HIGH)
+CostGuardAI Safety Score: 78 (Low Risk)
 ⚠️ Potential token explosion due to unbounded context
 ⚠️ Output variability risk
 ⚠️ Cost estimate: $420/month at scale
@@ -228,7 +228,7 @@ Supports prompt cost estimation for OpenAI cost, Claude cost, and LLM cost acros
 | ⚠️ Output collision | Conflicting instructions producing unstable output |
 | 🔒 Missing guardrails | No output constraints = unpredictable behavior |
 
-**CostGuardAI Safety Score: 0–100.** Know your risk before you ship.
+**CostGuardAI Safety Score: 0–100.** Higher score = safer. Know your score before you ship.
 
 ---
 
@@ -337,7 +337,7 @@ git commit -m "Add CostGuardAI preflight checks"
 |---|---|
 | `costguardai analyze <file>` | Analyze a prompt file |
 | `costguardai fix <file>` | Auto-fix detected issues |
-| `costguardai ci --fail-on-risk <n>` | CI gate — exit 1 if risk score ≥ n |
+| `costguardai ci --fail-on-risk <n>` | CI gate — exit 1 if Safety Score < n |
 | `costguardai init` | Initialize config in current repo |
 
 **Options**
@@ -346,7 +346,7 @@ git commit -m "Add CostGuardAI preflight checks"
 |---|---|---|
 | `--model <id>` | Model to analyze against | `gpt-4o-mini` |
 | `--format text\|md\|json` | Output format | `text` |
-| `--threshold <n>` | Exit 1 if any file risk_score ≥ n | — |
+| `--threshold <n>` | Exit 1 if any file Safety Score < n | — |
 | `--ext <exts>` | File extensions to scan | `.txt,.md,.prompt` |
 | `--expected-output <n>` | Expected output tokens | `512` |
 

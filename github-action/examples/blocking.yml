@@ -1,6 +1,6 @@
 # CostGuard Prompt Scan — Threshold-blocking example
 #
-# Blocks the pull request merge if any prompt's risk score exceeds the threshold.
+# Blocks the pull request merge if any prompt's Safety Score falls below the threshold.
 # The build exits with code 1 and the PR comment shows which files failed.
 #
 # Required secret:
@@ -19,7 +19,7 @@ on:
 
 jobs:
   prompt-scan:
-    name: Prompt Risk Check
+    name: Prompt Safety Check
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -31,13 +31,13 @@ jobs:
       - uses: costguardai/prompt-scan@v1
         with:
           api_key: ${{ secrets.COSTGUARD_API_KEY }}
-          # Block the build if any prompt scores 70 or above (0–100 scale).
-          # Lower this value for stricter enforcement.
+          # Block the build if any prompt's Safety Score falls below 30 (0–100 scale).
+          # Raise this value for stricter enforcement.
           risk_threshold: 70
 
       # Optional: use scan outputs in downstream steps
       # - name: Print scan summary
       #   run: |
-      #     echo "Highest risk score: ${{ steps.scan.outputs.highest_risk_score }}"
-      #     echo "Files scanned:      ${{ steps.scan.outputs.scanned_files }}"
-      #     echo "Blocked:            ${{ steps.scan.outputs.blocked }}"
+      #     echo "Lowest Safety Score: ${{ steps.scan.outputs.lowest_safety_score }}"
+      #     echo "Files scanned:       ${{ steps.scan.outputs.scanned_files }}"
+      #     echo "Blocked:             ${{ steps.scan.outputs.blocked }}"

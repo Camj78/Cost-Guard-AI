@@ -43,7 +43,7 @@ You give it a prompt file, it gives you:
   - Output volatility (instructions that produce high-variance outputs)
   - Length penalty (prompts approaching truncation threshold)
 - Top risk drivers with specific mitigation suggestions
-- CI integration: fail builds when risk exceeds a configured threshold
+- CI integration: fail builds when Safety Score falls below your configured threshold
 - GitHub Action: auto-comment on every PR with score + shareable report link
 
 The CLI is one command:
@@ -85,7 +85,7 @@ one input. Structural analysis is the actual value.
 ```
 Yes. npx @camj78/costguardai analyze prompt.txt (or pipe stdin).
 
-CI usage: costguardai ci --fail-on-risk 70 ./prompts/
+CI usage: costguardai ci --fail-on-risk 70 ./prompts/  # blocks if Safety Score < 30
 
 The GitHub Action runs on every PR, posts a comment with the score, and links
 to a shareable report. Install takes about 30 seconds: npx @camj78/costguardai install

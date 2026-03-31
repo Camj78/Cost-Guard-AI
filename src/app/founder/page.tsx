@@ -875,23 +875,23 @@ export default async function FounderPage({
               {/* Risk distribution */}
               <div className="glass-card p-6 space-y-4">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.06em]">
-                  Risk Distribution ({dayLabel})
+                  Safety Score Distribution ({dayLabel})
                 </p>
                 {analysesPeriod.length === 0 ? (
                   <p className="text-xs text-muted-foreground">No analyses in this period.</p>
                 ) : (
                   <div className="space-y-2">
                     {[
-                      { label: "High risk (70+)", count: highRiskCount, color: "text-red-400" },
+                      { label: "Low Safety Score (≤30)", count: highRiskCount, color: "text-red-400" },
                       {
-                        label: "Medium risk (40–69)",
+                        label: "Warning Zone (31–60)",
                         count: analysesPeriod.filter(
                           (r) => r.risk_score >= 40 && r.risk_score < 70
                         ).length,
                         color: "text-amber-400",
                       },
                       {
-                        label: "Low risk (<40)",
+                        label: "Safe (61+)",
                         count: analysesPeriod.filter((r) => r.risk_score < 40).length,
                         color: "text-green-400",
                       },
@@ -906,9 +906,9 @@ export default async function FounderPage({
                     {avgRisk !== null && (
                       <div className="pt-2 border-t border-white/5">
                         <div className="flex items-center justify-between">
-                          <p className="text-xs text-muted-foreground">Avg risk score</p>
+                          <p className="text-xs text-muted-foreground">Avg Safety Score</p>
                           <p className="text-xs font-mono tabular-nums text-foreground">
-                            {avgRisk}
+                            {100 - avgRisk}
                           </p>
                         </div>
                       </div>

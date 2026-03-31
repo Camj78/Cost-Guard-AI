@@ -35,10 +35,10 @@ costguard analyze prompt.txt
 Output:
 
 ```
-RiskScore:    28  (LOW)
-Tokens:       18
-Cost/request: $0.0001
-Context:      0.1%
+Safety Score:  72  (Low)
+Tokens:        18
+Cost/request:  $0.0001
+Context:       0.1%
 
 Summary: Low risk. Prompt is concise with minimal ambiguity.
 ```
@@ -54,8 +54,8 @@ costguard ci prompt.txt --fail-on-risk 70
 ```
 
 Exit codes:
-- `0` — score is below threshold (pass)
-- `1` — score meets or exceeds threshold (fail)
+- `0` — Safety Score is above threshold (pass)
+- `1` — Safety Score falls below threshold (fail)
 - `2` — runtime error
 
 For JSON output (useful for CI parsing):
@@ -100,7 +100,7 @@ jobs:
 ```
 
 The action posts an analysis comment on every PR, including:
-- RiskScore and risk band
+- Safety Score and safety band
 - Top risk drivers
 - Link to the full shareable report
 - Attribution footer with score version

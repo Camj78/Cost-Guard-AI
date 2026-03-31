@@ -67,11 +67,11 @@ export function buildExplanation(
 
   let summary: string;
   if (top_risk_drivers.length === 0) {
-    summary = `RiskScore ${riskScore} (${band}). No significant risk drivers detected.`;
+    summary = `CostGuardAI Safety Score: ${100 - riskScore} (${band}). No significant risk drivers detected.`;
   } else if (top_risk_drivers.length === 1) {
-    summary = `RiskScore ${riskScore} (${band}) driven primarily by ${top_risk_drivers[0]}.`;
+    summary = `CostGuardAI Safety Score: ${100 - riskScore} (${band}) driven primarily by ${top_risk_drivers[0]}.`;
   } else {
-    summary = `RiskScore ${riskScore} (${band}) driven primarily by ${top_risk_drivers[0]} and ${top_risk_drivers[1]}.`;
+    summary = `CostGuardAI Safety Score: ${100 - riskScore} (${band}) driven primarily by ${top_risk_drivers[0]} and ${top_risk_drivers[1]}.`;
   }
 
   return {

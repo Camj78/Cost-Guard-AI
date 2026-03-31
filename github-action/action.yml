@@ -1,5 +1,5 @@
 name: 'CostGuard Prompt Scan'
-description: 'Scan repository prompt files for AI cost and risk. Blocks builds when risk score exceeds threshold.'
+description: 'Scan repository prompt files for AI cost and safety risk. Blocks builds when Safety Score falls below threshold.'
 branding:
   icon: 'shield'
   color: 'red'
@@ -13,17 +13,17 @@ inputs:
     required: false
     default: '.'
   risk_threshold:
-    description: 'Risk score threshold 0–100. Build fails if any scanned prompt exceeds this value.'
+    description: 'Minimum acceptable Safety Score (0–100). Build fails if any scanned prompt Safety Score falls below this value.'
     required: false
     default: '70'
 
 outputs:
-  highest_risk_score:
-    description: 'Highest risk score found across all scanned prompts.'
+  lowest_safety_score:
+    description: 'Lowest Safety Score found across all scanned prompts. Lower scores indicate higher risk.'
   scanned_files:
     description: 'Total number of files scanned.'
   blocked:
-    description: '"true" if any prompt exceeded the threshold, "false" otherwise.'
+    description: '"true" if any prompt Safety Score fell below the threshold, "false" otherwise.'
 
 runs:
   using: 'node20'

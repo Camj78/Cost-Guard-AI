@@ -48,7 +48,7 @@ The `COSTGUARD_PROMPT_STORAGE` environment variable controls telemetry behavior:
 | Data Type            | Stored Server-Side | Notes                                     |
 |----------------------|--------------------|-------------------------------------------|
 | Prompt text          | No (default)       | Only hash stored; text in local manifests |
-| Risk score           | Yes                | In `analysis_history`                     |
+| Safety Score         | Yes                | Stored as internal `risk_score` in `analysis_history` |
 | Token counts         | Yes                | In `analysis_history`                     |
 | Cost estimate        | Yes                | In `analysis_history`                     |
 | Trust fields         | Yes                | `analysis_version`, `score_version`, `ruleset_hash`, `input_hash` |

@@ -40,14 +40,17 @@ export function evaluatePolicy(
   const violations: PolicyViolation[] = [];
 
   for (const f of files) {
-    // max_risk_score: block files with risk score above the limit
+    // max_risk_score: block files whose Safety Score falls below the minimum threshold.
+    // Safety Score = 100 − risk_score; a low Safety Score indicates unsafe output.
     if (
       policy.max_risk_score !== undefined &&
       f.risk_score > policy.max_risk_score
     ) {
+      const safetyScore = 100 - f.risk_score;
+      const minSafetyScore = 100 - policy.max_risk_score;
       violations.push({
         rule: "max_risk_score",
-        message: `Risk score ${f.risk_score} exceeds policy limit of ${policy.max_risk_score}`,
+        message: `Safety Score ${safetyScore} is below the minimum policy threshold of ${minSafetyScore}. A low Safety Score indicates unsafe output.`,
         file: f.file,
       });
     }
@@ -72,7 +75,7 @@ export function evaluatePolicy(
       if (structuralDriver && structuralDriver.impact >= 60 && f.risk_score >= 60) {
         violations.push({
           rule: "block_injection_risk",
-          message: `High structural/injection risk detected (risk score: ${f.risk_score}, structural impact: ${structuralDriver.impact})`,
+          message: `High structural/injection risk detected (Safety Score: ${100 - f.risk_score}, structural impact: ${structuralDriver.impact}). Low Safety Score indicates unsafe output.`,
           file: f.file,
         });
       }

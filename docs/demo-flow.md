@@ -40,12 +40,12 @@ costguard analyze prompt.txt
 Sample output:
 
 ```
-RiskScore:    62  (WARNING)
-Tokens:       87
-Cost/request: $0.0004
-Context:      0.5%
+Safety Score:  38  (High)
+Tokens:        87
+Cost/request:  $0.0004
+Context:       0.5%
 
-Summary: Warning. Ambiguity Risk and Output Volatility Risk are elevated.
+Summary: High risk. Ambiguity Risk and Output Volatility Risk are elevated.
 
 Top Risk Drivers:
   Ambiguity Risk       (impact: 45)
@@ -59,14 +59,14 @@ Mitigations:
 
 ---
 
-## Step 3: Observe the RiskScore
+## Step 3: Review the Safety Score
 
-The score of 62 (WARNING) indicates:
+The Safety Score of 38 (High) indicates:
 - Ambiguous instructions may cause inconsistent model outputs
 - Open-ended output format increases cost unpredictability
 - Prompt is safe from truncation but benefits from tightening
 
-Revise the prompt to address the top drivers, then re-run `costguard analyze` to verify the score improves.
+Revise the prompt to address the top drivers, then re-run `costguard analyze` to verify the Safety Score improves.
 
 ---
 
@@ -92,7 +92,7 @@ Within ~30 seconds, a comment appears on the PR:
 ```
 ## CostGuard Analysis
 
-**RiskScore: 62 (WARNING)**
+**Safety Score: 38 (High)**
 
 ### Top Drivers
 • Ambiguity Risk
@@ -117,7 +117,7 @@ https://costguardai.io/report/<analysis_id>
 ```
 
 The report shows:
-- Full RiskScore with risk band
+- Full Safety Score with safety band
 - Top risk drivers with impact scores
 - Actionable mitigation suggestions
 - Report integrity metadata (score version, analysis version)

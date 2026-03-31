@@ -31,8 +31,8 @@ Switch to terminal. Run:
 costguard analyze prompt.txt
 ```
 
-> "CostGuard gives you a RiskScore in under a second. This prompt scores 62 —
-> WARNING. Two risk drivers flagged: Ambiguity Risk and Output Volatility."
+> "CostGuard gives you a Safety Score in under a second. This prompt scores 38 —
+> High. Two risk drivers flagged: Ambiguity Risk and Output Volatility."
 
 Point to the mitigation list.
 
@@ -47,7 +47,7 @@ Switch to GitHub PR.
 > "We also run this in CI. Every pull request gets an automatic analysis comment.
 > Score, top drivers, and a shareable report link — before the code ships."
 
-Point to the PR comment showing RiskScore and the footer.
+Point to the PR comment showing Safety Score and the footer.
 
 ---
 
@@ -58,7 +58,7 @@ Click the report link.
 > "Click the link. Public, privacy-safe report. No raw prompts — just the risk
 > intelligence your team needs to make a decision."
 
-Point to: RiskScore, drivers, mitigations, integrity metadata.
+Point to: Safety Score, drivers, mitigations, integrity metadata.
 
 ---
 
@@ -75,7 +75,7 @@ Switch to dashboard observability view.
 
 ## Key Phrases (use verbatim)
 
-- "RiskScore"
+- "Safety Score"
 - "preflight analysis"
 - "the linting layer for LLM prompts"
 - "before it ships"

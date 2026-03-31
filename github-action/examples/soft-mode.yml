@@ -1,8 +1,8 @@
 # CostGuard Prompt Scan — Soft mode (report only, never blocks)
 #
-# Posts a PR comment with the full risk report on every push but never fails
-# the build, regardless of the risk score. Use this when rolling out CostGuard
-# to an existing repo without immediately enforcing thresholds.
+# Posts a PR comment with the full Safety Score report on every push but never
+# fails the build. Use this when rolling out CostGuard to an existing repo
+# without immediately enforcing thresholds.
 #
 # To switch to enforcing mode: change risk_threshold to a value below 100.
 #
@@ -22,7 +22,7 @@ on:
 
 jobs:
   prompt-scan:
-    name: Prompt Risk Report
+    name: Prompt Safety Report
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -35,12 +35,12 @@ jobs:
         id: scan
         with:
           api_key: ${{ secrets.COSTGUARD_API_KEY }}
-          # Setting threshold to 100 means no prompt can ever exceed it.
+          # Setting threshold to 100 means no prompt will ever be blocked.
           # The PR comment is always posted; the build always exits 0.
           risk_threshold: 100
 
-      # Log the result even in soft mode so you can track drift over time.
-      - name: Report risk score
+      # Log Safety Scores even in soft mode so you can track drift over time.
+      - name: Report Safety Score
         run: |
-          echo "Highest risk score: ${{ steps.scan.outputs.highest_risk_score }}"
-          echo "Files scanned:      ${{ steps.scan.outputs.scanned_files }}"
+          echo "Lowest Safety Score: ${{ steps.scan.outputs.lowest_safety_score }}"
+          echo "Files scanned:       ${{ steps.scan.outputs.scanned_files }}"

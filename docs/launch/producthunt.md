@@ -2,7 +2,7 @@
 
 ## Tagline (max 60 chars)
 ```
-RiskScore your LLM prompts before they ship
+Safety Score your LLM prompts before they ship
 ```
 
 ## Description (max 260 chars)
@@ -27,9 +27,9 @@ production pipeline was costing ~$400/month more than necessary — and we only
 found out when the invoice arrived.
 
 The core idea: run a preflight check on your LLM prompts the same way you'd run
-a linter on your code. CostGuard computes a RiskScore (0–100) based on five
-heuristics — length, context saturation, ambiguity, structural quality, and
-output volatility — and gives you specific fixes.
+a linter on your code. CostGuard computes a Safety Score (0–100, higher = safer)
+based on five heuristics — length, context saturation, ambiguity, structural
+quality, and output volatility — and gives you specific fixes.
 
 Key features:
 → CLI: `costguard analyze prompt.txt`
@@ -54,6 +54,6 @@ Would love to hear what prompts you're building with.
 3. Observability dashboard
 
 ## Gallery Descriptions
-1. "RiskScore with top drivers and mitigations — shareable via permalink"
-2. "Automatic PR comment on every push — score, drivers, report link"
+1. "Safety Score with top drivers and mitigations — shareable via permalink"
+2. "Automatic PR comment on every push — Safety Score, drivers, report link"
 3. "Track token volume, cost, and risk trends across all models"

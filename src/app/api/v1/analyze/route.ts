@@ -250,7 +250,6 @@ export async function POST(req: Request) {
     ruleset_hash: RULESET_HASH,
     input_hash: inputHash,
     risk: assessment.riskLevel.toUpperCase(),
-    risk_score: assessment.riskScore,
     safety_score: 100 - assessment.riskScore,
     model: model.id,
     input_tokens: assessment.inputTokens,
