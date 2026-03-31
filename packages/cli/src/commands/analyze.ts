@@ -310,6 +310,12 @@ function formatText(output: AnalysisOutput): string {
   lines.push("  score < 40  →  exit 1 (fail)");
   lines.push("  score 40–70  →  warning");
   lines.push("  score > 70  →  pass");
+  lines.push("");
+  if (s.min_safety_score < 60) {
+    lines.push("→ fix this prompt, then run CostGuardAI again before shipping");
+  } else {
+    lines.push("→ run this before every prompt deployment to avoid hidden token costs");
+  }
 
   return lines.join("\n");
 }
@@ -344,6 +350,12 @@ function formatMd(output: AnalysisOutput): string {
     lines.push(
       `Risk Threshold: ${s.threshold} (Safety Score <= ${thresholdSafety}). Above threshold: **${s.above_threshold}**.`,
     );
+  }
+  lines.push("");
+  if (s.min_safety_score < 60) {
+    lines.push("→ fix this prompt, then run CostGuardAI again before shipping");
+  } else {
+    lines.push("→ run this before every prompt deployment to avoid hidden token costs");
   }
 
   return lines.join("\n");

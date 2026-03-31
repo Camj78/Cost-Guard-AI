@@ -1,6 +1,6 @@
 {
   "name": "@camj78/costguardai",
-  "version": "0.2.14",
+  "version": "0.2.15",
   "description": "Detect token cost explosions and prompt risk before LLM calls — preflight analysis for OpenAI, Anthropic, and Gemini prompts",
   "keywords": [
     "llm",
