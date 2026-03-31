@@ -25,6 +25,13 @@ CostGuardAI Preflight Analysis
 1 file(s) analyzed. Lowest Safety Score: 48.
 ```
 
+## Quick Start
+
+```bash
+npm install -g @camj78/costguardai
+costguardai demo
+```
+
 ---
 
 ## 🚨 A prompt that looked fine cost $6,500 in production
@@ -375,3 +382,9 @@ If this saves you from a bad prompt in production, consider ⭐ starring — it 
 other developers find it.
 
 → [costguardai.io](https://costguardai.io) · [npm](https://www.npmjs.com/package/@camj78/costguardai) · [team@costguardai.io](mailto:team@costguardai.io)
+
+---
+
+Want CI enforcement, batch analysis, or team usage tracking?
+
+Upgrade at https://costguardai.io
