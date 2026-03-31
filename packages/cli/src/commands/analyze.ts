@@ -92,6 +92,7 @@ interface ParsedArgs {
   configPath: string;
   extensions: string[] | null;
   expectedOutputTokens: number | null;
+  ciMode: boolean;
 }
 
 function parseArgs(args: string[]): ParsedArgs {
@@ -102,10 +103,13 @@ function parseArgs(args: string[]): ParsedArgs {
   let configPath = "costguard.config.json";
   let extensions: string[] | null = null;
   let expectedOutputTokens: number | null = null;
+  let ciMode = false;
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === "--json") {
+    if (a === "--ci-mode") {
+      ciMode = true;
+    } else if (a === "--json") {
       format = "json";
     } else if (a === "--format" && args[i + 1]) {
       const f = args[++i];
@@ -136,7 +140,7 @@ function parseArgs(args: string[]): ParsedArgs {
     }
   }
 
-  return { targetPath, model, format, threshold, configPath, extensions, expectedOutputTokens };
+  return { targetPath, model, format, threshold, configPath, extensions, expectedOutputTokens, ciMode };
 }
 
 // ── File walking ──────────────────────────────────────────────────────────────
@@ -168,6 +172,26 @@ function walkDir(dir: string, extensions: string[], ignoreList: string[]): strin
 
   walk(dir);
   return results;
+}
+
+// ── Zero-config CI discovery ──────────────────────────────────────────────────
+
+/**
+ * Restricted discovery used by `costguardai ci` when no explicit path is given.
+ * Rules:
+ *   - .txt / .md  → only under a directory literally named "prompts"
+ *   - .prompt     → anywhere in the tree
+ */
+function discoverZeroConfigFiles(dir: string, ignoreList: string[]): string[] {
+  const results: string[] = [];
+  const promptsDir = path.join(dir, "prompts");
+  if (fs.existsSync(promptsDir) && fs.statSync(promptsDir).isDirectory()) {
+    results.push(...walkDir(promptsDir, [".txt", ".md"], ignoreList));
+  }
+  // .prompt files may live anywhere — collect them from the full tree
+  results.push(...walkDir(dir, [".prompt"], ignoreList));
+  // Deduplicate (a .prompt under prompts/ would appear in both passes) then sort
+  return [...new Set(results)].sort();
 }
 
 // ── Safety band mapping ───────────────────────────────────────────────────────
@@ -405,7 +429,9 @@ export async function analyzeToOutput(args: string[]): Promise<{
   const stat = fs.statSync(targetPath);
   let files: string[];
   if (stat.isDirectory()) {
-    files = walkDir(targetPath, extensions, ignoreList);
+    files = parsed.ciMode
+      ? discoverZeroConfigFiles(targetPath, ignoreList)
+      : walkDir(targetPath, extensions, ignoreList);
   } else {
     const ext = path.extname(targetPath).toLowerCase();
     if (!extensions.includes(ext)) {
