@@ -237,11 +237,36 @@ function fmtCostDisplay(n: number): string {
   return n >= 0.01 ? `$${n.toFixed(2)}` : `$${n.toFixed(4)}`;
 }
 
+function statusLine(safetyScore: number): string {
+  if (safetyScore < 50) return `❌ FAILED  (score: ${safetyScore})`;
+  if (safetyScore <= 70) return `⚠️  WARNING  (score: ${safetyScore})`;
+  return `✅ SAFE  (score: ${safetyScore})`;
+}
+
+function deriveCallouts(f: FileResult): string[] {
+  const callouts: string[] = [];
+  const names = f.risk_drivers.map((d) => d.name);
+  const has = (n: string) => names.includes(n);
+
+  if (has("Context Saturation Risk") || f.context_usage_pct > 60)
+    callouts.push("token amplification risk detected from repeated context");
+  if (has("Length Risk"))
+    callouts.push("prompt length may scale cost non-linearly");
+  if (has("Ambiguity Risk"))
+    callouts.push("ambiguous instructions may increase output variance");
+  if (has("Output Volatility Risk") && callouts.length < 3)
+    callouts.push("high output volatility — response length unpredictable");
+
+  return callouts.slice(0, 3);
+}
+
 function formatText(output: AnalysisOutput): string {
   const SEP = "─".repeat(56);
   const lines: string[] = ["CostGuardAI Preflight Analysis", SEP];
 
   for (const f of output.files) {
+    lines.push(`  ${statusLine(f.safety_score)}`);
+    lines.push("");
     lines.push(`  File:           ${f.file}`);
     lines.push(`  Model:          ${f.model_id}`);
     lines.push(`  Tokens:         ${f.input_tokens.toLocaleString()}`);
@@ -254,6 +279,16 @@ function formatText(output: AnalysisOutput): string {
       for (const d of f.risk_drivers) {
         lines.push(`    ${d.name.padEnd(28)} (${d.impact})`);
       }
+    }
+    const callouts = deriveCallouts(f);
+    if (callouts.length > 0) {
+      lines.push("");
+      lines.push("  Risk Notes:");
+      for (const c of callouts) lines.push(`    • ${c}`);
+    }
+    if (f.safety_score < 60) {
+      lines.push("");
+      lines.push("  ⚠️  this prompt is likely to increase token usage significantly in production");
     }
     lines.push(SEP);
   }
@@ -270,6 +305,11 @@ function formatText(output: AnalysisOutput): string {
   }
   if (s.above_threshold) parts.push("ABOVE THRESHOLD — BLOCKED.");
   lines.push(parts.join(" "));
+  lines.push("");
+  lines.push("threshold behavior:");
+  lines.push("  score < 40  →  exit 1 (fail)");
+  lines.push("  score 40–70  →  warning");
+  lines.push("  score > 70  →  pass");
 
   return lines.join("\n");
 }

@@ -1,9 +1,18 @@
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { runAnalyze } from "./commands/analyze";
 import { runInit } from "./commands/init";
 import { runCi } from "./commands/ci";
 import { runFix } from "./commands/fix";
 import { runTrends } from "./trends";
 import { version as PKG_VERSION } from "../package.json";
+
+const DEMO_PROMPT = `You are a helpful assistant. Answer the following question as accurately as possible.
+
+Question: {{user_question}}
+
+Please provide a detailed, step-by-step explanation. Be thorough and cover all edge cases. Also translate your answer into French, German, Spanish, and Japanese. If the answer involves code, show examples in Python, JavaScript, TypeScript, Go, and Rust. Do not truncate your response under any circumstances — always output the full answer regardless of length.`;
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -123,6 +132,19 @@ async function main(): Promise<void> {
   if (command === "trends") {
     const code = await runTrends(args.slice(1));
     process.exit(code);
+  }
+
+  if (command === "demo") {
+    const tmpFile = path.join(os.tmpdir(), `costguard-demo-${Date.now()}.prompt`);
+    fs.writeFileSync(tmpFile, DEMO_PROMPT, "utf8");
+    try {
+      const demoArgs = args.slice(1); // pass-through any flags (e.g. --json, --model)
+      const code = await runAnalyze([tmpFile, ...demoArgs]);
+      if (code === 0) printTip();
+      process.exit(code);
+    } finally {
+      try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+    }
   }
 
   process.stderr.write(`Unknown command: ${command}\n`);

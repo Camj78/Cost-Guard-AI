@@ -1,3 +1,32 @@
+## 🚨 this prompt looked fine — would have burned significantly more tokens in production
+
+```bash
+npx @camj78/costguardai demo
+```
+
+```text
+CostGuardAI Preflight Analysis
+────────────────────────────────────────
+  ⚠️  WARNING  (score: 48)
+
+  Model:          gpt-4o-mini
+  Tokens:         244
+  Cost/req:       $0.0001
+  CostGuardAI Safety Score: 48 (Warning)
+  Context:        1.5%
+
+  Risk Notes:
+    • token amplification risk detected from repeated context
+    • ambiguous instructions may increase output variance
+    • high output volatility — response length unpredictable
+
+  ⚠️  this prompt is likely to increase token usage significantly in production
+────────────────────────────────────────
+1 file(s) analyzed. Lowest Safety Score: 48.
+```
+
+---
+
 ## 🚨 A prompt that looked fine cost $6,500 in production
 
 CostGuardAI detects:
