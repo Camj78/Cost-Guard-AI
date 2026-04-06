@@ -178,7 +178,6 @@ async function main(): Promise<void> {
       console.info = noop;
     }
     const code = await runAnalyze(restArgs);
-    if (code === 0 && !isJsonMode) printTip();
     process.exit(code);
   }
 
@@ -202,8 +201,19 @@ async function main(): Promise<void> {
     fs.writeFileSync(tmpFile, DEMO_PROMPT, "utf8");
     try {
       const demoArgs = args.slice(1); // pass-through any flags (e.g. --json, --model)
+      const isDemoJsonMode = demoArgs.some(
+        (a, i, arr) =>
+          a === "--json" ||
+          a === "--format=json" ||
+          (a === "--format" && arr[i + 1] === "json"),
+      );
       const code = await runAnalyze([tmpFile, ...demoArgs]);
-      if (code === 0) printTip();
+      if (code === 0 && !isDemoJsonMode) {
+        process.stdout.write(
+          "\nNext: run on your own prompt file\n\n" +
+          "  costguardai analyze path/to/your-prompt.txt\n\n",
+        );
+      }
       process.exit(code);
     } finally {
       try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }

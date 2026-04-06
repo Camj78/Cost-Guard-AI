@@ -1,220 +1,62 @@
-## 🚨 this prompt looked fine — would have burned significantly more tokens in production
+# CostGuardAI
 
-```bash
-npx @camj78/costguardai demo
-```
+[![GitHub stars](https://img.shields.io/github/stars/Camj78/Cost-Guard-AI?style=social)](https://github.com/Camj78/Cost-Guard-AI)
+[![npm version](https://img.shields.io/npm/v/@camj78/costguardai)](https://www.npmjs.com/package/@camj78/costguardai)
+[![License](https://img.shields.io/github/license/Camj78/Cost-Guard-AI)](LICENSE)
 
-```text
-CostGuardAI Preflight Analysis
-────────────────────────────────────────
-  ⚠️  WARNING  (score: 48)
-
-  Model:          gpt-4o-mini
-  Tokens:         244
-  Cost/req:       $0.0001
-  CostGuardAI Safety Score: 48 (Warning)
-  Context:        1.5%
-
-  Risk Notes:
-    • token amplification risk detected from repeated context
-    • ambiguous instructions may increase output variance
-    • high output volatility — response length unpredictable
-
-  ⚠️  this prompt is likely to increase token usage significantly in production
-────────────────────────────────────────
-1 file(s) analyzed. Lowest Safety Score: 48.
-```
+Prevent unsafe and expensive AI prompts from reaching production.
 
 ---
 
-## 🚫 this would have blocked a bad prompt before deploy
+## Quickstart
 
-```bash
-npx @camj78/costguardai ci --fail-on-risk 70
-```
-
-```text
-CostGuardAI Preflight Analysis
-────────────────────────────────────────
-  ❌ FAILED  (score: 49)
-
-  File:           prompts/risky.prompt
-  CostGuardAI Safety Score: 49 (Warning)
-
-  Risk Notes:
-    • ambiguous instructions may increase output variance
-    • high output volatility — response length unpredictable
-
-  ⚠️  this prompt is likely to increase token usage significantly in production
-────────────────────────────────────────
-1 file(s) analyzed. Lowest Safety Score: 49.
-
-threshold behavior (Safety Score):
-  Safety Score < 40  →  exit 1 (fail)
-  Safety Score 40–70 →  warning
-  Safety Score > 70  →  pass
-
-❌ CI FAILED — blocked from deploy
-
-CostGuardAI blocked this merge.
-Safety Score: 49 (FAIL)
-
-Suggested fix:
-costguardai fix prompts/risky.prompt
-```
-
----
-
-## Quick Start
+**Step 1 — Demo**
 
 ```bash
 npm install -g @camj78/costguardai
 costguardai demo
 ```
 
----
+```text
+CostGuardAI Preflight Analysis
+────────────────────────────────────────
+  WARNING  (score: 48)
 
-## 🚨 A prompt that looked fine cost $6,500 in production
+  Model:          gpt-4o-mini
+  Tokens:         244
+  Cost/req:       $0.0001
+  Safety Score:   48 (Warning)
+  Context:        1.5%
 
-CostGuardAI detects:
-- token explosion risk
-- cost at scale
-- unstable outputs
+  Risk Notes:
+    - token amplification risk detected from repeated context
+    - ambiguous instructions may increase output variance
+    - high output volatility — response length unpredictable
 
-Run in seconds:
+  fix before shipping — this prompt is likely to increase token usage significantly in production
+────────────────────────────────────────
+1 file(s) analyzed. Lowest Safety Score: 48.
+
+Next: run on your own prompt file
+
+  costguardai analyze path/to/your-prompt.txt
+```
+
+**Step 2 — Analyze your own prompt**
 
 ```bash
-npx @camj78/costguardai analyze prompt.txt
+costguardai analyze path/to/your-prompt.txt --api-key <key>
 ```
 
----
+Get an API key at [costguardai.io](https://costguardai.io). Analysis calls the API — your prompt text is not stored.
 
-## Use cases
+**Step 3 — Add to CI**
 
-- estimate OpenAI / Claude / LLM cost before deployment
-- detect token explosion in prompts
-- sanity check prompts before running experiments
-- prevent expensive prompt mistakes in production
-
----
-
-## Why this matters
-
-Small prompt changes can:
-- 10x token usage
-- silently increase API costs
-- break outputs at scale
-
-CostGuardAI flags this before it happens.
-
----
-
-# CostGuardAI
-
-⭐ If this saves you a bad deploy, star the repo — it helps others find it.
-
-[![GitHub stars](https://img.shields.io/github/stars/Camj78/Cost-Guard-AI?style=social)](https://github.com/Camj78/Cost-Guard-AI)
-[![npm version](https://img.shields.io/npm/v/@camj78/costguardai)](https://www.npmjs.com/package/@camj78/costguardai)
-[![License](https://img.shields.io/github/license/Camj78/Cost-Guard-AI)](LICENSE)
-
-Run in 5 seconds → `costguardai analyze prompt.txt`
-
-Prevent unsafe and expensive AI prompts from reaching production.
-
-CostGuardAI is a CLI for **AI prompt testing, LLM cost optimization, and prompt validation**.
-
-Detect:
-- token explosions
-- unstable outputs
-- hidden OpenAI / Anthropic costs
-- prompt failures before production
-
-Built for:
-- AI CI pipelines
-- prompt safety enforcement
-- production-grade LLM workflows
-
-`npm install -g @camj78/costguardai`
-
----
-
-## ⚠️ Why this exists
-
-A single prompt can:
-- silently explode token costs in production
-- fail unpredictably in real usage
-- behave differently than in testing
-
-CostGuardAI catches these issues **before they hit production**.
-
----
-
-## Why developers use CostGuardAI
-
-If you've ever thought:
-
-- "Why is my OpenAI bill suddenly so high?"
-- "Why did this prompt explode in tokens?"
-- "Why is my LLM output inconsistent?"
-- "How do I test prompts before production?"
-- "How do I prevent prompt issues in CI?"
-
-CostGuardAI helps catch these issues before they hit production:
-
-- Detects token explosion risk
-- Flags ambiguous or unstable prompts
-- Estimates real usage cost
-- Surfaces output variability issues
-- Works in CI to block risky prompts
-
----
-
-## 🔍 Example
-
-Input prompt:
-
-> "Summarize customer conversations with full context"
-
-CostGuardAI output:
-
-```
-CostGuardAI Safety Score: 78 (Low Risk)
-⚠️ Potential token explosion due to unbounded context
-⚠️ Output variability risk
-⚠️ Cost estimate: $420/month at scale
-→ Fix suggestions available in Pro
+```bash
+costguardai ci path/to/your-prompt.txt --api-key <key> --fail-on-risk 70
 ```
 
----
-
-### Real CLI output
-
-Example output when a risky production prompt is analyzed.
-
-```text
-$ costguardai analyze ./prompts/checkout-flow.txt
-
-CostGuardAI Safety Score: 78 (Low Risk)
-⚠️ Potential token explosion due to unbounded context
-⚠️ Output variability risk
-⚠️ Cost estimate: $420/month at scale
-
-Free includes → basic analysis only
-🔒 Fix suggestions: Pro
-🔒 CI enforcement: Pro
-
-Upgrade → https://costguardai.io/upgrade
-Pro unlocks → fix suggestions, CI enforcement, safer prompt reviews
-
-Next step → run this on a real prompt from your codebase
-Example: costguardai analyze ./prompts/checkout-flow.txt
-```
-
----
-
-**CostGuardAI** is a CLI + web tool that analyzes AI prompts _before_ they hit production.
-Scan for prompt injection, token explosion, cost overruns, and truncation risk — locally, in CI, or in your browser.
-Supports prompt cost estimation for OpenAI cost, Claude cost, and LLM cost across all major providers.
+Blocks risky prompts before merge. See [Add to CI in 60 seconds](#add-to-ci-in-60-seconds) below for the full GitHub Actions setup.
 
 ---
 
@@ -232,58 +74,36 @@ Supports prompt cost estimation for OpenAI cost, Claude cost, and LLM cost acros
 
 ---
 
-## 30-second quickstart
+## Why this exists
 
-```bash
-# Install
-npm install -g @camj78/costguardai
+A single prompt can:
+- silently explode token costs in production
+- fail unpredictably in real usage
+- behave differently than in testing
 
-# Analyze a prompt
-costguardai analyze my-prompt.txt
-
-# Example output:
-# CostGuardAI Safety Score: 72/100
-# Detected issues:
-# • prompt injection risk
-# • token explosion risk
-# • unstable output structure
-
-# Auto-fix issues
-costguardai fix my-prompt.txt
-
-# Block risky prompts in CI
-costguardai ci --fail-on-risk 70
-```
-
-**All analysis runs locally. Your prompts never leave your machine.**
+CostGuardAI catches these issues **before they hit production**.
 
 ---
 
-## Try it now
+## CLI Reference
 
-Paste any prompt into a file and run:
+| Command | Description |
+|---|---|
+| `costguardai demo` | Run analysis on a built-in demo prompt |
+| `costguardai analyze <file>` | Analyze a prompt file |
+| `costguardai fix <file>` | Auto-fix detected issues |
+| `costguardai ci --fail-on-risk <n>` | CI gate — exit 1 if Safety Score < n |
+| `costguardai init` | Initialize config in current repo |
 
-```bash
-npx @camj78/costguardai analyze prompt.txt
-```
+**Options**
 
-No setup required.
-
-Or try with a demo prompt:
-
-`npx @camj78/costguardai analyze examples/demo-prompt.txt`
-
----
-
-## Why I built this
-
-I kept shipping AI features and discovering problems in production — runaway token costs,
-prompts that got injected, responses that truncated mid-sentence. There was no `eslint`
-for prompts. So I built one.
-
-CostGuardAI is the preflight check I wish I'd had from day one.
-
-— [@Camj78](https://github.com/Camj78)
+| Flag | Description | Default |
+|---|---|---|
+| `--model <id>` | Model to analyze against | `gpt-4o-mini` |
+| `--format text\|md\|json` | Output format | `text` |
+| `--threshold <n>` | Exit 1 if any file Safety Score < n | — |
+| `--ext <exts>` | File extensions to scan | `.txt,.md,.prompt` |
+| `--expected-output <n>` | Expected output tokens | `512` |
 
 ---
 
@@ -301,11 +121,6 @@ costguardai init
 
 **Step 3 — Add CI gate**
 
-Used in CI to prevent:
-- token explosions
-- unstable outputs
-- hidden LLM costs
-
 ```yaml
 name: CostGuardAI
 
@@ -320,6 +135,32 @@ jobs:
         run: npx @camj78/costguardai@latest ci --fail-on-risk 70
 ```
 
+CI blocks risky prompts before merge:
+
+```text
+CostGuardAI Preflight Analysis
+────────────────────────────────────────
+  ❌ FAILED  (score: 49)
+
+  File:           prompts/risky.prompt
+  CostGuardAI Safety Score: 49 (Warning)
+
+  Risk Notes:
+    • ambiguous instructions may increase output variance
+    • high output volatility — response length unpredictable
+
+❌ CI FAILED — blocked from deploy
+Safety Score: 49 — below threshold of 70
+
+Suggested fix: costguardai fix prompts/risky.prompt
+────────────────────────────────────────
+```
+
+threshold behavior (Safety Score):
+- Safety Score > 70  →  pass
+- Safety Score 40–70 →  warning
+- Safety Score < 40  →  exit 1 (fail)
+
 **Step 4 — Commit**
 ```bash
 git add .
@@ -328,27 +169,6 @@ git commit -m "Add CostGuardAI preflight checks"
 
 > Add the safety badge to your repo:
 > `[![CostGuardAI Safety](https://costguardai.io/badge.svg)](https://costguardai.io)`
-
----
-
-## CLI Reference
-
-| Command | Description |
-|---|---|
-| `costguardai analyze <file>` | Analyze a prompt file |
-| `costguardai fix <file>` | Auto-fix detected issues |
-| `costguardai ci --fail-on-risk <n>` | CI gate — exit 1 if Safety Score < n |
-| `costguardai init` | Initialize config in current repo |
-
-**Options**
-
-| Flag | Description | Default |
-|---|---|---|
-| `--model <id>` | Model to analyze against | `gpt-4o-mini` |
-| `--format text\|md\|json` | Output format | `text` |
-| `--threshold <n>` | Exit 1 if any file Safety Score < n | — |
-| `--ext <exts>` | File extensions to scan | `.txt,.md,.prompt` |
-| `--expected-output <n>` | Expected output tokens | `512` |
 
 ---
 
@@ -417,6 +237,18 @@ All client-side. Nothing sent to a server.
 
 ---
 
+## Why I built this
+
+I kept shipping AI features and discovering problems in production — runaway token costs,
+prompts that got injected, responses that truncated mid-sentence. There was no `eslint`
+for prompts. So I built one.
+
+CostGuardAI is the preflight check I wish I'd had from day one.
+
+— [@Camj78](https://github.com/Camj78)
+
+---
+
 ## Contributing
 
 Issues, PRs, and feedback welcome.
@@ -425,9 +257,3 @@ If this saves you from a bad prompt in production, consider ⭐ starring — it 
 other developers find it.
 
 → [costguardai.io](https://costguardai.io) · [npm](https://www.npmjs.com/package/@camj78/costguardai) · [team@costguardai.io](mailto:team@costguardai.io)
-
----
-
-Want CI enforcement, batch analysis, or team usage tracking?
-
-Upgrade at https://costguardai.io
