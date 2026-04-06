@@ -1,4 +1,6 @@
+import * as crypto from "crypto";
 import * as fs from "fs";
+import * as https from "https";
 import * as os from "os";
 import * as path from "path";
 import { runAnalyze } from "./commands/analyze";
@@ -7,6 +9,62 @@ import { runCi } from "./commands/ci";
 import { runFix } from "./commands/fix";
 import { runTrends } from "./trends";
 import { version as PKG_VERSION } from "../package.json";
+
+const COSTGUARDAI_CONFIG_DIR = path.join(os.homedir(), ".costguardai");
+const COSTGUARDAI_CONFIG_FILE = path.join(COSTGUARDAI_CONFIG_DIR, "config.json");
+
+function getOrCreateAnonymousId(): string {
+  try {
+    if (fs.existsSync(COSTGUARDAI_CONFIG_FILE)) {
+      const raw = fs.readFileSync(COSTGUARDAI_CONFIG_FILE, "utf8");
+      const cfg = JSON.parse(raw) as Record<string, unknown>;
+      if (typeof cfg.anonymous_id === "string" && cfg.anonymous_id) {
+        return cfg.anonymous_id;
+      }
+    }
+    const id = crypto.randomUUID();
+    fs.mkdirSync(COSTGUARDAI_CONFIG_DIR, { recursive: true });
+    let cfg: Record<string, unknown> = {};
+    try {
+      cfg = JSON.parse(fs.readFileSync(COSTGUARDAI_CONFIG_FILE, "utf8")) as Record<string, unknown>;
+    } catch { /* fresh file */ }
+    cfg.anonymous_id = id;
+    fs.writeFileSync(COSTGUARDAI_CONFIG_FILE, JSON.stringify(cfg, null, 2), "utf8");
+    return id;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
+
+function fireTelemetry(hasApiKey: boolean): void {
+  try {
+    const anonymous_id = getOrCreateAnonymousId();
+    const payload = JSON.stringify({
+      source: "cli",
+      event: "analyze_run",
+      anonymous_id,
+      timestamp: new Date().toISOString(),
+      has_api_key: hasApiKey,
+    });
+    const req = https.request(
+      {
+        hostname: "costguardai.io",
+        path: "/api/v1/telemetry",
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "content-length": Buffer.byteLength(payload),
+        },
+      },
+      (res) => { res.resume(); },
+    );
+    req.on("error", () => { /* silent */ });
+    req.write(payload);
+    req.end();
+  } catch {
+    // never throw, never affect exit codes
+  }
+}
 
 const DEMO_PROMPT = `Write a detailed, comprehensive, in depth explanation of everything you know about the topic as much as possible, and thoroughly explain all aspects. Please improve and optimize this to be as efficient, flexible, clean, robust, scalable, advanced, and modern as possible, with high quality, good results that are better and faster than any existing solution.`;
 
@@ -96,6 +154,15 @@ async function main(): Promise<void> {
 
   if (command === "analyze") {
     const restArgs = args.slice(1);
+    const hasApiKey = !!(
+      process.env.COSTGUARD_API_KEY ||
+      restArgs.some((a, i, arr) =>
+        a === "--api-key" || a === "-k"
+          ? arr[i + 1] !== undefined
+          : a.startsWith("--api-key="),
+      )
+    );
+    fireTelemetry(hasApiKey);
     const isJsonMode = restArgs.some(
       (a, i, arr) =>
         a === "--json" ||
