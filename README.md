@@ -9,7 +9,7 @@ Prevent unsafe and expensive AI prompts from reaching production.
 Works natively in GitHub Actions:
 
 ```yaml
-- uses: Camj78/Cost-Guard-AI/.github/actions/costguardai@main
+- uses: Camj78/Cost-Guard-AI@main
 ```
 
 ---
@@ -77,13 +77,13 @@ Used in CI to prevent:
 - unstable outputs
 
 ```yaml
-- uses: Camj78/Cost-Guard-AI/.github/actions/costguardai@main
+- uses: Camj78/Cost-Guard-AI@main
 ```
 
 Set a minimum Safety Score threshold:
 
 ```yaml
-- uses: Camj78/Cost-Guard-AI/.github/actions/costguardai@main
+- uses: Camj78/Cost-Guard-AI@main
   with:
     fail-on-risk: 70
 ```
@@ -166,7 +166,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run CostGuardAI
-        uses: Camj78/Cost-Guard-AI/.github/actions/costguardai@main
+        uses: Camj78/Cost-Guard-AI@main
         with:
           fail-on-risk: 70
 ```
