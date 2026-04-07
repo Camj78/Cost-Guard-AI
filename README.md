@@ -6,6 +6,12 @@
 
 Prevent unsafe and expensive AI prompts from reaching production.
 
+Works natively in GitHub Actions:
+
+```yaml
+- uses: Camj78/Cost-Guard-AI/.github/actions/costguardai@main
+```
+
 ---
 
 ## Quickstart
@@ -57,6 +63,32 @@ costguardai ci path/to/your-prompt.txt --api-key <key> --fail-on-risk 70
 ```
 
 Blocks risky prompts before merge. See [Add to CI in 60 seconds](#add-to-ci-in-60-seconds) below for the full GitHub Actions setup.
+
+---
+
+## Add to GitHub Actions
+
+Catch expensive AI prompts before they ship.
+
+Used in CI to prevent:
+
+- token explosions
+- hidden LLM costs
+- unstable outputs
+
+```yaml
+- uses: Camj78/Cost-Guard-AI/.github/actions/costguardai@main
+```
+
+Set a minimum Safety Score threshold:
+
+```yaml
+- uses: Camj78/Cost-Guard-AI/.github/actions/costguardai@main
+  with:
+    fail-on-risk: 70
+```
+
+Safety Score runs from 0 to 100. Higher is safer.
 
 ---
 
@@ -121,6 +153,8 @@ costguardai init
 
 **Step 3 — Add CI gate**
 
+Fails the workflow if the CostGuardAI Safety Score drops below 70.
+
 ```yaml
 name: CostGuardAI
 
@@ -132,7 +166,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run CostGuardAI
-        run: npx @camj78/costguardai@latest ci --fail-on-risk 70
+        uses: Camj78/Cost-Guard-AI/.github/actions/costguardai@main
+        with:
+          fail-on-risk: 70
 ```
 
 CI blocks risky prompts before merge:

@@ -1,0 +1,15 @@
+name: "CostGuardAI"
+description: "Prevent expensive and unsafe AI prompts in CI"
+
+inputs:
+  fail-on-risk:
+    description: "Fail if Safety Score falls below this threshold (0–100)"
+    required: false
+    default: "70"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run CostGuardAI preflight
+      shell: bash
+      run: npx @camj78/costguardai@latest ci --fail-on-risk ${{ inputs.fail-on-risk }}
