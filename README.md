@@ -9,7 +9,7 @@ Prevent unsafe and expensive AI prompts from reaching production.
 Works natively in GitHub Actions:
 
 ```yaml
-- uses: Camj78/Cost-Guard-AI@main
+- uses: Camj78/costguardai-action@v1
 ```
 
 ---
@@ -54,7 +54,7 @@ Next: run on your own prompt file
 costguardai analyze path/to/your-prompt.txt --api-key <key>
 ```
 
-Get an API key at [costguardai.io](https://costguardai.io). Analysis calls the API — your prompt text is not stored.
+Analysis calls the API — your prompt text is not stored.
 
 **Step 3 — Add to CI**
 
@@ -77,13 +77,13 @@ Used in CI to prevent:
 - unstable outputs
 
 ```yaml
-- uses: Camj78/Cost-Guard-AI@main
+- uses: Camj78/costguardai-action@v1
 ```
 
 Set a minimum Safety Score threshold:
 
 ```yaml
-- uses: Camj78/Cost-Guard-AI@main
+- uses: Camj78/costguardai-action@v1
   with:
     fail-on-risk: 70
 ```
@@ -166,7 +166,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run CostGuardAI
-        uses: Camj78/Cost-Guard-AI@main
+        uses: Camj78/costguardai-action@v1
         with:
           fail-on-risk: 70
 ```
