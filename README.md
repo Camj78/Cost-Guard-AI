@@ -99,6 +99,23 @@ jobs:
 
 This runs CostGuardAI automatically on every pull request and blocks merges when prompt risk is too high.
 
+### What you'll see in pull requests
+
+```text
+❌ CostGuardAI FAILED
+
+Safety Score: 64/100
+Top risk drivers:
+- Prompt injection exposure
+- Excessive token usage risk
+- Unbounded behavior patterns
+
+Suggested fix:
+Tighten instructions, reduce unnecessary context, and set clearer output boundaries.
+```
+
+This gives reviewers immediate, actionable feedback directly in CI before risky prompts are merged.
+
 Set a minimum Safety Score threshold:
 
 ```yaml
