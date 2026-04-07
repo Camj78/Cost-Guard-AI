@@ -1,0 +1,44 @@
+name: CostGuardAI PR Comment
+
+on:
+  pull_request:
+
+jobs:
+  costguard-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run CostGuardAI
+        id: costguard
+        run: npx @camj78/costguardai@latest ci --fail-on-risk 70 --format json > result.json
+        continue-on-error: true
+
+      - name: Post PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('result.json', 'utf8'));
+
+            const body = `
+❌ CostGuardAI Analysis
+
+Safety Score: ${data.safety_score}/100
+
+Top risks:
+${data.top_risks?.map(r => `- ${r}`).join('\n') || '- None'}
+
+Prevent this automatically in CI:
+
+\`\`\`yaml
+- uses: Camj78/costguardai-action@v1
+\`\`\`
+`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
