@@ -1,6 +1,10 @@
 name: "CostGuardAI"
 description: "Prevent expensive and unsafe AI prompts in CI"
 
+branding:
+  icon: "shield"
+  color: "blue"
+
 inputs:
   fail-on-risk:
     description: "Fail if Safety Score falls below this threshold (0–100)"
