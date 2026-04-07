@@ -149,6 +149,21 @@ function buildComment(data: CiJson | null): string {
 
   const costLine = costStr ? `**Projected cost:** ${costStr} per request` : null;
 
+  const ctaBlock = [
+    "<details>",
+    "<summary>Prevent this automatically in GitHub Actions</summary>",
+    "",
+    "```yaml",
+    "- uses: Camj78/Cost-Guard-AI/.github/actions/costguardai@main",
+    "  with:",
+    "    fail-on-risk: 70",
+    "```",
+    "",
+    "Fails the workflow if the CostGuardAI Safety Score drops below 70.",
+    "",
+    "</details>",
+  ].join("\n");
+
   return [
     COMMENT_MARKER,
     "## CostGuardAI Report",
@@ -158,6 +173,9 @@ function buildComment(data: CiJson | null): string {
     "",
     "**Top risks:**",
     driversBlock,
+    "",
+    "---",
+    ctaBlock,
     "",
     "---",
     versionedFooter,
