@@ -179,6 +179,16 @@ function buildComment(data: CiJson | null): string {
     "",
     "---",
     versionedFooter,
+    "",
+    "---",
+    "",
+    "Prevent this automatically in CI:",
+    "",
+    "```yaml",
+    "- uses: Camj78/costguardai-action@v1",
+    "```",
+    "",
+    "---",
   ].join("\n");
 }
 
