@@ -80,6 +80,25 @@ Used in CI to prevent:
 - uses: Camj78/costguardai-action@v1
 ```
 
+### Full GitHub Actions setup
+
+```yaml
+name: CostGuardAI
+
+on: [pull_request]
+
+jobs:
+  costguard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Camj78/costguardai-action@v1
+        with:
+          fail-on-risk: 70
+```
+
+This runs CostGuardAI automatically on every pull request and blocks merges when prompt risk is too high.
+
 Set a minimum Safety Score threshold:
 
 ```yaml
