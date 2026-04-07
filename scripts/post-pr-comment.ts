@@ -154,7 +154,7 @@ function buildComment(data: CiJson | null): string {
     "<summary>Prevent this automatically in GitHub Actions</summary>",
     "",
     "```yaml",
-    "- uses: Camj78/Cost-Guard-AI@main",
+    "- uses: Camj78/costguardai-action@v1",
     "  with:",
     "    fail-on-risk: 70",
     "```",
