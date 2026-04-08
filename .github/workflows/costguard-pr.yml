@@ -276,6 +276,8 @@ jobs:
           lines.push(
             `_Powered by [CostGuardAI](https://costguardai.io) · score v${data.score_version}_`
           );
+          lines.push("");
+          lines.push("If this saved you from a bad prompt, consider ⭐ starring CostGuardAI");
 
           fs.writeFileSync("costguard-report.md", lines.join("\n"));
           console.log("Report written to costguard-report.md");
