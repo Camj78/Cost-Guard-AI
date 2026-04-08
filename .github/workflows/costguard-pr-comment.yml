@@ -40,19 +40,19 @@ jobs:
 
             const body = `## CostGuardAI Safety Report
 
-**File:** \`${fileName}\`
-**Safety Score:** ${safetyScore}/100 *(100 − risk score of ${riskScore})*
+            **File:** \`${fileName}\`
+            **Safety Score:** ${safetyScore}/100 *(100 − risk score of ${riskScore})*
 
-**Risk Drivers:**
-${driversText}
+            **Risk Drivers:**
+            ${driversText}
 
----
-Add CostGuardAI to your CI pipeline to catch prompt risks before they ship:
+            ---
+            Add CostGuardAI to your CI pipeline to catch prompt risks before they ship:
 
-\`\`\`yaml
-- uses: Camj78/costguardai-action@v1
-\`\`\`
-`;
+            \`\`\`yaml
+            - uses: Camj78/costguardai-action@v1
+            \`\`\`
+            `;
 
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
