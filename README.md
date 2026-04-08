@@ -1,16 +1,16 @@
-# CostGuardAI
+# CostGuardAI GitHub Action
 
-[![GitHub stars](https://img.shields.io/github/stars/Camj78/Cost-Guard-AI?style=social)](https://github.com/Camj78/Cost-Guard-AI)
-[![npm version](https://img.shields.io/npm/v/@camj78/costguardai)](https://www.npmjs.com/package/@camj78/costguardai)
-[![License](https://img.shields.io/github/license/Camj78/Cost-Guard-AI)](LICENSE)
+Catch expensive and unsafe AI prompts before they reach production.
 
-Prevent unsafe and expensive AI prompts from reaching production.
-
-Works natively in GitHub Actions:
+- Detect token explosions and hidden costs
+- Generate a CostGuardAI Safety Score on every PR
+- Fail CI when prompts fall below your Safety Score threshold
 
 ```yaml
 - uses: Camj78/costguardai-action@v1
 ```
+
+Runs automatically in GitHub Actions to analyze prompts before merge.
 
 ---
 
@@ -98,6 +98,8 @@ jobs:
 ```
 
 This runs CostGuardAI automatically on every pull request and blocks merges when prompt risk is too high.
+
+Prefer the GitHub Marketplace listing? Install here: https://github.com/marketplace/actions/costguardai-prevent-expensive-ai-prompts
 
 ### What you'll see in pull requests
 
