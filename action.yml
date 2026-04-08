@@ -1,4 +1,4 @@
-name: "CostGuardAI"
+name: "CostGuardAI – Prevent Expensive AI Prompts"
 description: "Prevent expensive and unsafe AI prompts in CI"
 
 branding:
