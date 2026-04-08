@@ -246,6 +246,14 @@ jobs:
             }
           }
 
+          lines.push("");
+          lines.push("---");
+          lines.push("Prevent this automatically in CI:");
+          lines.push("");
+          lines.push("```yaml");
+          lines.push("- uses: Camj78/costguardai-action@v1");
+          lines.push("```");
+          lines.push("");
           lines.push(
             `_Powered by [CostGuardAI](https://costguardai.io) · score v${data.score_version}_`
           );
