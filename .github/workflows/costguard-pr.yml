@@ -248,10 +248,24 @@ jobs:
 
           lines.push("");
           lines.push("---");
-          lines.push("Prevent this automatically in CI:");
+          lines.push("");
+          lines.push("### 🚀 Catch this earlier in CI");
+          lines.push("");
+          lines.push("This PR triggered risk signals. You can prevent this before merge with CostGuardAI:");
           lines.push("");
           lines.push("```yaml");
-          lines.push("- uses: Camj78/costguardai-action@v1");
+          lines.push("name: CostGuardAI");
+          lines.push("");
+          lines.push("on: [pull_request]");
+          lines.push("");
+          lines.push("jobs:");
+          lines.push("  costguard:");
+          lines.push("    runs-on: ubuntu-latest");
+          lines.push("    steps:");
+          lines.push("      - uses: actions/checkout@v4");
+          lines.push("      - uses: Camj78/costguardai-action@v1");
+          lines.push("        with:");
+          lines.push("          fail-on-risk: 70");
           lines.push("```");
           lines.push("");
           lines.push(
