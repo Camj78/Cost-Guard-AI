@@ -35,24 +35,20 @@ jobs:
               : [];
 
             const driversText = riskDrivers.length > 0
-              ? riskDrivers.map(r => `- ${r}`).join('\n')
-              : '- None identified';
+              ? riskDrivers.map(r => "- " + r).join("\n")
+              : "- None identified";
 
-            const body = `## CostGuardAI Safety Report
-
-            **File:** \`${fileName}\`
-            **Safety Score:** ${safetyScore}/100 *(100 − risk score of ${riskScore})*
-
-            **Risk Drivers:**
-            ${driversText}
-
-            ---
-            Add CostGuardAI to your CI pipeline to catch prompt risks before they ship:
-
-            \`\`\`yaml
-            - uses: Camj78/costguardai-action@v1
-            \`\`\`
-            `;
+            const body =
+              "## CostGuardAI Safety Report\n\n" +
+              "**File:** `" + fileName + "`\n" +
+              "**Safety Score:** " + safetyScore + "/100 (100 - risk score of " + riskScore + ")\n\n" +
+              "**Risk Drivers:**\n" +
+              driversText + "\n\n" +
+              "---\n" +
+              "Add CostGuardAI to your CI pipeline:\n\n" +
+              "```yaml\n" +
+              "- uses: Camj78/costguardai-action@v1\n" +
+              "```";
 
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
