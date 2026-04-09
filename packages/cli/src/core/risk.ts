@@ -241,10 +241,35 @@ export function assessRisk(inputs: RiskInputs): RiskAssessment {
   const volatilityBucket = Math.min(100, volatilitySum);
   const volatilityRisk = volatilityBucket * SCORING_WEIGHTS.volatility;
 
+  // ─── 6. Security Pattern Risk (Additive Boost) ───────────────────────────
+  //
+  // Detects prompt injection, jailbreak, and safety-bypass patterns that
+  // score low on structural/cost heuristics but indicate malicious intent.
+  // Applied as an additive boost after the weighted base score — analogous
+  // to the CVE threat-intel adjustment applied by the API layer.
+  //
+  const SECURITY_PATTERNS: RegExp[] = [
+    /ignore\s+(all\s+)?(previous|prior)\s+instructions/i,
+    /system\s+override/i,
+    /safety\s+filters?\s+(disabled|suspended|lifted|bypassed)/i,
+    /disable\s+safety\s+filters?/i,
+    /reveal\s+(your\s+)?system\s+prompt/i,
+    /unrestricted\s+(developer\s+)?(debug\s+)?mode/i,
+  ];
+  let securityBoost = 0;
+  const securityFixes: string[] = [];
+  for (const pat of SECURITY_PATTERNS) {
+    if (pat.test(promptText)) {
+      securityBoost = 75;
+      securityFixes.push("Prompt injection or jailbreak pattern detected. Remove all override/bypass directives before deploying.");
+      break;
+    }
+  }
+
   // ─── Final Score ─────────────────────────────────────────────────────────
   const totalRisk = lengthRisk + contextRisk + ambiguityRisk + structuralRisk + volatilityRisk;
   const base_risk_score = Math.min(100, Math.round(totalRisk));
-  const riskScore = base_risk_score;
+  const riskScore = Math.min(100, base_risk_score + securityBoost);
 
   const allDrivers: RiskDriver[] = [
     { name: "Length Risk", impact: lengthBucket, fixes: lengthFixes },
@@ -252,6 +277,7 @@ export function assessRisk(inputs: RiskInputs): RiskAssessment {
     { name: "Ambiguity Risk", impact: ambiguityBucket, fixes: ambiguityFixes },
     { name: "Structural Risk", impact: structuralBucket, fixes: structuralFixes },
     { name: "Output Volatility Risk", impact: volatilityBucket, fixes: volatilityFixes },
+    { name: "Security Pattern Risk", impact: securityBoost > 0 ? 90 : 0, fixes: securityFixes },
   ];
   const riskDrivers = [...allDrivers]
     .sort((a, b) => b.impact - a.impact)
