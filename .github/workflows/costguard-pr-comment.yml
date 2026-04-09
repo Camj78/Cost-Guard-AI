@@ -21,20 +21,34 @@ jobs:
             const fs = require('fs');
             const data = JSON.parse(fs.readFileSync('result.json', 'utf8'));
 
-            const body = `
-❌ CostGuardAI Analysis
+            const files = Array.isArray(data.files) ? data.files : [];
 
-Safety Score: ${data.safety_score}/100
+            const highestRiskFile = files.reduce((max, f) => {
+              return (f.risk_score ?? 0) > (max.risk_score ?? 0) ? f : max;
+            }, files[0] || {});
 
-Top risks:
-${data.top_risks?.map(r => `- ${r}`).join('\n') || '- None'}
+            const riskScore = highestRiskFile.risk_score ?? 0;
+            const safetyScore = 100 - riskScore;
+            const fileName = highestRiskFile.file || 'unknown';
+            const riskDrivers = Array.isArray(highestRiskFile.risk_drivers)
+              ? highestRiskFile.risk_drivers
+              : [];
 
-Prevent this automatically in CI:
+            const driversText = riskDrivers.length > 0
+              ? riskDrivers.map(r => "- " + r).join("\n")
+              : "- None identified";
 
-\`\`\`yaml
-- uses: Camj78/costguardai-action@v1
-\`\`\`
-`;
+            const body =
+              "## CostGuardAI Safety Report\n\n" +
+              "**File:** `" + fileName + "`\n" +
+              "**Safety Score:** " + safetyScore + "/100 (100 - risk score of " + riskScore + ")\n\n" +
+              "**Risk Drivers:**\n" +
+              driversText + "\n\n" +
+              "---\n" +
+              "Add CostGuardAI to your CI pipeline:\n\n" +
+              "```yaml\n" +
+              "- uses: Camj78/costguardai-action@v1\n" +
+              "```";
 
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
